@@ -3325,3 +3325,80 @@ body.screen-shake {
     font-size: 0.8rem !important;
     padding: 0.3rem 0.7rem !important;
 }
+
+/* ===== METRONOME CONTROLS ===== */
+.metronome-controls {
+    display: none;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.4rem 0.8rem;
+    background: var(--surface-color);
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    margin: 0.3rem auto;
+    max-width: fit-content;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+.metronome-row {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+.metro-label {
+    font-family: var(--font-fun);
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    min-width: 2.8rem;
+}
+.metro-adj {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 1px solid var(--border-color);
+    background: var(--surface-color);
+    color: var(--text-primary);
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+}
+.metro-adj:hover {
+    background: var(--primary-color);
+    color: #fff;
+}
+.metro-value {
+    font-family: var(--font-fun);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    min-width: 2rem;
+    text-align: center;
+}
+.metronome-beat-dots {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    margin-left: 0.3rem;
+}
+.metro-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--border-color);
+    transition: background 0.12s, transform 0.12s, box-shadow 0.12s;
+}
+.metro-dot.active {
+    background: var(--primary-color);
+    transform: scale(1.4);
+    box-shadow: 0 0 8px var(--primary-color);
+}
+.metro-dot.past {
+    background: var(--text-secondary);
+    opacity: 0.5;
+}
