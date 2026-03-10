@@ -462,14 +462,15 @@ a:hover { color: var(--accent-hover); }
 /* Fretboard */
 .fretboard-wrapper {
     overflow-x: auto;
-    margin: 1.5rem 0;
+    margin: 1.5rem -1.5rem;
     padding: 0.75rem 0;
     -webkit-overflow-scrolling: touch;
 }
 
 .fretboard {
     position: relative;
-    min-width: 1020px;
+    width: 100%;
+    min-width: 700px;
     background: linear-gradient(180deg, var(--fretboard-wood) 0%, var(--fretboard-wood-light) 100%);
     border-radius: var(--radius-lg);
     padding: 2rem 1.25rem 1.5rem;

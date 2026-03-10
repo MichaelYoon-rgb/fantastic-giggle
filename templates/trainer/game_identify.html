@@ -289,6 +289,8 @@ async function getNextNote() {
         document.querySelectorAll('.note-dot').forEach(d => {
             d.classList.remove('highlighted', 'correct', 'incorrect', 'show', 'color-coded');
             d.style.background = '';
+            d.style.opacity = '';
+            d.textContent = FRETBOARD[`${d.dataset.string}-${d.dataset.fret}`];
         });
 
         // Highlight the new note
@@ -331,6 +333,27 @@ function vibrateString(stringNum) {
     }
 }
 
+// Reveal ALL positions of a given note on the fretboard
+function revealAllSameNotes(note) {
+    const color = getNoteColor(note);
+    const enharmonic = ENHARMONIC[note];
+    for (let s = 1; s <= 6; s++) {
+        for (let f = 0; f <= 12; f++) {
+            const cellNote = FRETBOARD[`${s}-${f}`];
+            if (cellNote === note || cellNote === enharmonic) {
+                const d = document.getElementById(`note-${s}-${f}`);
+                if (d) {
+                    d.textContent = cellNote;
+                    d.classList.add('color-coded');
+                    d.style.background = color;
+                    d.style.opacity = '1';
+                }
+                vibrateString(s);
+            }
+        }
+    }
+}
+
 // Skip button — reveal answer and move on
 document.getElementById('skipBtn').addEventListener('click', function() {
     if (waiting) return;
@@ -338,12 +361,10 @@ document.getElementById('skipBtn').addEventListener('click', function() {
 
     const dot = document.getElementById(`note-${currentString}-${currentFret}`);
     if (dot) {
-        dot.textContent = currentNote;
         dot.classList.remove('highlighted');
-        dot.classList.add('color-coded');
-        dot.style.background = getNoteColor(currentNote);
-        dot.style.opacity = '1';
     }
+
+    revealAllSameNotes(currentNote);
 
     // Highlight the correct button
     document.querySelectorAll('.note-btn').forEach(b => {
@@ -356,7 +377,7 @@ document.getElementById('skipBtn').addEventListener('click', function() {
     playNoteSound(currentNote, currentString, currentFret);
     vibrateString(currentString);
     showFeedback(`It was ${currentNote}`, 'incorrect');
-    setTimeout(() => getNextNote(), 1500);
+    setTimeout(() => getNextNote(), 2000);
 });
 
 // Handle answer — keep trying until correct
@@ -376,11 +397,10 @@ async function handleAnswer(selectedNote) {
         scoreCorrect++;
         streak++;
         if (dot) {
-            dot.textContent = currentNote;
             dot.classList.remove('highlighted');
-            dot.classList.add('correct', 'color-coded');
-            dot.style.background = getNoteColor(currentNote);
+            dot.classList.add('correct');
         }
+        revealAllSameNotes(currentNote);
         document.querySelectorAll('.note-btn').forEach(b => {
             if (b.dataset.note === selectedNote) b.classList.add('correct');
         });
@@ -410,8 +430,8 @@ async function handleAnswer(selectedNote) {
             console.log('Not logged in or error saving');
         }
 
-        // Next note after short delay
-        setTimeout(() => getNextNote(), 900);
+        // Next note after delay (longer to see all revealed notes)
+        setTimeout(() => getNextNote(), 1800);
     } else {
         // Wrong — mark button but let user keep trying
         scoreWrong++;
