@@ -146,14 +146,20 @@ class PitchDetector {
         this.audioContext = null;
         this.analyser = null;
         this.stream = null;
+        this.sourceNode = null;
         this.isListening = false;
         this.onNoteDetected = null;
-        this.bufferSize = 8192;
+        this.bufferSize = 4096;
         this.buffer = new Float32Array(this.bufferSize);
         this.detectionInterval = null;
         this.lastDetectedNote = null;
         this.lastDetectedTime = 0;
-        this.confidenceThreshold = 0.93;
+        // YIN threshold — lower = stricter (0.05–0.20 typical for guitar)
+        this.yinThreshold = 0.15;
+        // Require N consecutive same-note detections before firing
+        this.confirmCount = 0;
+        this.confirmTarget = 2;
+        this.confirmNote = null;
     }
 
     async start() {
@@ -163,21 +169,24 @@ class PitchDetector {
                     echoCancellation: false,
                     noiseSuppression: false,
                     autoGainControl: false,
+                    sampleRate: { ideal: 44100 },
                 }
             });
 
-            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const source = this.audioContext.createMediaStreamSource(this.stream);
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)({
+                sampleRate: 44100, // Force consistent sample rate
+            });
+            this.sourceNode = this.audioContext.createMediaStreamSource(this.stream);
 
             this.analyser = this.audioContext.createAnalyser();
-            this.analyser.fftSize = this.bufferSize * 2;
-            this.analyser.smoothingTimeConstant = 0.85;
+            this.analyser.fftSize = this.bufferSize;
+            this.analyser.smoothingTimeConstant = 0;
 
-            source.connect(this.analyser);
+            this.sourceNode.connect(this.analyser);
             this.isListening = true;
 
             // Start detection loop
-            this.detectionInterval = setInterval(() => this.detect(), 60);
+            this.detectionInterval = setInterval(() => this.detect(), 80);
             return true;
         } catch (e) {
             console.error('Microphone access denied:', e);
@@ -190,6 +199,10 @@ class PitchDetector {
         if (this.detectionInterval) {
             clearInterval(this.detectionInterval);
             this.detectionInterval = null;
+        }
+        if (this.sourceNode) {
+            this.sourceNode.disconnect();
+            this.sourceNode = null;
         }
         if (this.stream) {
             this.stream.getTracks().forEach(t => t.stop());
@@ -206,104 +219,108 @@ class PitchDetector {
 
         this.analyser.getFloatTimeDomainData(this.buffer);
 
-        // Check if there's enough signal (volume gate)
+        // Volume gate — check RMS
         let rms = 0;
         for (let i = 0; i < this.buffer.length; i++) {
             rms += this.buffer[i] * this.buffer[i];
         }
         rms = Math.sqrt(rms / this.buffer.length);
 
-        if (rms < 0.015) return; // Too quiet, skip
+        if (rms < 0.02) return; // Too quiet
 
-        // Autocorrelation pitch detection
-        const freq = this.autoCorrelate(this.buffer, this.audioContext.sampleRate);
+        const sampleRate = this.audioContext.sampleRate;
+        const freq = this.yinDetect(this.buffer, sampleRate);
 
         if (freq > 0) {
-            // Sanity check: ignore frequencies outside guitar range (70-1200 Hz)
-            if (freq < 70 || freq > 1200) return;
+            // Sanity: guitar range only (E2=82Hz to about B5=988Hz)
+            if (freq < 75 || freq > 1000) return;
 
             const noteInfo = this.frequencyToNote(freq);
             const now = Date.now();
 
-            // Debounce: only fire if it's a new note or 300ms has passed
-            if (noteInfo.note !== this.lastDetectedNote || now - this.lastDetectedTime > 300) {
-                this.lastDetectedNote = noteInfo.note;
-                this.lastDetectedTime = now;
+            // Confirmation: require consecutive same-note detections
+            if (noteInfo.note === this.confirmNote) {
+                this.confirmCount++;
+            } else {
+                this.confirmNote = noteInfo.note;
+                this.confirmCount = 1;
+            }
 
-                if (this.onNoteDetected) {
-                    this.onNoteDetected(noteInfo);
+            if (this.confirmCount >= this.confirmTarget) {
+                // Only fire if it's a new note or enough time has passed
+                if (noteInfo.note !== this.lastDetectedNote || now - this.lastDetectedTime > 400) {
+                    this.lastDetectedNote = noteInfo.note;
+                    this.lastDetectedTime = now;
+                    if (this.onNoteDetected) {
+                        this.onNoteDetected(noteInfo);
+                    }
                 }
             }
         }
     }
 
-    autoCorrelate(buf, sampleRate) {
-        let SIZE = buf.length;
+    /**
+     * YIN pitch detection algorithm
+     * Reference: de Cheveigné & Kawahara (2002)
+     * Returns detected frequency in Hz, or -1 if no pitch found.
+     */
+    yinDetect(buf, sampleRate) {
+        const halfLen = Math.floor(buf.length / 2);
 
-        // ── Guitar frequency range limits ──
-        // Lowest: E2 ~82Hz → period ~538 samples at 44100
-        // Highest: E4 fret 12 ~660Hz → period ~67 samples
-        const minPeriod = Math.floor(sampleRate / 1200); // ~37 at 44100
-        const maxPeriod = Math.min(Math.floor(SIZE / 2), Math.floor(sampleRate / 70)); // ~630 at 44100
+        // Guitar range periods at this sample rate
+        const minTau = Math.floor(sampleRate / 1000); // ~44 at 44100
+        const maxTau = Math.min(halfLen, Math.floor(sampleRate / 75));  // ~588 at 44100
 
-        if (SIZE < maxPeriod * 2) return -1;
+        if (maxTau >= halfLen) return -1;
 
-        // ── Normalized autocorrelation (proper cross-correlation) ──
-        // For each lag τ, compute: R(τ) = Σ buf[i]*buf[i+τ] / sqrt(Σ buf[i]² · Σ buf[i+τ]²)
-        let best_offset = -1;
-        let best_correlation = 0;
-        let foundGoodCorrelation = false;
+        // Step 1 & 2: Difference function + cumulative mean normalized difference
+        // d(τ) = Σ(x[j] - x[j+τ])²  for j=0..W-1
+        // d'(τ) = d(τ) / ((1/τ) * Σ d(j) for j=1..τ)   with d'(0) = 1
+        const yinBuffer = new Float32Array(maxTau + 1);
+        yinBuffer[0] = 1.0;
 
-        for (let tau = minPeriod; tau <= maxPeriod; tau++) {
-            let sum = 0, sumSq1 = 0, sumSq2 = 0;
-            const len = SIZE - tau;
-            for (let i = 0; i < len; i++) {
-                sum += buf[i] * buf[i + tau];
-                sumSq1 += buf[i] * buf[i];
-                sumSq2 += buf[i + tau] * buf[i + tau];
+        let runningSum = 0;
+        for (let tau = 1; tau <= maxTau; tau++) {
+            let diff = 0;
+            for (let j = 0; j < halfLen; j++) {
+                const delta = buf[j] - buf[j + tau];
+                diff += delta * delta;
             }
-            const denom = Math.sqrt(sumSq1 * sumSq2);
-            if (denom === 0) continue;
-            const correlation = sum / denom;
+            runningSum += diff;
+            // Cumulative mean normalized difference
+            yinBuffer[tau] = (runningSum > 0) ? diff * tau / runningSum : 1.0;
+        }
 
-            if (correlation > this.confidenceThreshold && correlation > best_correlation) {
-                best_correlation = correlation;
-                best_offset = tau;
-                foundGoodCorrelation = true;
-            } else if (foundGoodCorrelation && correlation < best_correlation * 0.85) {
-                // Past the peak — stop searching
+        // Step 3: Absolute threshold — find first dip below threshold
+        // Start from minTau (highest guitar frequency) to avoid sub-period artifacts
+        let bestTau = -1;
+        for (let tau = minTau; tau < maxTau; tau++) {
+            if (yinBuffer[tau] < this.yinThreshold) {
+                // Walk forward to find the actual minimum of this dip
+                while (tau + 1 < maxTau && yinBuffer[tau + 1] < yinBuffer[tau]) {
+                    tau++;
+                }
+                bestTau = tau;
                 break;
             }
         }
 
-        if (best_correlation > this.confidenceThreshold && best_offset > 0) {
-            // Parabolic interpolation for sub-sample accuracy
-            let shift = 0;
-            if (best_offset > minPeriod && best_offset < maxPeriod) {
-                // Re-compute neighbors for interpolation
-                const calcCorr = (tau) => {
-                    let s = 0, s1 = 0, s2 = 0;
-                    const l = SIZE - tau;
-                    for (let i = 0; i < l; i++) {
-                        s += buf[i] * buf[i + tau];
-                        s1 += buf[i] * buf[i];
-                        s2 += buf[i + tau] * buf[i + tau];
-                    }
-                    const d = Math.sqrt(s1 * s2);
-                    return d > 0 ? s / d : 0;
-                };
-                const prev = calcCorr(best_offset - 1);
-                const curr = best_correlation;
-                const next = calcCorr(best_offset + 1);
-                const denom = 2 * curr - next - prev;
-                if (denom !== 0) {
-                    shift = (next - prev) / (2 * denom);
-                    shift = Math.max(-0.5, Math.min(0.5, shift));
-                }
+        if (bestTau === -1) return -1;
+
+        // Step 4: Parabolic interpolation for sub-sample accuracy
+        let betterTau = bestTau;
+        if (bestTau > 0 && bestTau < maxTau) {
+            const s0 = yinBuffer[bestTau - 1];
+            const s1 = yinBuffer[bestTau];
+            const s2 = yinBuffer[bestTau + 1];
+            const denom = 2 * s1 - s2 - s0;
+            if (denom !== 0) {
+                const adjustment = (s2 - s0) / (2 * denom);
+                betterTau = bestTau + Math.max(-1, Math.min(1, adjustment));
             }
-            return sampleRate / (best_offset + shift);
         }
-        return -1;
+
+        return sampleRate / betterTau;
     }
 
     frequencyToNote(freq) {
