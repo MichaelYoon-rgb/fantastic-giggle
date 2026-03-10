@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="{% static 'css/style.css' %}?v={% now 'U' %}">
     {% block extra_css %}{% endblock %}
 </head>
-<body>
+<body class="{% block body_class %}{% endblock %}">
     <!-- Grain + noise overlays are in CSS ::before / ::after -->
 
     <!-- Floating pastel blobs -->

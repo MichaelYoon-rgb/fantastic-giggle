@@ -2,12 +2,13 @@
 
 {% block title %}Identify Notes — Fretboard Trainer{% endblock %}
 {% block nav_identify %}active{% endblock %}
+{% block body_class %}fretboard-page{% endblock %}
 
 {% block content %}
-<div class="game-header">
+<div class="game-overlay-top">
     <div>
         <h1 class="game-title">Identify the Note</h1>
-        <p class="game-subtitle">A position is highlighted on the fretboard. Name that note!</p>
+        <p class="game-subtitle">A position is highlighted — name that note!</p>
     </div>
     <div class="game-score">
         <div class="score-item">
@@ -25,24 +26,26 @@
     </div>
 </div>
 
-<!-- Filter Panel (collapsible) -->
-<div class="filter-panel" style="margin-bottom: 0.5rem;">
-    <div class="filter-header" id="filterToggle" style="cursor:pointer;">
-        <div class="filter-title">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-            Note Filter
+<!-- Filter Panel (collapsible, overlaid) -->
+<div class="game-overlay-filter">
+    <div class="filter-panel">
+        <div class="filter-header" id="filterToggle" style="cursor:pointer;">
+            <div class="filter-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                Note Filter
+            </div>
+            <span class="btn btn-ghost btn-sm" id="filterStatus">All Notes ▼</span>
         </div>
-        <span class="btn btn-ghost btn-sm" id="filterStatus">All Notes ▼</span>
-    </div>
-    <div id="filterBody" style="display:none;">
-        <div class="filter-groups">
-            <button class="filter-group-btn active" data-filter="all">All Notes</button>
-            <button class="filter-group-btn" data-filter="naturals">Naturals</button>
-            <button class="filter-group-btn" data-filter="sharps">Sharps</button>
-            <button class="filter-group-btn" data-filter="flats">Flats</button>
-            <button class="filter-group-btn" data-filter="custom">Custom</button>
+        <div id="filterBody" style="display:none;">
+            <div class="filter-groups">
+                <button class="filter-group-btn active" data-filter="all">All Notes</button>
+                <button class="filter-group-btn" data-filter="naturals">Naturals</button>
+                <button class="filter-group-btn" data-filter="sharps">Sharps</button>
+                <button class="filter-group-btn" data-filter="flats">Flats</button>
+                <button class="filter-group-btn" data-filter="custom">Custom</button>
+            </div>
+            <div class="filter-notes" id="filterNotes" style="display:none;"></div>
         </div>
-        <div class="filter-notes" id="filterNotes" style="display:none;"></div>
     </div>
 </div>
 
@@ -89,11 +92,11 @@
 </div>
 
 <!-- Answer Buttons -->
-<div class="note-buttons" id="noteButtons"></div>
-
-<!-- Skip Button -->
-<div style="display:flex; justify-content:center; margin-top:0.5rem;">
-    <button class="btn btn-ghost" id="skipBtn" style="font-family:var(--font-fun); font-size:0.85rem;">⏭ Skip &amp; Reveal</button>
+<div class="game-overlay-bottom">
+    <div class="note-buttons" id="noteButtons"></div>
+    <div style="display:flex; justify-content:center; margin-top:0.3rem;">
+        <button class="btn btn-ghost" id="skipBtn" style="font-family:var(--font-fun); font-size:0.85rem;">⏭ Skip &amp; Reveal</button>
+    </div>
 </div>
 
 <!-- Feedback Toast -->

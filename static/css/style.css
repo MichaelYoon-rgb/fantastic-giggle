@@ -66,6 +66,20 @@ body {
     overflow-x: hidden;
 }
 
+body.fretboard-page {
+    background: linear-gradient(180deg, var(--fretboard-wood) 0%, var(--fretboard-wood-light) 100%);
+}
+
+body.fretboard-page .main-content {
+    max-width: 100%;
+    padding: 0;
+}
+
+body.fretboard-page .fretboard {
+    border-top: none;
+    border-bottom: none;
+}
+
 body::before {
     content: '';
     position: fixed;
@@ -461,9 +475,13 @@ a:hover { color: var(--accent-hover); }
 
 /* Fretboard */
 .fretboard-wrapper {
+    position: relative;
+    width: 100vw;
+    left: 50%;
+    transform: translateX(-50%);
+    margin: 0;
+    padding: 0;
     overflow-x: auto;
-    margin: 1.5rem -1.5rem;
-    padding: 0.75rem 0;
     -webkit-overflow-scrolling: touch;
 }
 
@@ -472,10 +490,12 @@ a:hover { color: var(--accent-hover); }
     width: 100%;
     min-width: 700px;
     background: linear-gradient(180deg, var(--fretboard-wood) 0%, var(--fretboard-wood-light) 100%);
-    border-radius: var(--radius-lg);
+    border-radius: 0;
     padding: 2rem 1.25rem 1.5rem;
-    box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255,255,255,0.5);
-    border: 1px solid rgba(0,0,0,0.06);
+    box-shadow: none;
+    border: none;
+    border-top: 1px solid rgba(0,0,0,0.06);
+    border-bottom: 1px solid rgba(0,0,0,0.06);
 }
 
 .fretboard::before {
@@ -744,6 +764,53 @@ a:hover { color: var(--accent-hover); }
     0% { transform: scale(1); }
     40% { transform: scale(1.2); }
     100% { transform: scale(1); }
+}
+
+/* Game Overlay Controls — float on top of fretboard */
+.game-overlay-top {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    margin: 0 0 0.25rem;
+}
+
+.game-overlay-top .game-title { font-size: 1.2rem; margin: 0; }
+.game-overlay-top .game-subtitle { font-size: 0.78rem; margin: 0; }
+
+.game-overlay-filter {
+    position: relative;
+    z-index: 12;
+    margin: 0 1rem 0.25rem;
+}
+
+.game-overlay-filter .filter-panel {
+    background: rgba(255, 252, 248, 0.88);
+    backdrop-filter: blur(12px);
+    border-radius: var(--radius-lg);
+    margin-bottom: 0;
+}
+
+.game-overlay-bottom {
+    position: relative;
+    z-index: 10;
+    padding: 0.5rem 1rem;
+}
+
+.game-overlay-bottom .note-buttons {
+    margin: 0.5rem 0;
+    gap: 0.35rem;
+}
+
+.game-overlay-bottom .note-btn {
+    width: 48px;
+    height: 48px;
+    font-size: 0.82rem;
+    backdrop-filter: blur(8px);
 }
 
 /* Game Controls */
@@ -2148,7 +2215,7 @@ a:hover { color: var(--accent-hover); }
     .hero h1, .hero-title { font-size: 2.2rem; }
     .hero p, .hero-subtitle { font-size: 0.92rem; }
     .game-header { flex-direction: column; align-items: flex-start; }
-    .fretboard-wrapper { margin: 1rem -1rem; padding: 0 1rem; }
+    .fretboard-wrapper { min-width: 0; }
     .note-btn { width: 44px; height: 44px; font-size: 0.8rem; }
     .challenge-note { font-size: 2.6rem; }
     .string-letter { width: 36px; height: 36px; font-size: 1.4rem; }

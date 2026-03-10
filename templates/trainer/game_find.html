@@ -2,9 +2,10 @@
 
 {% block title %}Find the Note — Fretboard Trainer{% endblock %}
 {% block nav_find %}active{% endblock %}
+{% block body_class %}fretboard-page{% endblock %}
 
 {% block content %}
-<div class="game-header">
+<div class="game-overlay-top">
     <div>
         <h1 class="game-title">Find the Note</h1>
         <p class="game-subtitle">Find the note on the fretboard — click or play it on your guitar!</p>
@@ -25,33 +26,35 @@
     </div>
 </div>
 
-<!-- Settings Panel (collapsible) -->
-<div class="filter-panel" style="margin-bottom: 0.5rem;">
-    <div class="filter-header" id="settingsToggle" style="cursor:pointer;">
-        <div class="filter-title">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-            Settings
-        </div>
-        <span class="btn btn-ghost btn-sm" id="settingsStatus">Block Mode ▼</span>
-    </div>
-    <div id="settingsBody" style="display:none;">
-        <div style="display:flex; flex-wrap:wrap; gap:1rem; align-items:flex-start;">
-            <div>
-                <div style="font-size:0.8rem; font-weight:600; color:var(--text-muted); margin-bottom:0.5rem; text-transform:uppercase; letter-spacing:0.05em; font-family:var(--font-fun);">Note Filter</div>
-                <div class="filter-groups">
-                    <button class="filter-group-btn active" data-filter="all">All Notes</button>
-                    <button class="filter-group-btn" data-filter="naturals">Naturals</button>
-                    <button class="filter-group-btn" data-filter="sharps">Sharps</button>
-                    <button class="filter-group-btn" data-filter="flats">Flats</button>
-                    <button class="filter-group-btn" data-filter="custom">Custom</button>
-                </div>
-                <div class="filter-notes" id="filterNotes" style="display:none; margin-top:0.5rem;"></div>
+<!-- Settings Panel (collapsible, overlaid) -->
+<div class="game-overlay-filter">
+    <div class="filter-panel">
+        <div class="filter-header" id="settingsToggle" style="cursor:pointer;">
+            <div class="filter-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                Settings
             </div>
-            <div>
-                <div style="font-size:0.8rem; font-weight:600; color:var(--text-muted); margin-bottom:0.5rem; text-transform:uppercase; letter-spacing:0.05em; font-family:var(--font-fun);">Game Mode</div>
-                <div class="region-selector">
-                    <button class="region-btn active" data-mode="block">3×3 Block</button>
-                    <button class="region-btn" data-mode="full">Full Fretboard</button>
+            <span class="btn btn-ghost btn-sm" id="settingsStatus">Block Mode ▼</span>
+        </div>
+        <div id="settingsBody" style="display:none;">
+            <div style="display:flex; flex-wrap:wrap; gap:1rem; align-items:flex-start;">
+                <div>
+                    <div style="font-size:0.8rem; font-weight:600; color:var(--text-muted); margin-bottom:0.5rem; text-transform:uppercase; letter-spacing:0.05em; font-family:var(--font-fun);">Note Filter</div>
+                    <div class="filter-groups">
+                        <button class="filter-group-btn active" data-filter="all">All Notes</button>
+                        <button class="filter-group-btn" data-filter="naturals">Naturals</button>
+                        <button class="filter-group-btn" data-filter="sharps">Sharps</button>
+                        <button class="filter-group-btn" data-filter="flats">Flats</button>
+                        <button class="filter-group-btn" data-filter="custom">Custom</button>
+                    </div>
+                    <div class="filter-notes" id="filterNotes" style="display:none; margin-top:0.5rem;"></div>
+                </div>
+                <div>
+                    <div style="font-size:0.8rem; font-weight:600; color:var(--text-muted); margin-bottom:0.5rem; text-transform:uppercase; letter-spacing:0.05em; font-family:var(--font-fun);">Game Mode</div>
+                    <div class="region-selector">
+                        <button class="region-btn active" data-mode="block">3×3 Block</button>
+                        <button class="region-btn" data-mode="full">Full Fretboard</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -59,26 +62,30 @@
 </div>
 
 <!-- Mic Panel -->
-<div class="mic-panel" id="micPanel">
-    <button class="mic-btn" id="micToggle">🎤 Use Microphone</button>
-    <span class="mic-status" id="micStatus">Click to enable real guitar input</span>
-    <span class="mic-detected-note" id="micDetected"></span>
-</div>
-
-<!-- Challenge Prompt -->
-<div class="challenge-prompt" id="challengePrompt">
-    <div class="challenge-text" id="challengeText">Find this note on the fretboard:</div>
-    <div class="challenge-note" id="challengeNote">—</div>
-    <div class="challenge-region" id="challengeRegion"></div>
-    <div id="findProgress" style="margin-top: 0.5rem; font-family: var(--font-fun); font-size: 0.85rem; color: var(--text-muted); display:none;">
-        Found: <span id="foundCount">0</span> / <span id="totalCount">0</span>
+<div class="game-overlay-filter">
+    <div class="mic-panel" id="micPanel">
+        <button class="mic-btn" id="micToggle">🎤 Use Microphone</button>
+        <span class="mic-status" id="micStatus">Click to enable real guitar input</span>
+        <span class="mic-detected-note" id="micDetected"></span>
     </div>
 </div>
 
-<!-- Action Buttons -->
-<div style="display:flex; gap:0.5rem; justify-content:center; margin-bottom:0.75rem; flex-wrap:wrap;">
-    <button class="btn btn-primary" id="revealBtn" style="display:none;">👁 Reveal All Answers</button>
-    <button class="btn btn-ghost" id="skipBtn">⏭ Skip</button>
+<!-- Challenge Prompt -->
+<div class="game-overlay-filter">
+    <div class="challenge-prompt" id="challengePrompt">
+        <div class="challenge-text" id="challengeText">Find this note on the fretboard:</div>
+        <div class="challenge-note" id="challengeNote">—</div>
+        <div class="challenge-region" id="challengeRegion"></div>
+        <div id="findProgress" style="margin-top: 0.5rem; font-family: var(--font-fun); font-size: 0.85rem; color: var(--text-muted); display:none;">
+            Found: <span id="foundCount">0</span> / <span id="totalCount">0</span>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div style="display:flex; gap:0.5rem; justify-content:center; margin-top:0.5rem; flex-wrap:wrap;">
+        <button class="btn btn-primary" id="revealBtn" style="display:none;">👁 Reveal All Answers</button>
+        <button class="btn btn-ghost" id="skipBtn">⏭ Skip</button>
+    </div>
 </div>
 
 <!-- Fretboard -->
