@@ -364,10 +364,12 @@ def api_get_weighted_note(request):
 
     # Pick a random position for this note
     positions = get_all_positions_for_note(chosen_note)
+    # Exclude fret 0 (open strings) so user practises fretting
+    positions = [(s, f) for s, f in positions if f > 0]
     if positions:
         string_num, fret_num = random.choice(positions)
     else:
-        string_num, fret_num = 1, 0
+        string_num, fret_num = 1, 1
 
     return JsonResponse({
         'note': chosen_note,
