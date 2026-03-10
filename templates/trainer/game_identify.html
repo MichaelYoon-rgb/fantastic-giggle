@@ -94,13 +94,17 @@
 <!-- Answer Buttons -->
 <div class="game-overlay-bottom">
     <div class="note-buttons" id="noteButtons"></div>
-    <div style="display:flex; justify-content:center; margin-top:0.3rem;">
-        <button class="btn btn-ghost" id="skipBtn" style="font-family:var(--font-fun); font-size:0.85rem;">⏭ Skip &amp; Reveal</button>
+    <div style="display:flex; justify-content:center; gap:0.5rem; margin-top:0.3rem; flex-wrap:wrap;">
+        <button class="btn btn-ghost" id="revealBtn" style="font-family:var(--font-fun); font-size:0.85rem;">👁 Reveal Answer</button>
+        <button class="btn btn-primary" id="nextBtn" style="font-family:var(--font-fun); font-size:0.85rem; display:none;">⏭ Next Note</button>
     </div>
 </div>
 
 <!-- Feedback Toast -->
 <div class="feedback-toast" id="feedbackToast"></div>
+
+<!-- Streak Banner -->
+<div class="streak-banner" id="streakBanner"></div>
 
 {% endblock %}
 
@@ -125,7 +129,9 @@ let currentFret = null;
 let scoreCorrect = 0;
 let scoreWrong = 0;
 let streak = 0;
+let bestStreak = 0;
 let waiting = false;
+let revealed = false;
 let currentFilter = 'all';
 let customNotes = [];
 
@@ -314,10 +320,15 @@ async function getNextNote() {
             b.style.pointerEvents = '';
         });
 
+        // Show reveal button, hide next button
+        document.getElementById('revealBtn').style.display = '';
+        document.getElementById('nextBtn').style.display = 'none';
+
         // Vibrate the string
         vibrateString(currentString);
 
         waiting = false;
+        revealed = false;
     } catch (err) {
         console.error('Error fetching note:', err);
     }
@@ -357,10 +368,13 @@ function revealAllSameNotes(note) {
     }
 }
 
-// Skip button — reveal answer and move on
-document.getElementById('skipBtn').addEventListener('click', function() {
-    if (waiting) return;
+// Reveal button — show answer but don't advance
+document.getElementById('revealBtn').addEventListener('click', function() {
+    if (revealed) return;
+    revealed = true;
     waiting = true;
+    streak = 0;
+    updateScore();
 
     const dot = document.getElementById(`note-${currentString}-${currentFret}`);
     if (dot) {
@@ -380,7 +394,15 @@ document.getElementById('skipBtn').addEventListener('click', function() {
     playNoteSound(currentNote, currentString, currentFret);
     vibrateString(currentString);
     showFeedback(`It was ${currentNote}`, 'incorrect');
-    setTimeout(() => getNextNote(), 2000);
+
+    // Swap buttons: hide reveal, show next
+    this.style.display = 'none';
+    document.getElementById('nextBtn').style.display = '';
+});
+
+// Next button — advance to next note
+document.getElementById('nextBtn').addEventListener('click', function() {
+    getNextNote();
 });
 
 // Handle answer — keep trying until correct
@@ -399,6 +421,7 @@ async function handleAnswer(selectedNote) {
         waiting = true;
         scoreCorrect++;
         streak++;
+        if (streak > bestStreak) bestStreak = streak;
         if (dot) {
             dot.classList.remove('highlighted');
             dot.classList.add('correct');
@@ -407,11 +430,17 @@ async function handleAnswer(selectedNote) {
         document.querySelectorAll('.note-btn').forEach(b => {
             if (b.dataset.note === selectedNote) b.classList.add('correct');
         });
-        showFeedback('Correct! 🎉', 'correct');
+
+        // Gamified streak feedback
+        showStreakFeedback(streak);
         playNoteSound(currentNote, currentString, currentFret);
         vibrateString(currentString);
 
         updateScore();
+
+        // Show next button, hide reveal
+        document.getElementById('revealBtn').style.display = 'none';
+        document.getElementById('nextBtn').style.display = '';
 
         // Record attempt
         try {
@@ -433,8 +462,7 @@ async function handleAnswer(selectedNote) {
             console.log('Not logged in or error saving');
         }
 
-        // Next note after delay (longer to see all revealed notes)
-        setTimeout(() => getNextNote(), 1800);
+        // User clicks Next to advance — no auto timeout
     } else {
         // Wrong — mark button but let user keep trying
         scoreWrong++;
@@ -484,11 +512,63 @@ function showFeedback(message, type) {
     toast.className = `feedback-toast ${type} show`;
     setTimeout(() => {
         toast.classList.remove('show');
-    }, 1200);
+    }, 1800);
+}
+
+// Gamified streak messages
+const STREAK_MESSAGES = [
+    { min: 1, emoji: '🎯', text: 'Nice!', color: '#a8e6cf' },
+    { min: 2, emoji: '🔥', text: 'Streak', color: '#f7e5a0' },
+    { min: 3, emoji: '🔥🔥', text: 'On Fire!', color: '#ffb347' },
+    { min: 5, emoji: '⚡', text: 'Unstoppable!', color: '#ff8a65' },
+    { min: 8, emoji: '💎', text: 'Diamond!', color: '#b388ff' },
+    { min: 10, emoji: '🏆', text: 'LEGENDARY!', color: '#ffd54f' },
+    { min: 15, emoji: '👑', text: 'GOD MODE!', color: '#ff6f00' },
+    { min: 20, emoji: '🌟✨', text: 'TRANSCENDENT!', color: '#e040fb' },
+    { min: 30, emoji: '🎸💀🔥', text: 'FRETBOARD MASTER!', color: '#ff1744' },
+];
+
+function showStreakFeedback(currentStreak) {
+    // Find the best matching message
+    let msg = STREAK_MESSAGES[0];
+    for (const m of STREAK_MESSAGES) {
+        if (currentStreak >= m.min) msg = m;
+    }
+
+    // Correct toast
+    showFeedback(`${msg.emoji} Correct!`, 'correct');
+
+    // Streak banner (the big flashy one)
+    if (currentStreak >= 2) {
+        const banner = document.getElementById('streakBanner');
+        banner.innerHTML = `
+            <div class="streak-emoji">${msg.emoji}</div>
+            <div class="streak-count">${currentStreak}</div>
+            <div class="streak-label">${msg.text}</div>
+        `;
+        banner.style.setProperty('--streak-color', msg.color);
+        banner.classList.remove('show');
+        void banner.offsetWidth;
+        banner.classList.add('show');
+
+        // Add screen shake for big streaks
+        if (currentStreak >= 5) {
+            document.body.classList.add('screen-shake');
+            setTimeout(() => document.body.classList.remove('screen-shake'), 400);
+        }
+
+        setTimeout(() => banner.classList.remove('show'), 2200);
+    }
 }
 
 // Keyboard shortcuts
 document.addEventListener('keydown', (e) => {
+    // Space or Enter to advance when waiting
+    if (waiting && (e.key === ' ' || e.key === 'Enter')) {
+        e.preventDefault();
+        getNextNote();
+        return;
+    }
     if (waiting) return;
     const keyMap = {
         'c': 'C', 'd': 'D', 'e': 'E', 'f': 'F', 'g': 'G', 'a': 'A', 'b': 'B',

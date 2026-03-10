@@ -1266,6 +1266,84 @@ a:hover { color: var(--accent-hover); }
     box-shadow: 0 4px 24px rgba(240, 144, 144, 0.5);
 }
 
+/* Streak Banner */
+.streak-banner {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.3);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    z-index: 300;
+    pointer-events: none;
+    opacity: 0;
+    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    text-shadow: 0 2px 12px rgba(0,0,0,0.3);
+    filter: drop-shadow(0 0 30px var(--streak-color, #ffd54f));
+}
+
+.streak-banner.show {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+    animation: streak-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.streak-emoji {
+    font-size: 2.4rem;
+    line-height: 1;
+    animation: streak-bounce 0.6s ease;
+}
+
+.streak-count {
+    font-family: var(--font-fun);
+    font-size: 3.5rem;
+    font-weight: 900;
+    color: var(--streak-color, #ffd54f);
+    line-height: 1;
+    letter-spacing: -2px;
+    -webkit-text-stroke: 1.5px rgba(0,0,0,0.25);
+}
+
+.streak-label {
+    font-family: var(--font-fun);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    opacity: 0.95;
+}
+
+@keyframes streak-pop {
+    0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0; }
+    50% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+
+@keyframes streak-bounce {
+    0%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-12px); }
+    60% { transform: translateY(4px); }
+}
+
+/* Screen shake for big streaks */
+@keyframes screen-shake {
+    0%, 100% { transform: translateX(0); }
+    10% { transform: translateX(-4px) rotate(-0.5deg); }
+    20% { transform: translateX(4px) rotate(0.5deg); }
+    30% { transform: translateX(-3px); }
+    40% { transform: translateX(3px); }
+    50% { transform: translateX(-2px); }
+    60% { transform: translateX(2px); }
+    70% { transform: translateX(-1px); }
+}
+
+body.screen-shake {
+    animation: screen-shake 0.4s ease;
+}
+
 /* Forms */
 .form-container {
     max-width: 400px;
