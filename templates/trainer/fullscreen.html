@@ -125,6 +125,9 @@
             <div class="fs-actions">
                 <button class="btn btn-sm btn-ghost" id="toggleNotes">👁 Show All</button>
                 <button class="btn btn-sm btn-ghost" id="toggleSound">🔊 Sound</button>
+                <button class="flip-toggle" id="flipToggle" title="Flip fretboard orientation">
+                    <span class="flip-icon">↕</span> Flip
+                </button>
                 <a href="{% url 'home' %}" class="btn btn-sm btn-outline">✕ Exit</a>
             </div>
         </div>
@@ -186,12 +189,16 @@
         let showAll = false;
         let soundOn = true;
         let noteInfoTimeout = null;
+        let fretboardInverted = true;
 
         function buildFretboard() {
             const container = document.getElementById('fsStrings');
-            for (let s = 6; s >= 1; s--) {
+            container.innerHTML = '';
+            const strings = fretboardInverted ? [1,2,3,4,5,6] : [6,5,4,3,2,1];
+            for (const s of strings) {
                 const row = document.createElement('div');
                 row.className = 'string-row';
+                row.dataset.string = s;
                 const label = document.createElement('div');
                 label.className = 'string-label';
                 label.textContent = STRING_NAMES[s];
@@ -201,19 +208,32 @@
                     const cell = document.createElement('div');
                     cell.className = `fret-cell ${f === 0 ? 'fret-0' : ''}`;
 
-                    // Single inlay dots (between D and G strings)
-                    if (s === 4 && INLAY_FRETS.includes(f)) {
-                        const inlay = document.createElement('div');
-                        inlay.className = 'inlay-dot';
-                        inlay.style.bottom = '-12px';
-                        cell.appendChild(inlay);
-                    }
-                    // Double inlay dots at 12th fret (one between A-D, one between G-B)
-                    if (DOUBLE_INLAY_FRETS.includes(f) && (s === 5 || s === 3)) {
-                        const inlay = document.createElement('div');
-                        inlay.className = 'inlay-dot';
-                        inlay.style.bottom = '-12px';
-                        cell.appendChild(inlay);
+                    if (fretboardInverted) {
+                        if (s === 3 && INLAY_FRETS.includes(f)) {
+                            const inlay = document.createElement('div');
+                            inlay.className = 'inlay-dot';
+                            inlay.style.bottom = '-12px';
+                            cell.appendChild(inlay);
+                        }
+                        if (DOUBLE_INLAY_FRETS.includes(f) && (s === 2 || s === 4)) {
+                            const inlay = document.createElement('div');
+                            inlay.className = 'inlay-dot';
+                            inlay.style.bottom = '-12px';
+                            cell.appendChild(inlay);
+                        }
+                    } else {
+                        if (s === 4 && INLAY_FRETS.includes(f)) {
+                            const inlay = document.createElement('div');
+                            inlay.className = 'inlay-dot';
+                            inlay.style.bottom = '-12px';
+                            cell.appendChild(inlay);
+                        }
+                        if (DOUBLE_INLAY_FRETS.includes(f) && (s === 5 || s === 3)) {
+                            const inlay = document.createElement('div');
+                            inlay.className = 'inlay-dot';
+                            inlay.style.bottom = '-12px';
+                            cell.appendChild(inlay);
+                        }
                     }
 
                     const dot = document.createElement('div');
@@ -229,7 +249,6 @@
                             vibrateString(s);
                         }
                         showNoteInfo(note, s, f);
-                        // Pulse the dot
                         dot.classList.add('highlighted');
                         setTimeout(() => dot.classList.remove('highlighted'), 600);
                     });
@@ -242,13 +261,12 @@
         }
 
         function vibrateString(stringNum) {
-            const rows = document.querySelectorAll('.string-row');
-            const idx = 6 - stringNum;
-            if (rows[idx]) {
-                rows[idx].classList.remove('vibrating');
-                void rows[idx].offsetWidth;
-                rows[idx].classList.add('vibrating');
-                setTimeout(() => rows[idx].classList.remove('vibrating'), 700);
+            const row = document.querySelector(`.string-row[data-string="${stringNum}"]`);
+            if (row) {
+                row.classList.remove('vibrating');
+                void row.offsetWidth;
+                row.classList.add('vibrating');
+                setTimeout(() => row.classList.remove('vibrating'), 700);
             }
         }
 
@@ -287,6 +305,13 @@
         });
 
         buildFretboard();
+
+        // Flip toggle
+        document.getElementById('flipToggle').addEventListener('click', function() {
+            fretboardInverted = !fretboardInverted;
+            this.classList.toggle('flipped', !fretboardInverted);
+            buildFretboard();
+        });
     </script>
 </body>
 </html>

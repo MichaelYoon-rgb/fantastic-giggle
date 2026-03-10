@@ -85,6 +85,7 @@
                 <a href="{% url 'game_find' %}" class="nav-link {% block nav_find %}{% endblock %}">🔍 Find</a>
                 <a href="{% url 'tuner' %}" class="nav-link {% block nav_tuner %}{% endblock %}">🎤 Tuner</a>
                 <a href="{% url 'fullscreen' %}" class="nav-link {% block nav_fullscreen %}{% endblock %}">🖥 Fretboard</a>
+                <a href="{% url 'leaderboard' %}" class="nav-link {% block nav_leaderboard %}{% endblock %}">🏆 Leaderboard</a>
                 {% if user.is_authenticated %}
                     <a href="{% url 'stats' %}" class="nav-link {% block nav_stats %}{% endblock %}">📊 Stats</a>
                     <div class="nav-user">

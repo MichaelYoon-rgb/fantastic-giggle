@@ -1,0 +1,114 @@
+{% extends "trainer/base.html" %}
+
+{% block title %}Leaderboard — Fretboard Trainer{% endblock %}
+{% block nav_leaderboard %}active{% endblock %}
+
+{% block content %}
+<div class="page-header" style="text-align:center; margin-bottom:1.5rem;">
+    <h1 class="game-title" style="font-size:2rem;">🏆 Streak Leaderboard</h1>
+    <p class="game-subtitle">The best note-naming streaks from every guitarist on the planet* <br><span style="font-size:0.7rem; opacity:0.6;">*who uses this app</span></p>
+    {% if personal_best > 0 %}
+    <div style="margin-top:0.75rem;">
+        <span style="font-family:var(--font-fun); font-size:1rem; background:var(--pastel-yellow); padding:0.3rem 0.9rem; border-radius:var(--radius-pill); font-weight:600; color:#2a2035;">
+            Your Personal Best: {{ personal_best }} 🔥
+        </span>
+    </div>
+    {% endif %}
+</div>
+
+<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:1rem; max-width:1200px; margin:0 auto; padding:0 1rem;">
+
+    <!-- Today -->
+    <div class="card" style="padding:1.25rem;">
+        <h3 style="font-family:var(--font-fun); font-size:1.05rem; margin-bottom:0.75rem; display:flex; align-items:center; gap:0.4rem;">
+            📅 Today
+            <span style="font-size:0.7rem; color:var(--text-muted); font-weight:400;">{{ today_label }}</span>
+        </h3>
+        {% if today_streaks %}
+        <ol class="leaderboard-list">
+            {% for entry in today_streaks %}
+            <li class="leaderboard-entry {% if forloop.first %}gold{% elif forloop.counter == 2 %}silver{% elif forloop.counter == 3 %}bronze{% endif %}">
+                <span class="lb-rank">
+                    {% if forloop.first %}🥇{% elif forloop.counter == 2 %}🥈{% elif forloop.counter == 3 %}🥉{% else %}{{ forloop.counter }}{% endif %}
+                </span>
+                <span class="lb-name">{{ entry.user__username }}</span>
+                <span class="lb-streak">{{ entry.best }} 🔥</span>
+            </li>
+            {% endfor %}
+        </ol>
+        {% else %}
+        <p style="color:var(--text-muted); font-size:0.85rem; text-align:center; padding:1rem 0;">No streaks today yet! Be the first 🎸</p>
+        {% endif %}
+    </div>
+
+    <!-- This Month -->
+    <div class="card" style="padding:1.25rem;">
+        <h3 style="font-family:var(--font-fun); font-size:1.05rem; margin-bottom:0.75rem; display:flex; align-items:center; gap:0.4rem;">
+            📆 This Month
+            <span style="font-size:0.7rem; color:var(--text-muted); font-weight:400;">{{ month_label }}</span>
+        </h3>
+        {% if month_streaks %}
+        <ol class="leaderboard-list">
+            {% for entry in month_streaks %}
+            <li class="leaderboard-entry {% if forloop.first %}gold{% elif forloop.counter == 2 %}silver{% elif forloop.counter == 3 %}bronze{% endif %}">
+                <span class="lb-rank">
+                    {% if forloop.first %}🥇{% elif forloop.counter == 2 %}🥈{% elif forloop.counter == 3 %}🥉{% else %}{{ forloop.counter }}{% endif %}
+                </span>
+                <span class="lb-name">{{ entry.user__username }}</span>
+                <span class="lb-streak">{{ entry.best }} 🔥</span>
+            </li>
+            {% endfor %}
+        </ol>
+        {% else %}
+        <p style="color:var(--text-muted); font-size:0.85rem; text-align:center; padding:1rem 0;">No streaks this month yet!</p>
+        {% endif %}
+    </div>
+
+    <!-- This Year -->
+    <div class="card" style="padding:1.25rem;">
+        <h3 style="font-family:var(--font-fun); font-size:1.05rem; margin-bottom:0.75rem; display:flex; align-items:center; gap:0.4rem;">
+            🗓 This Year
+            <span style="font-size:0.7rem; color:var(--text-muted); font-weight:400;">{{ year_label }}</span>
+        </h3>
+        {% if year_streaks %}
+        <ol class="leaderboard-list">
+            {% for entry in year_streaks %}
+            <li class="leaderboard-entry {% if forloop.first %}gold{% elif forloop.counter == 2 %}silver{% elif forloop.counter == 3 %}bronze{% endif %}">
+                <span class="lb-rank">
+                    {% if forloop.first %}🥇{% elif forloop.counter == 2 %}🥈{% elif forloop.counter == 3 %}🥉{% else %}{{ forloop.counter }}{% endif %}
+                </span>
+                <span class="lb-name">{{ entry.user__username }}</span>
+                <span class="lb-streak">{{ entry.best }} 🔥</span>
+            </li>
+            {% endfor %}
+        </ol>
+        {% else %}
+        <p style="color:var(--text-muted); font-size:0.85rem; text-align:center; padding:1rem 0;">No streaks this year yet!</p>
+        {% endif %}
+    </div>
+
+    <!-- All Time -->
+    <div class="card" style="padding:1.25rem;">
+        <h3 style="font-family:var(--font-fun); font-size:1.05rem; margin-bottom:0.75rem; display:flex; align-items:center; gap:0.4rem;">
+            ♾️ All Time
+            <span style="font-size:0.7rem; color:var(--text-muted); font-weight:400;">Hall of Fame</span>
+        </h3>
+        {% if alltime_streaks %}
+        <ol class="leaderboard-list">
+            {% for entry in alltime_streaks %}
+            <li class="leaderboard-entry {% if forloop.first %}gold{% elif forloop.counter == 2 %}silver{% elif forloop.counter == 3 %}bronze{% endif %}">
+                <span class="lb-rank">
+                    {% if forloop.first %}🥇{% elif forloop.counter == 2 %}🥈{% elif forloop.counter == 3 %}🥉{% else %}{{ forloop.counter }}{% endif %}
+                </span>
+                <span class="lb-name">{{ entry.user__username }}</span>
+                <span class="lb-streak">{{ entry.best }} 🔥</span>
+            </li>
+            {% endfor %}
+        </ol>
+        {% else %}
+        <p style="color:var(--text-muted); font-size:0.85rem; text-align:center; padding:1rem 0;">No streaks recorded yet! Go play some games 🎵</p>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

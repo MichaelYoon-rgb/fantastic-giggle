@@ -7,9 +7,12 @@
 {% block content %}
 <div class="game-overlay-top">
     <div>
-        <h1 class="game-title">Identify the Note</h1>
-        <p class="game-subtitle">A position is highlighted — name that note!</p>
+        <h1 class="game-title">🎸 Identify the Note</h1>
+        <p class="game-subtitle" id="gameSubtitle">A position is highlighted — name that note!</p>
     </div>
+    <button class="flip-toggle" id="flipToggle" title="Flip fretboard orientation">
+        <span class="flip-icon">↕</span> Flip
+    </button>
     <div class="game-score">
         <div class="score-item">
             <div class="score-value correct-color" id="scoreCorrect">0</div>
@@ -134,6 +137,7 @@ let waiting = false;
 let revealed = false;
 let currentFilter = 'all';
 let customNotes = [];
+let fretboardInverted = true; // true = player POV (high e top, low E bottom)
 
 // Frets that get inlay dots (between strings 3 and 4)
 const INLAY_FRETS = [3, 5, 7, 9];
@@ -143,9 +147,12 @@ const DOUBLE_INLAY_FRETS = [12];
 function buildFretboard() {
     const container = document.getElementById('gameStrings');
     container.innerHTML = '';
-    for (let s = 6; s >= 1; s--) {
+    // Player POV (inverted): high e at top (s=1→6), Traditional: low E at top (s=6→1)
+    const strings = fretboardInverted ? [1,2,3,4,5,6] : [6,5,4,3,2,1];
+    for (const s of strings) {
         const row = document.createElement('div');
         row.className = 'string-row';
+        row.dataset.string = s;
         const label = document.createElement('div');
         label.className = 'string-label';
         label.textContent = STRING_NAMES[s];
@@ -155,20 +162,36 @@ function buildFretboard() {
             const cell = document.createElement('div');
             cell.className = `fret-cell ${f === 0 ? 'fret-0' : ''}`;
 
-            // Add inlay dots between strings 4 and 3 (D and G)
-            // Single inlay dots (between D and G strings)
-            if (s === 4 && INLAY_FRETS.includes(f)) {
-                const inlay = document.createElement('div');
-                inlay.className = 'inlay-dot';
-                inlay.style.bottom = '-12px';
-                cell.appendChild(inlay);
-            }
-            // Double inlay dots at 12th fret (one between A-D, one between G-B)
-            if (DOUBLE_INLAY_FRETS.includes(f) && (s === 5 || s === 3)) {
-                const inlay = document.createElement('div');
-                inlay.className = 'inlay-dot';
-                inlay.style.bottom = '-12px';
-                cell.appendChild(inlay);
+            // Inlay dots — placed between the right strings depending on orientation
+            if (fretboardInverted) {
+                // Inverted: high e on top. D(4) is row index 3, G(3) is row index 2
+                // Dots go between G and D → on G string row, top direction
+                if (s === 3 && INLAY_FRETS.includes(f)) {
+                    const inlay = document.createElement('div');
+                    inlay.className = 'inlay-dot';
+                    inlay.style.bottom = '-12px';
+                    cell.appendChild(inlay);
+                }
+                if (DOUBLE_INLAY_FRETS.includes(f) && (s === 2 || s === 4)) {
+                    const inlay = document.createElement('div');
+                    inlay.className = 'inlay-dot';
+                    inlay.style.bottom = '-12px';
+                    cell.appendChild(inlay);
+                }
+            } else {
+                // Traditional: low E on top
+                if (s === 4 && INLAY_FRETS.includes(f)) {
+                    const inlay = document.createElement('div');
+                    inlay.className = 'inlay-dot';
+                    inlay.style.bottom = '-12px';
+                    cell.appendChild(inlay);
+                }
+                if (DOUBLE_INLAY_FRETS.includes(f) && (s === 5 || s === 3)) {
+                    const inlay = document.createElement('div');
+                    inlay.className = 'inlay-dot';
+                    inlay.style.bottom = '-12px';
+                    cell.appendChild(inlay);
+                }
             }
 
             const dot = document.createElement('div');
@@ -336,14 +359,12 @@ async function getNextNote() {
 
 // Vibrate the string row when a note plays
 function vibrateString(stringNum) {
-    // String rows are rendered 6→1 (index 0=string6, index 5=string1)
-    const rows = document.querySelectorAll('.string-row');
-    const idx = 6 - stringNum;
-    if (rows[idx]) {
-        rows[idx].classList.remove('vibrating');
-        void rows[idx].offsetWidth; // force reflow
-        rows[idx].classList.add('vibrating');
-        setTimeout(() => rows[idx].classList.remove('vibrating'), 700);
+    const row = document.querySelector(`.string-row[data-string="${stringNum}"]`);
+    if (row) {
+        row.classList.remove('vibrating');
+        void row.offsetWidth; // force reflow
+        row.classList.add('vibrating');
+        setTimeout(() => row.classList.remove('vibrating'), 700);
     }
 }
 
@@ -373,6 +394,8 @@ document.getElementById('revealBtn').addEventListener('click', function() {
     if (revealed) return;
     revealed = true;
     waiting = true;
+    // Save the broken streak to leaderboard before resetting
+    if (streak >= 2) recordStreak(streak);
     streak = 0;
     updateScore();
 
@@ -466,6 +489,8 @@ async function handleAnswer(selectedNote) {
     } else {
         // Wrong — mark button but let user keep trying
         scoreWrong++;
+        // Save the broken streak to leaderboard before resetting
+        if (streak >= 2) recordStreak(streak);
         streak = 0;
         document.querySelectorAll('.note-btn').forEach(b => {
             if (b.dataset.note === selectedNote) {
@@ -474,7 +499,15 @@ async function handleAnswer(selectedNote) {
                 b.style.pointerEvents = 'none'; // disable this wrong button
             }
         });
-        showFeedback('Try again!', 'incorrect');
+        // Goofy wrong-answer messages
+        const wrongMessages = [
+            'Nope! 😅', 'Not quite, chief 🫠', 'Swing and a miss! ⚾',
+            'The fretboard said no 🙅', 'Close... but no 🎸', 'Try again, rockstar! 🤘',
+            'That ain\'t it 💀', 'Bruh. 😐', 'Almost... jk not really 😂',
+            'Your guitar is judging you 👀', 'The pick slipped, right? 🎵',
+            'Wrong note, great confidence! 💅', 'Even the amp cringed 🔌',
+        ];
+        showFeedback(wrongMessages[Math.floor(Math.random() * wrongMessages.length)], 'incorrect');
 
         updateScore();
 
@@ -585,6 +618,62 @@ document.addEventListener('keydown', (e) => {
         }
     }
 });
+
+// Record streak to leaderboard
+async function recordStreak(streakVal) {
+    try {
+        await fetch('/api/record-streak/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken,
+            },
+            body: JSON.stringify({
+                streak: streakVal,
+                game_mode: 'identify',
+            }),
+        });
+    } catch (err) {
+        console.log('Not logged in or error saving streak');
+    }
+}
+
+// Flip toggle handler
+document.getElementById('flipToggle').addEventListener('click', function() {
+    fretboardInverted = !fretboardInverted;
+    this.classList.toggle('flipped', !fretboardInverted);
+    buildFretboard();
+    // Re-highlight current note if there is one
+    if (currentNote && !waiting) {
+        const dot = document.getElementById(`note-${currentString}-${currentFret}`);
+        if (dot) {
+            dot.classList.add('highlighted');
+            dot.textContent = '?';
+        }
+    }
+});
+
+// Goofy subtitle rotation
+const GOOFY_SUBTITLES = [
+    'A position is highlighted — name that note!',
+    'Can you hear the fretboard whispering? 🤫',
+    'Your guitar teacher would be proud... maybe 😏',
+    'Notes go brrrrr 🎵',
+    'Warning: may cause sudden confidence in jam sessions',
+    'One note at a time, legend 🏆',
+    'Press the right one. No pressure. 😬',
+    'The fretboard has trust issues. Prove yourself. 🎸',
+];
+let subtitleIdx = 0;
+setInterval(() => {
+    subtitleIdx = (subtitleIdx + 1) % GOOFY_SUBTITLES.length;
+    const el = document.getElementById('gameSubtitle');
+    el.style.opacity = '0';
+    setTimeout(() => {
+        el.textContent = GOOFY_SUBTITLES[subtitleIdx];
+        el.style.opacity = '1';
+    }, 300);
+}, 12000);
 
 // Init
 buildFretboard();

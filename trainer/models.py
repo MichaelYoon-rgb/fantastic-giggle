@@ -193,3 +193,20 @@ class DailyPracticeLog(models.Model):
 
     def __str__(self):
         return f"{self.user.username} — {self.date}"
+
+
+class StreakRecord(models.Model):
+    """Records best streaks for the global leaderboard."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='streak_records')
+    streak = models.IntegerField()
+    game_mode = models.CharField(max_length=20, choices=[
+        ('identify', 'Identify Note'),
+        ('find', 'Find Note'),
+    ])
+    achieved_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-streak', '-achieved_at']
+
+    def __str__(self):
+        return f"{self.user.username}: {self.streak} streak ({self.game_mode})"

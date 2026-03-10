@@ -7,9 +7,12 @@
 {% block content %}
 <div class="game-overlay-top">
     <div>
-        <h1 class="game-title">Find the Note</h1>
+        <h1 class="game-title">🔍 Find the Note</h1>
         <p class="game-subtitle">Find the note on the fretboard — click or play it on your guitar!</p>
     </div>
+    <button class="flip-toggle" id="flipToggle" title="Flip fretboard orientation">
+        <span class="flip-icon">↕</span> Flip
+    </button>
     <div class="game-score">
         <div class="score-item">
             <div class="score-value correct-color" id="scoreCorrect">0</div>
@@ -156,6 +159,7 @@ let gameMode = 'block'; // 'block' or 'full'
 let customNotes = [];
 let pitchDetector = null;
 let micActive = false;
+let fretboardInverted = true; // true = player POV (high e top, low E bottom)
 
 // Full-fretboard mode tracking
 let foundPositions = [];
@@ -166,9 +170,11 @@ let revealed = false;
 function buildFretboard() {
     const container = document.getElementById('gameStrings');
     container.innerHTML = '';
-    for (let s = 6; s >= 1; s--) {
+    const strings = fretboardInverted ? [1,2,3,4,5,6] : [6,5,4,3,2,1];
+    for (const s of strings) {
         const row = document.createElement('div');
         row.className = 'string-row';
+        row.dataset.string = s;
         const label = document.createElement('div');
         label.className = 'string-label';
         label.textContent = STRING_NAMES[s];
@@ -178,19 +184,33 @@ function buildFretboard() {
             const cell = document.createElement('div');
             cell.className = `fret-cell ${f === 0 ? 'fret-0' : ''}`;
 
-            // Single inlay dots (between D and G strings)
-            if (s === 4 && INLAY_FRETS.includes(f)) {
-                const inlay = document.createElement('div');
-                inlay.className = 'inlay-dot';
-                inlay.style.bottom = '-12px';
-                cell.appendChild(inlay);
-            }
-            // Double inlay dots at 12th fret (one between A-D, one between G-B)
-            if (DOUBLE_INLAY_FRETS.includes(f) && (s === 5 || s === 3)) {
-                const inlay = document.createElement('div');
-                inlay.className = 'inlay-dot';
-                inlay.style.bottom = '-12px';
-                cell.appendChild(inlay);
+            // Inlay dots
+            if (fretboardInverted) {
+                if (s === 3 && INLAY_FRETS.includes(f)) {
+                    const inlay = document.createElement('div');
+                    inlay.className = 'inlay-dot';
+                    inlay.style.bottom = '-12px';
+                    cell.appendChild(inlay);
+                }
+                if (DOUBLE_INLAY_FRETS.includes(f) && (s === 2 || s === 4)) {
+                    const inlay = document.createElement('div');
+                    inlay.className = 'inlay-dot';
+                    inlay.style.bottom = '-12px';
+                    cell.appendChild(inlay);
+                }
+            } else {
+                if (s === 4 && INLAY_FRETS.includes(f)) {
+                    const inlay = document.createElement('div');
+                    inlay.className = 'inlay-dot';
+                    inlay.style.bottom = '-12px';
+                    cell.appendChild(inlay);
+                }
+                if (DOUBLE_INLAY_FRETS.includes(f) && (s === 5 || s === 3)) {
+                    const inlay = document.createElement('div');
+                    inlay.className = 'inlay-dot';
+                    inlay.style.bottom = '-12px';
+                    cell.appendChild(inlay);
+                }
             }
 
             const dot = document.createElement('div');
@@ -360,13 +380,12 @@ document.getElementById('micToggle').addEventListener('click', async function() 
 
 // ─── VIBRATE STRING ───
 function vibrateString(stringNum) {
-    const rows = document.querySelectorAll('.string-row');
-    const idx = 6 - stringNum;
-    if (rows[idx]) {
-        rows[idx].classList.remove('vibrating');
-        void rows[idx].offsetWidth;
-        rows[idx].classList.add('vibrating');
-        setTimeout(() => rows[idx].classList.remove('vibrating'), 700);
+    const row = document.querySelector(`.string-row[data-string="${stringNum}"]`);
+    if (row) {
+        row.classList.remove('vibrating');
+        void row.offsetWidth;
+        row.classList.add('vibrating');
+        setTimeout(() => row.classList.remove('vibrating'), 700);
     }
 }
 
@@ -641,6 +660,16 @@ function showFeedback(message, type) {
 buildFretboard();
 buildFilterNotes();
 getNextChallenge();
+
+// Flip toggle handler
+document.getElementById('flipToggle').addEventListener('click', function() {
+    fretboardInverted = !fretboardInverted;
+    this.classList.toggle('flipped', !fretboardInverted);
+    buildFretboard();
+    if (currentChallenge) {
+        if (gameMode === 'block') updateBlockHighlight();
+    }
+});
 
 // Reposition block overlay on resize
 window.addEventListener('resize', () => {

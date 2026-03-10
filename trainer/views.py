@@ -5,11 +5,13 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
-from .models import NoteAttempt, NoteStats, PositionStats, UserProfile, PracticeStepProgress, DailyPracticeLog
+from .models import NoteAttempt, NoteStats, PositionStats, UserProfile, PracticeStepProgress, DailyPracticeLog, StreakRecord
 import json
 import random
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 import calendar as cal_module
+from django.utils import timezone
+from django.db.models import Max
 
 # ─── Fretboard Data ───
 ALL_NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
@@ -239,6 +241,42 @@ def stats_view(request):
         'fretboard': json.dumps(build_fretboard_data()),
     }
     return render(request, 'trainer/stats.html', context)
+
+
+def leaderboard_view(request):
+    """Global leaderboard showing best streaks by day, month, year, and all-time."""
+    now = timezone.now()
+    today = now.date()
+
+    # Helper to get top streaks in a queryset
+    def top_streaks(qs, limit=15):
+        # Get the best streak per user, then order by streak desc
+        return list(
+            qs.values('user__username')
+            .annotate(best=Max('streak'))
+            .order_by('-best')[:limit]
+        )
+
+    all_records = StreakRecord.objects.all()
+
+    context = {
+        'today_streaks': top_streaks(all_records.filter(achieved_at__date=today)),
+        'month_streaks': top_streaks(all_records.filter(achieved_at__year=now.year, achieved_at__month=now.month)),
+        'year_streaks': top_streaks(all_records.filter(achieved_at__year=now.year)),
+        'alltime_streaks': top_streaks(all_records),
+        'today_label': today.strftime('%B %d, %Y'),
+        'month_label': today.strftime('%B %Y'),
+        'year_label': str(today.year),
+    }
+
+    # Current user's personal best
+    if request.user.is_authenticated:
+        personal = all_records.filter(user=request.user).order_by('-streak').first()
+        context['personal_best'] = personal.streak if personal else 0
+    else:
+        context['personal_best'] = 0
+
+    return render(request, 'trainer/leaderboard.html', context)
 
 
 # ─── API Endpoints ───
@@ -607,3 +645,29 @@ def api_update_step_progress(request):
         'step6_bpm': progress.step6_current_bpm,
         'step6_completed': progress.step6_completed,
     })
+
+
+@require_POST
+def api_record_streak(request):
+    """Record a streak to the leaderboard when it ends."""
+    if not request.user.is_authenticated:
+        return JsonResponse({'stored': False, 'message': 'Login to save streaks'})
+
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+
+    streak_val = data.get('streak', 0)
+    game_mode = data.get('game_mode', 'identify')
+
+    if streak_val < 2:
+        return JsonResponse({'stored': False, 'message': 'Streak too small'})
+
+    StreakRecord.objects.create(
+        user=request.user,
+        streak=streak_val,
+        game_mode=game_mode,
+    )
+
+    return JsonResponse({'stored': True, 'streak': streak_val})
