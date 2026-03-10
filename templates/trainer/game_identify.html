@@ -16,6 +16,9 @@
                 <button class="filter-pill" data-filter="flats">Flats</button>
                 <button class="filter-pill" data-filter="custom">Custom</button>
             </div>
+            <button class="flip-toggle" id="showAllToggle" title="Show/hide all notes on fretboard">
+                <span class="flip-icon">🎹</span> Notes
+            </button>
             <button class="flip-toggle" id="flipToggle" title="Flip fretboard orientation">
                 <span class="flip-icon">↕</span> Flip
             </button>
@@ -124,6 +127,7 @@ let revealed = false;
 let currentFilter = 'all';
 let customNotes = [];
 let fretboardInverted = true; // true = player POV (high e top, low E bottom)
+let showAllNotes = false;
 
 // Frets that get inlay dots (between strings 3 and 4)
 const INLAY_FRETS = [3, 5, 7, 9];
@@ -288,9 +292,17 @@ async function getNextNote() {
 
         // Clear previous highlights
         document.querySelectorAll('.note-dot').forEach(d => {
-            d.classList.remove('highlighted', 'correct', 'incorrect', 'show', 'color-coded');
-            d.style.background = '';
-            d.style.opacity = '';
+            d.classList.remove('highlighted', 'correct', 'incorrect');
+            if (!showAllNotes) {
+                d.classList.remove('show', 'color-coded');
+                d.style.background = '';
+                d.style.opacity = '';
+            } else {
+                const note = FRETBOARD[`${d.dataset.string}-${d.dataset.fret}`];
+                d.classList.add('show', 'color-coded');
+                d.style.background = getNoteColor(note);
+                d.style.opacity = '0.55';
+            }
             d.textContent = FRETBOARD[`${d.dataset.string}-${d.dataset.fret}`];
         });
 
@@ -299,6 +311,7 @@ async function getNextNote() {
         if (dot) {
             dot.classList.add('highlighted');
             dot.textContent = '?';
+            dot.style.opacity = '1';
         }
 
         // Play the note sound so the user can hear it
@@ -606,6 +619,38 @@ async function recordStreak(streakVal) {
         console.log('Not logged in or error saving streak');
     }
 }
+
+// Show All Notes toggle
+document.getElementById('showAllToggle').addEventListener('click', function() {
+    showAllNotes = !showAllNotes;
+    this.classList.toggle('flipped', showAllNotes);
+    document.querySelectorAll('#gameStrings .note-dot').forEach(d => {
+        if (showAllNotes) {
+            const note = FRETBOARD[`${d.dataset.string}-${d.dataset.fret}`];
+            d.classList.add('show', 'color-coded');
+            d.style.background = getNoteColor(note);
+            d.style.opacity = '0.55';
+            d.textContent = note;
+        } else {
+            // Reset to default hidden state, except currently highlighted
+            if (!d.classList.contains('highlighted') && !d.classList.contains('correct')) {
+                d.classList.remove('show', 'color-coded');
+                d.style.background = '';
+                d.style.opacity = '';
+                d.textContent = FRETBOARD[`${d.dataset.string}-${d.dataset.fret}`];
+            }
+        }
+    });
+    // Re-highlight the current question dot
+    if (currentNote && !waiting) {
+        const dot = document.getElementById(`note-${currentString}-${currentFret}`);
+        if (dot) {
+            dot.classList.add('highlighted');
+            dot.textContent = '?';
+            dot.style.opacity = '1';
+        }
+    }
+});
 
 // Flip toggle handler
 document.getElementById('flipToggle').addEventListener('click', function() {
