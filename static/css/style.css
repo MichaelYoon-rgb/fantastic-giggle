@@ -1665,6 +1665,426 @@ a:hover { color: var(--accent-hover); }
     opacity: 0.35;
 }
 
+/* ═══════════════════════════════════════════
+   PRACTICE CALENDAR
+   ═══════════════════════════════════════════ */
+.practice-calendar-card { max-width: 560px; margin: 0 auto 1.5rem; }
+
+.calendar-legend {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    font-family: var(--font-fun);
+}
+.legend-item { display: flex; align-items: center; gap: 0.3rem; }
+.legend-dot {
+    width: 12px; height: 12px; border-radius: 50%;
+    border: 2px solid var(--border);
+    background: var(--bg-tertiary);
+}
+.legend-dot.partial { background: conic-gradient(var(--pastel-mint) 180deg, var(--bg-tertiary) 180deg); }
+.legend-dot.full { background: var(--pastel-mint); border-color: var(--pastel-mint); }
+
+.calendar-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    font-family: var(--font-fun);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.3rem;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+}
+
+.calendar-day {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 4px 0;
+}
+.calendar-day.empty { visibility: hidden; }
+.calendar-day.future { opacity: 0.3; }
+.calendar-day.today .day-circle { box-shadow: 0 0 0 2px var(--accent); }
+
+.day-circle {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--bg-tertiary);
+    border: 2px solid var(--border);
+    transition: all 0.3s ease;
+}
+.day-circle.partial { border-color: var(--pastel-mint); }
+.day-circle.full {
+    background: var(--pastel-mint);
+    border-color: var(--pastel-mint);
+    box-shadow: 0 0 10px rgba(168, 230, 207, 0.4);
+}
+
+.day-num {
+    font-family: var(--font-fun);
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+/* ═══════════════════════════════════════════
+   PATHWAY
+   ═══════════════════════════════════════════ */
+.pathway-container {
+    position: relative;
+    max-width: 700px;
+    margin: 0 auto;
+    padding-left: 32px;
+}
+
+.pathway-line {
+    position: absolute;
+    left: 22px;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: linear-gradient(180deg, var(--pastel-mint), var(--accent), var(--pastel-coral));
+    border-radius: 2px;
+    opacity: 0.3;
+}
+
+.pathway-step {
+    position: relative;
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+    transition: opacity 0.3s ease;
+}
+.pathway-step.locked { opacity: 0.45; }
+.pathway-step.locked .step-body { display: none !important; }
+
+.step-marker {
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-card-solid);
+    border: 3px solid var(--border);
+    z-index: 2;
+    transition: all 0.3s ease;
+}
+.pathway-step.active .step-marker {
+    border-color: var(--accent);
+    box-shadow: 0 0 16px var(--accent-glow);
+    animation: pulse-glow 2s ease-in-out infinite;
+}
+.pathway-step.completed .step-marker {
+    background: var(--pastel-mint);
+    border-color: var(--pastel-mint);
+}
+
+.step-number {
+    font-family: var(--font-fun);
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--text-secondary);
+}
+.pathway-step.active .step-number { color: var(--accent); }
+.pathway-step.completed .step-number { color: #1e3a2c; }
+
+.step-content {
+    flex: 1;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1rem 1.25rem;
+    box-shadow: var(--shadow-sm);
+}
+.pathway-step.active .step-content {
+    border-color: rgba(176, 140, 220, 0.3);
+    box-shadow: 0 2px 12px rgba(176, 140, 220, 0.08);
+}
+
+.step-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    cursor: pointer;
+}
+.step-title {
+    font-family: var(--font-fun);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+}
+.step-badge {
+    font-family: var(--font-fun);
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    background: var(--bg-tertiary);
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+.pathway-step.completed .step-badge {
+    background: var(--pastel-mint);
+    color: #1e3a2c;
+}
+
+.step-desc {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    margin: 0.5rem 0 0.75rem;
+    line-height: 1.5;
+}
+
+.step-body {
+    border-top: 1px solid var(--border-light);
+    padding-top: 0.75rem;
+    margin-top: 0.5rem;
+}
+
+/* Note selector buttons */
+.exercise-note-selector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+.exercise-label {
+    font-family: var(--font-fun);
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-right: 0.3rem;
+}
+
+.note-select-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 2px solid rgba(0,0,0,0.08);
+    font-family: var(--font-fun);
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #2a2035;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.note-select-btn:hover { transform: scale(1.12); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+.note-select-btn.active { box-shadow: 0 0 0 3px var(--accent); transform: scale(1.15); }
+.note-select-btn.done {
+    position: relative;
+    opacity: 0.6;
+}
+.note-select-btn.done::after {
+    content: '✓';
+    position: absolute;
+    bottom: -4px;
+    right: -4px;
+    font-size: 0.6rem;
+    background: var(--pastel-mint);
+    border-radius: 50%;
+    width: 14px;
+    height: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #1e3a2c;
+    font-weight: 700;
+}
+
+.exercise-status {
+    font-family: var(--font-fun);
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.75rem;
+    padding: 0.4rem 0;
+}
+
+.exercise-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.75rem;
+}
+
+/* String walk visual */
+.string-walk-visual {
+    display: flex;
+    gap: 0.25rem;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin: 0.75rem 0;
+    padding: 0.6rem;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius);
+}
+.walk-string {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    background: var(--bg-card-solid);
+    font-family: var(--font-fun);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.walk-string.return { opacity: 0.55; font-size: 0.65rem; }
+.walk-arrow {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    opacity: 0.3;
+}
+
+/* Progress grid */
+.note-progress-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    align-items: center;
+    margin-top: 0.5rem;
+}
+.progress-grid-label {
+    font-family: var(--font-fun);
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-right: 0.3rem;
+}
+.progress-note-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+    padding: 0.25rem 0.4rem;
+    border-radius: var(--radius-sm);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-light);
+}
+.progress-note-item.done { background: rgba(168, 230, 207, 0.25); border-color: var(--pastel-mint); }
+.progress-note-item.partial { background: rgba(247, 229, 160, 0.25); border-color: var(--pastel-yellow); }
+.pn-note { font-family: var(--font-fun); font-size: 0.72rem; font-weight: 700; }
+.pn-count { font-family: var(--font-fun); font-size: 0.6rem; color: var(--text-muted); }
+
+/* Pair selector */
+.pair-selector {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.75rem;
+}
+
+/* Random sequence display */
+.random-sequence {
+    display: flex;
+    gap: 0.3rem;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin: 0.75rem 0;
+    padding: 0.75rem;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius);
+}
+.seq-note {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-fun);
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #2a2035;
+    border: 2px solid rgba(0,0,0,0.06);
+}
+.seq-arrow {
+    font-family: var(--font-fun);
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    opacity: 0.5;
+}
+
+/* Metronome controls */
+.metronome-controls {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+}
+
+/* BPM control (step 6) */
+.bpm-control {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+.bpm-display {
+    font-family: var(--font-fun);
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--accent);
+    min-width: 40px;
+    text-align: center;
+}
+.bpm-label {
+    font-family: var(--font-fun);
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-right: 0.5rem;
+}
+
+.bpm-progress-bar {
+    position: relative;
+    height: 20px;
+    background: var(--bg-tertiary);
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 0.75rem 0;
+}
+.bpm-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--pastel-mint), var(--accent));
+    border-radius: 10px;
+    transition: width 0.4s ease;
+}
+.bpm-text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-fun);
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    mix-blend-mode: multiply;
+}
+
 /* Grunge image decoration */
 .grunge-decoration {
     position: relative;

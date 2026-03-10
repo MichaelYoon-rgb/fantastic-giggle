@@ -5,9 +5,11 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
-from .models import NoteAttempt, NoteStats, PositionStats, UserProfile
+from .models import NoteAttempt, NoteStats, PositionStats, UserProfile, PracticeStepProgress, DailyPracticeLog
 import json
 import random
+from datetime import date, timedelta
+import calendar as cal_module
 
 # ─── Fretboard Data ───
 ALL_NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
@@ -162,10 +164,42 @@ def game_find(request):
 
 
 def tuner_view(request):
-    """Standalone tuner / string-walk exercise."""
+    """Fretboard mastery pathway with spaced repetition calendar."""
     context = {
         'fretboard': json.dumps(build_fretboard_data()),
     }
+
+    if request.user.is_authenticated:
+        progress, _ = PracticeStepProgress.objects.get_or_create(user=request.user)
+        context['progress'] = progress
+        context['step1_completions'] = progress.get_step1_completions()
+        context['step2_notes'] = progress.get_step2_notes()
+        context['step3_notes'] = progress.get_step3_notes()
+
+        # Calendar data for current month
+        today = date.today()
+        year, month = today.year, today.month
+        first_day = date(year, month, 1)
+        num_days = cal_module.monthrange(year, month)[1]
+        logs = DailyPracticeLog.objects.filter(
+            user=request.user, date__year=year, date__month=month
+        )
+        log_map = {log.date.day: log.get_exercises() for log in logs}
+
+        cal_data = []
+        for d in range(1, num_days + 1):
+            exercises = log_map.get(d, [])
+            cal_data.append({
+                'day': d,
+                'exercises': exercises,
+                'count': len(exercises),
+                'is_today': d == today.day,
+                'is_future': d > today.day,
+            })
+        context['calendar'] = json.dumps(cal_data)
+        context['month_name'] = today.strftime('%B %Y')
+        context['first_weekday'] = first_day.weekday()  # 0=Mon
+
     return render(request, 'trainer/tuner.html', context)
 
 
@@ -469,4 +503,107 @@ def api_get_stats(request):
     return JsonResponse({
         'authenticated': True,
         'stats': stats_data,
+    })
+
+
+@require_POST
+def api_update_step_progress(request):
+    """Update the user's step progress (complete exercise, advance step, etc.)."""
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Login required'}, status=401)
+
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+
+    action = data.get('action')
+    progress, _ = PracticeStepProgress.objects.get_or_create(user=request.user)
+
+    if action == 'complete_note_run':
+        # Step 1: user completed a perfect run for a note
+        note = data.get('note', '')
+        completions = progress.get_step1_completions()
+        progress.step1_current_note = note
+        progress.step1_current_streak += 1
+
+        if progress.step1_current_streak >= 3:
+            # 3 perfect runs → count as 1 completion for this note
+            completions[note] = completions.get(note, 0) + 1
+            progress.set_step1_completions(completions)
+            progress.step1_current_streak = 0
+            progress.step1_current_note = ''
+
+            # Check if all 7 naturals done twice
+            naturals = ['C', 'D', 'E', 'F', 'G', 'A', 'B']
+            all_done = all(completions.get(n, 0) >= 2 for n in naturals)
+            if all_done and progress.current_step == 1:
+                progress.current_step = 2
+
+        progress.save()
+
+    elif action == 'reset_note_streak':
+        progress.step1_current_streak = 0
+        progress.save()
+
+    elif action == 'complete_step2_note':
+        note = data.get('note', '')
+        notes = progress.get_step2_notes()
+        if note not in notes:
+            notes.append(note)
+            progress.step2_notes_done = json.dumps(notes)
+        # All 7 naturals done → advance
+        if len(notes) >= 7 and progress.current_step == 2:
+            progress.current_step = 3
+        progress.save()
+
+    elif action == 'complete_step3_note':
+        note = data.get('note', '')
+        notes = progress.get_step3_notes()
+        if note not in notes:
+            notes.append(note)
+            progress.step3_notes_done = json.dumps(notes)
+        # All 5 sharps/flats done → advance
+        if len(notes) >= 5 and progress.current_step == 3:
+            progress.current_step = 4
+        progress.save()
+
+    elif action == 'complete_step4':
+        progress.step4_completed = True
+        if progress.current_step == 4:
+            progress.current_step = 5
+        progress.save()
+
+    elif action == 'complete_step5':
+        progress.step5_completed = True
+        if progress.current_step == 5:
+            progress.current_step = 6
+        progress.save()
+
+    elif action == 'update_step6_bpm':
+        bpm = data.get('bpm', 40)
+        progress.step6_current_bpm = bpm
+        if bpm >= 80:
+            progress.step6_completed = True
+        progress.save()
+
+    elif action == 'log_exercise':
+        exercise_key = data.get('exercise', '')
+        today = date.today()
+        log, _ = DailyPracticeLog.objects.get_or_create(
+            user=request.user, date=today
+        )
+        log.add_exercise(exercise_key)
+
+    return JsonResponse({
+        'current_step': progress.current_step,
+        'step1_completions': progress.get_step1_completions(),
+        'step1_streak': progress.step1_current_streak,
+        'step1_note': progress.step1_current_note,
+        'step2_notes': progress.get_step2_notes(),
+        'step3_notes': progress.get_step3_notes(),
+        'step4_completed': progress.step4_completed,
+        'step5_completed': progress.step5_completed,
+        'step6_bpm': progress.step6_current_bpm,
+        'step6_completed': progress.step6_completed,
     })

@@ -17,4 +17,5 @@ urlpatterns = [
     path('api/weighted-note/', views.api_get_weighted_note, name='api_weighted_note'),
     path('api/find-challenge/', views.api_get_find_challenge, name='api_find_challenge'),
     path('api/stats/', views.api_get_stats, name='api_stats'),
+    path('api/step-progress/', views.api_update_step_progress, name='api_step_progress'),
 ]

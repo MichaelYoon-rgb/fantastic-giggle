@@ -1,104 +1,278 @@
 {% extends "trainer/base.html" %}
 
-{% block title %}Tuner & String Walk — Every Guitar Note{% endblock %}
+{% block title %}Fretboard Mastery — Every Guitar Note{% endblock %}
 {% block nav_tuner %}active{% endblock %}
 
 {% block content %}
 <div class="game-header">
     <div>
-        <h1 class="game-title">Tuner & String Walk</h1>
-        <p class="game-subtitle">Plug in your guitar — tune up and walk each open string</p>
+        <h1 class="game-title">Fretboard Mastery Pathway</h1>
+        <p class="game-subtitle">A structured daily practice system to master every note on the fretboard. Complete each step before advancing to the next.</p>
     </div>
 </div>
 
-<div class="tuner-container">
-    <!-- Tuner Display -->
-    <div class="tuner-display" id="tunerDisplay">
-        <div class="tuner-note-display" id="tunerNote">—</div>
-        <div class="tuner-freq" id="tunerFreq">Play a note...</div>
-        <div class="tuner-cents-bar">
-            <div class="tuner-cents-indicator" id="centsIndicator"></div>
+<!-- ══════ MONTHLY CALENDAR ══════ -->
+{% if user.is_authenticated %}
+<div class="card practice-calendar-card">
+    <div class="card-header">
+        <div class="card-title">📅 {{ month_name }}</div>
+        <div class="calendar-legend">
+            <span class="legend-item"><span class="legend-dot empty"></span> No practice</span>
+            <span class="legend-item"><span class="legend-dot partial"></span> Some exercises</span>
+            <span class="legend-item"><span class="legend-dot full"></span> Full session</span>
         </div>
-        <div class="tuner-cents-label" id="centsLabel">0 cents</div>
+    </div>
+    <div class="calendar-weekdays">
+        <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+    </div>
+    <div class="calendar-grid" id="calendarGrid"></div>
+</div>
+{% endif %}
 
-        <div class="tuner-strings" id="tunerStrings">
-            <button class="tuner-string-btn" data-note="E" data-freq="82.41">E</button>
-            <button class="tuner-string-btn" data-note="A" data-freq="110.00">A</button>
-            <button class="tuner-string-btn" data-note="D" data-freq="146.83">D</button>
-            <button class="tuner-string-btn" data-note="G" data-freq="196.00">G</button>
-            <button class="tuner-string-btn" data-note="B" data-freq="246.94">B</button>
-            <button class="tuner-string-btn" data-note="e" data-freq="329.63">e</button>
+<!-- ══════ PATHWAY ══════ -->
+<div class="pathway-container">
+    <div class="pathway-line"></div>
+
+    <!-- STEP 1 -->
+    <div class="pathway-step {% if user.is_authenticated %}{% if progress.current_step == 1 %}active{% elif progress.current_step > 1 %}completed{% else %}locked{% endif %}{% else %}active{% endif %}" data-step="1">
+        <div class="step-marker">
+            <div class="step-number">1</div>
+        </div>
+        <div class="step-content">
+            <div class="step-header">
+                <h3 class="step-title">Single Note String Walk</h3>
+                <span class="step-badge" id="step1Badge">{% if user.is_authenticated and progress.current_step > 1 %}✓ Complete{% else %}Frets 1–12{% endif %}</span>
+            </div>
+            <p class="step-desc">Pick one natural note. Play it on every string from low E → high e, then back down. No open strings — frets 1–12 only. Get 3 perfect runs, then move to the next note. Complete all 7 natural notes twice.</p>
+
+            <div class="step-body" id="step1Body" {% if user.is_authenticated and progress.current_step != 1 %}style="display:none"{% endif %}>
+                <!-- Note selector -->
+                <div class="exercise-note-selector" id="step1Notes">
+                    <span class="exercise-label">Pick a note:</span>
+                </div>
+                <div class="exercise-status" id="step1Status">Select a note to begin</div>
+
+                <!-- Visual: string indicators -->
+                <div class="string-walk-visual" id="step1Walk">
+                    <div class="walk-string" data-s="6">E</div>
+                    <div class="walk-arrow">→</div>
+                    <div class="walk-string" data-s="5">A</div>
+                    <div class="walk-arrow">→</div>
+                    <div class="walk-string" data-s="4">D</div>
+                    <div class="walk-arrow">→</div>
+                    <div class="walk-string" data-s="3">G</div>
+                    <div class="walk-arrow">→</div>
+                    <div class="walk-string" data-s="2">B</div>
+                    <div class="walk-arrow">→</div>
+                    <div class="walk-string" data-s="1">e</div>
+                    <div class="walk-arrow">→</div>
+                    <div class="walk-string return" data-s="2">B</div>
+                    <div class="walk-arrow">→</div>
+                    <div class="walk-string return" data-s="3">G</div>
+                    <div class="walk-arrow">→</div>
+                    <div class="walk-string return" data-s="4">D</div>
+                    <div class="walk-arrow">→</div>
+                    <div class="walk-string return" data-s="5">A</div>
+                    <div class="walk-arrow">→</div>
+                    <div class="walk-string return" data-s="6">E</div>
+                </div>
+
+                <div class="exercise-actions">
+                    <button class="btn btn-primary" id="step1PerfectBtn" disabled>✓ Perfect Run</button>
+                    <button class="btn btn-ghost" id="step1MissBtn" disabled>✗ Made a Mistake</button>
+                </div>
+
+                <!-- Progress grid -->
+                <div class="note-progress-grid" id="step1Progress"></div>
+            </div>
         </div>
     </div>
 
-    <!-- Mic Controls -->
-    <div style="text-align:center; margin-bottom:1.5rem;">
-        <button class="btn btn-lg btn-primary" id="micStartBtn">🎤 Start Listening</button>
+    <!-- STEP 2 -->
+    <div class="pathway-step {% if user.is_authenticated %}{% if progress.current_step == 2 %}active{% elif progress.current_step > 2 %}completed{% elif progress.current_step < 2 %}locked{% endif %}{% else %}locked{% endif %}" data-step="2">
+        <div class="step-marker">
+            <div class="step-number">2</div>
+        </div>
+        <div class="step-content">
+            <div class="step-header">
+                <h3 class="step-title">Metronome — Natural Notes</h3>
+                <span class="step-badge" id="step2Badge">{% if user.is_authenticated and progress.current_step > 2 %}✓ Complete{% else %}40 BPM{% endif %}</span>
+            </div>
+            <p class="step-desc">Set the metronome to 40 BPM. Play 1 note per beat as in Step 1. Complete all 7 natural notes without mistakes.</p>
+
+            <div class="step-body" id="step2Body" {% if not user.is_authenticated or progress.current_step != 2 %}style="display:none"{% endif %}>
+                <div class="metronome-controls">
+                    <button class="btn btn-sm btn-primary" id="metro2Toggle">▶ Start Metronome (40 BPM)</button>
+                </div>
+
+                <div class="exercise-note-selector" id="step2Notes">
+                    <span class="exercise-label">Current note:</span>
+                </div>
+                <div class="exercise-status" id="step2Status">Start the metronome, then play each note</div>
+
+                <div class="exercise-actions">
+                    <button class="btn btn-primary" id="step2DoneBtn" disabled>✓ Note Complete</button>
+                </div>
+                <div class="note-progress-grid" id="step2Progress"></div>
+            </div>
+        </div>
     </div>
 
-    <!-- String Walk Exercise -->
-    <div class="card">
-        <div class="card-header">
-            <div class="card-title">String Walk Exercise</div>
-            <button class="btn btn-sm btn-ghost" id="resetWalk">Reset</button>
+    <!-- STEP 3 -->
+    <div class="pathway-step {% if user.is_authenticated %}{% if progress.current_step == 3 %}active{% elif progress.current_step > 3 %}completed{% elif progress.current_step < 3 %}locked{% endif %}{% else %}locked{% endif %}" data-step="3">
+        <div class="step-marker">
+            <div class="step-number">3</div>
         </div>
-        <p style="color:var(--text-secondary); font-size:0.88rem; margin-bottom:1rem;">
-            Play each open string from low E to high e. The tuner will detect when you hit the right note!
-        </p>
-        <div class="string-walk" id="stringWalk">
-            <div class="string-walk-step active" data-target="E" data-freq="82.41">E</div>
-            <div class="string-walk-arrow">→</div>
-            <div class="string-walk-step" data-target="A" data-freq="110.00">A</div>
-            <div class="string-walk-arrow">→</div>
-            <div class="string-walk-step" data-target="D" data-freq="146.83">D</div>
-            <div class="string-walk-arrow">→</div>
-            <div class="string-walk-step" data-target="G" data-freq="196.00">G</div>
-            <div class="string-walk-arrow">→</div>
-            <div class="string-walk-step" data-target="B" data-freq="246.94">B</div>
-            <div class="string-walk-arrow">→</div>
-            <div class="string-walk-step" data-target="e" data-freq="329.63">e</div>
-        </div>
-        <div id="walkMessage" style="text-align:center; font-family:var(--font-fun); font-size:0.9rem; color:var(--text-muted); margin-top:0.5rem;">
-            Play the low E string (6th string)...
+        <div class="step-content">
+            <div class="step-header">
+                <h3 class="step-title">Sharps & Flats</h3>
+                <span class="step-badge" id="step3Badge">{% if user.is_authenticated and progress.current_step > 3 %}✓ Complete{% else %}40 BPM{% endif %}</span>
+            </div>
+            <p class="step-desc">With the metronome at 40 BPM, do the same string walk for all sharps/flats: C#, D#, F#, G#, A#.</p>
+
+            <div class="step-body" id="step3Body" {% if not user.is_authenticated or progress.current_step != 3 %}style="display:none"{% endif %}>
+                <div class="metronome-controls">
+                    <button class="btn btn-sm btn-primary" id="metro3Toggle">▶ Start Metronome (40 BPM)</button>
+                </div>
+
+                <div class="exercise-note-selector" id="step3Notes">
+                    <span class="exercise-label">Current note:</span>
+                </div>
+                <div class="exercise-status" id="step3Status">Play each sharp/flat note on every string</div>
+
+                <div class="exercise-actions">
+                    <button class="btn btn-primary" id="step3DoneBtn" disabled>✓ Note Complete</button>
+                </div>
+                <div class="note-progress-grid" id="step3Progress"></div>
+            </div>
         </div>
     </div>
 
-    <!-- Reference: Standard Tuning -->
-    <div class="card" style="margin-top:1rem;">
-        <div class="card-header">
-            <div class="card-title">Standard Tuning Reference</div>
+    <!-- STEP 4 -->
+    <div class="pathway-step {% if user.is_authenticated %}{% if progress.current_step == 4 %}active{% elif progress.current_step > 4 %}completed{% elif progress.current_step < 4 %}locked{% endif %}{% else %}locked{% endif %}" data-step="4">
+        <div class="step-marker">
+            <div class="step-number">4</div>
         </div>
-        <div style="display:grid; grid-template-columns:repeat(6, 1fr); gap:0.5rem; text-align:center;">
-            <div>
-                <div style="font-family:var(--font-fun); font-size:1.4rem; font-weight:700; color:var(--pastel-mint);">E</div>
-                <div style="font-size:0.72rem; color:var(--text-muted);">82.41 Hz</div>
-                <div style="font-size:0.68rem; color:var(--text-muted);">6th string</div>
+        <div class="step-content">
+            <div class="step-header">
+                <h3 class="step-title">Two-Note Pairs</h3>
+                <span class="step-badge" id="step4Badge">{% if user.is_authenticated and progress.current_step > 4 %}✓ Complete{% else %}Up & Down{% endif %}</span>
             </div>
-            <div>
-                <div style="font-family:var(--font-fun); font-size:1.4rem; font-weight:700; color:var(--pastel-sky);">A</div>
-                <div style="font-size:0.72rem; color:var(--text-muted);">110.0 Hz</div>
-                <div style="font-size:0.68rem; color:var(--text-muted);">5th string</div>
+            <p class="step-desc">Pick 2 different notes. Play the first going up (low E → high e) and the second going down (high e → low E) without stopping. When it feels easy, mark it complete.</p>
+
+            <div class="step-body" id="step4Body" {% if not user.is_authenticated or progress.current_step != 4 %}style="display:none"{% endif %}>
+                <div class="metronome-controls">
+                    <button class="btn btn-sm btn-primary" id="metro4Toggle">▶ Start Metronome (40 BPM)</button>
+                </div>
+
+                <div class="pair-selector">
+                    <div>
+                        <span class="exercise-label">Note 1 (up):</span>
+                        <div class="exercise-note-selector" id="step4Note1"></div>
+                    </div>
+                    <div>
+                        <span class="exercise-label">Note 2 (down):</span>
+                        <div class="exercise-note-selector" id="step4Note2"></div>
+                    </div>
+                </div>
+                <div class="exercise-status" id="step4Status">Pick two notes and practice the pair</div>
+
+                <div class="exercise-actions">
+                    <button class="btn btn-primary" id="step4DoneBtn">✓ It Feels Easy — Complete Step 4</button>
+                </div>
             </div>
-            <div>
-                <div style="font-family:var(--font-fun); font-size:1.4rem; font-weight:700; color:var(--pastel-yellow);">D</div>
-                <div style="font-size:0.72rem; color:var(--text-muted);">146.8 Hz</div>
-                <div style="font-size:0.68rem; color:var(--text-muted);">4th string</div>
+        </div>
+    </div>
+
+    <!-- STEP 5 -->
+    <div class="pathway-step {% if user.is_authenticated %}{% if progress.current_step == 5 %}active{% elif progress.current_step > 5 %}completed{% elif progress.current_step < 5 %}locked{% endif %}{% else %}locked{% endif %}" data-step="5">
+        <div class="step-marker">
+            <div class="step-number">5</div>
+        </div>
+        <div class="step-content">
+            <div class="step-header">
+                <h3 class="step-title">Random Note Sequence</h3>
+                <span class="step-badge" id="step5Badge">{% if user.is_authenticated and progress.current_step > 5 %}✓ Complete{% else %}7 Notes{% endif %}</span>
             </div>
-            <div>
-                <div style="font-family:var(--font-fun); font-size:1.4rem; font-weight:700; color:var(--pastel-peach);">G</div>
-                <div style="font-size:0.72rem; color:var(--text-muted);">196.0 Hz</div>
-                <div style="font-size:0.68rem; color:var(--text-muted);">3rd string</div>
+            <p class="step-desc">All 7 natural notes in a random order. Play each note with the metronome, alternating up and down strings without stopping. When you can do it flawlessly, mark it complete.</p>
+
+            <div class="step-body" id="step5Body" {% if not user.is_authenticated or progress.current_step != 5 %}style="display:none"{% endif %}>
+                <div class="metronome-controls">
+                    <button class="btn btn-sm btn-primary" id="metro5Toggle">▶ Start Metronome (40 BPM)</button>
+                </div>
+
+                <div class="random-sequence" id="step5Sequence"></div>
+                <button class="btn btn-sm btn-ghost" id="step5Shuffle">🔀 Shuffle New Order</button>
+                <div class="exercise-status" id="step5Status">Play each note in order, alternating directions</div>
+
+                <div class="exercise-actions">
+                    <button class="btn btn-primary" id="step5DoneBtn">✓ Flawless Run — Complete Step 5</button>
+                </div>
             </div>
-            <div>
-                <div style="font-family:var(--font-fun); font-size:1.4rem; font-weight:700; color:var(--pastel-lavender);">B</div>
-                <div style="font-size:0.72rem; color:var(--text-muted);">247.0 Hz</div>
-                <div style="font-size:0.68rem; color:var(--text-muted);">2nd string</div>
+        </div>
+    </div>
+
+    <!-- STEP 6 -->
+    <div class="pathway-step {% if user.is_authenticated %}{% if progress.current_step == 6 %}active{% elif progress.current_step > 6 %}completed{% elif progress.current_step < 6 %}locked{% endif %}{% else %}locked{% endif %}" data-step="6">
+        <div class="step-marker">
+            <div class="step-number">6</div>
+        </div>
+        <div class="step-content">
+            <div class="step-header">
+                <h3 class="step-title">Speed It Up!</h3>
+                <span class="step-badge" id="step6Badge">{% if user.is_authenticated and progress.step6_completed %}✓ 80 BPM{% else %}Goal: 80 BPM{% endif %}</span>
             </div>
-            <div>
-                <div style="font-family:var(--font-fun); font-size:1.4rem; font-weight:700; color:var(--pastel-pink);">e</div>
-                <div style="font-size:0.72rem; color:var(--text-muted);">329.6 Hz</div>
-                <div style="font-size:0.68rem; color:var(--text-muted);">1st string</div>
+            <p class="step-desc">Repeat steps 2–5 gradually increasing the tempo. The goal is to reach 80 BPM cleanly. You're building speed and confidence!</p>
+
+            <div class="step-body" id="step6Body" {% if not user.is_authenticated or progress.current_step != 6 %}style="display:none"{% endif %}>
+                <div class="metronome-controls">
+                    <div class="bpm-control">
+                        <button class="btn btn-sm btn-ghost" id="bpmDown">−</button>
+                        <span class="bpm-display" id="bpmDisplay">{% if user.is_authenticated %}{{ progress.step6_current_bpm }}{% else %}40{% endif %}</span>
+                        <span class="bpm-label">BPM</span>
+                        <button class="btn btn-sm btn-ghost" id="bpmUp">+</button>
+                    </div>
+                    <button class="btn btn-sm btn-primary" id="metro6Toggle">▶ Start</button>
+                </div>
+
+                <div class="exercise-status" id="step6Status">Work through steps 2–5 at increasing tempos</div>
+                <div class="bpm-progress-bar">
+                    <div class="bpm-fill" id="bpmFill" style="width: {% if user.is_authenticated %}{{ progress.step6_current_bpm|floatformat:0 }}{% else %}0{% endif %}%"></div>
+                    <span class="bpm-text">40 → 80 BPM</span>
+                </div>
+
+                <div class="exercise-actions">
+                    <button class="btn btn-primary" id="step6SaveBpm">💾 Save BPM Progress</button>
+                </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════ TUNER (always available) ══════ -->
+<div class="card" style="margin-top: 1.5rem;">
+    <div class="card-header">
+        <div class="card-title">🎤 Guitar Tuner</div>
+    </div>
+    <div class="tuner-container">
+        <div class="tuner-display" id="tunerDisplay">
+            <div class="tuner-note-display" id="tunerNote">—</div>
+            <div class="tuner-freq" id="tunerFreq">Play a note...</div>
+            <div class="tuner-cents-bar">
+                <div class="tuner-cents-indicator" id="centsIndicator"></div>
+            </div>
+            <div class="tuner-cents-label" id="centsLabel">0 cents</div>
+            <div class="tuner-strings" id="tunerStrings">
+                <button class="tuner-string-btn" data-note="E" data-freq="82.41">E</button>
+                <button class="tuner-string-btn" data-note="A" data-freq="110.00">A</button>
+                <button class="tuner-string-btn" data-note="D" data-freq="146.83">D</button>
+                <button class="tuner-string-btn" data-note="G" data-freq="196.00">G</button>
+                <button class="tuner-string-btn" data-note="B" data-freq="246.94">B</button>
+                <button class="tuner-string-btn" data-note="e" data-freq="329.63">e</button>
+            </div>
+        </div>
+        <div style="text-align:center; margin-top:1rem;">
+            <button class="btn btn-lg btn-primary" id="micStartBtn">🎤 Start Listening</button>
         </div>
     </div>
 </div>
@@ -109,12 +283,12 @@
 
 {% block extra_js %}
 <script>
-/* ─── Tuner & String Walk ─── */
-
-const NOTE_FREQS = {
-    'E2': 82.41, 'A2': 110.00, 'D3': 146.83, 'G3': 196.00, 'B3': 246.94, 'E4': 329.63,
-};
-
+/* ═══════════════════════════════════════════
+   FRETBOARD MASTERY PATHWAY
+   ═══════════════════════════════════════════ */
+const FRETBOARD = {{ fretboard|safe }};
+const NATURALS = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+const SHARPS = ['C#', 'D#', 'F#', 'G#', 'A#'];
 const STRING_ORDER = ['E', 'A', 'D', 'G', 'B', 'e'];
 const STRING_NAMES_MAP = {
     'E': { label: 'Low E (6th)', freq: 82.41 },
@@ -125,12 +299,423 @@ const STRING_NAMES_MAP = {
     'e': { label: 'High E (1st)', freq: 329.63 },
 };
 
+let isAuthenticated = {{ user.is_authenticated|yesno:"true,false" }};
+{% if user.is_authenticated and progress %}
+let stepProgress = {
+    currentStep: {{ progress.current_step }},
+    step1Completions: {{ progress.step1_note_completions|safe }},
+    step1Streak: {{ progress.step1_current_streak }},
+    step1Note: '{{ progress.step1_current_note }}',
+    step2Notes: {{ progress.step2_notes_done|safe }},
+    step3Notes: {{ progress.step3_notes_done|safe }},
+    step4Completed: {{ progress.step4_completed|yesno:"true,false" }},
+    step5Completed: {{ progress.step5_completed|yesno:"true,false" }},
+    step6Bpm: {{ progress.step6_current_bpm }},
+    step6Completed: {{ progress.step6_completed|yesno:"true,false" }},
+};
+{% else %}
+let stepProgress = {
+    currentStep: 1, step1Completions: {}, step1Streak: 0, step1Note: '',
+    step2Notes: [], step3Notes: [], step4Completed: false,
+    step5Completed: false, step6Bpm: 40, step6Completed: false,
+};
+{% endif %}
+
+/* ─── API HELPERS ─── */
+async function updateProgress(data) {
+    if (!isAuthenticated) return;
+    try {
+        const resp = await fetch('/api/step-progress/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
+            body: JSON.stringify(data),
+        });
+        const result = await resp.json();
+        Object.assign(stepProgress, {
+            currentStep: result.current_step,
+            step1Completions: result.step1_completions,
+            step1Streak: result.step1_streak,
+            step1Note: result.step1_note,
+            step2Notes: result.step2_notes,
+            step3Notes: result.step3_notes,
+            step4Completed: result.step4_completed,
+            step5Completed: result.step5_completed,
+            step6Bpm: result.step6_bpm,
+            step6Completed: result.step6_completed,
+        });
+        refreshPathway();
+        return result;
+    } catch (e) { console.error('Progress update failed', e); }
+}
+
+/* ─── CALENDAR ─── */
+{% if user.is_authenticated %}
+(function buildCalendar() {
+    const calData = {{ calendar|safe }};
+    const firstWeekday = {{ first_weekday }};
+    const grid = document.getElementById('calendarGrid');
+    if (!grid) return;
+
+    // Empty cells for offset
+    for (let i = 0; i < firstWeekday; i++) {
+        const empty = document.createElement('div');
+        empty.className = 'calendar-day empty';
+        grid.appendChild(empty);
+    }
+
+    calData.forEach(d => {
+        const cell = document.createElement('div');
+        cell.className = 'calendar-day' + (d.is_today ? ' today' : '') + (d.is_future ? ' future' : '');
+
+        const circle = document.createElement('div');
+        circle.className = 'day-circle';
+        const fill = Math.min(1, d.count / 3);
+        if (fill >= 1) {
+            circle.classList.add('full');
+        } else if (fill > 0) {
+            circle.classList.add('partial');
+            circle.style.background = `conic-gradient(var(--pastel-mint) ${fill * 360}deg, var(--bg-tertiary) ${fill * 360}deg)`;
+        }
+
+        const num = document.createElement('span');
+        num.className = 'day-num';
+        num.textContent = d.day;
+
+        cell.appendChild(circle);
+        cell.appendChild(num);
+        grid.appendChild(cell);
+    });
+})();
+{% endif %}
+
+/* ─── METRONOME ─── */
+let metronomeInterval = null;
+let metronomeAudioCtx = null;
+
+function startMetronome(bpm) {
+    stopMetronome();
+    if (!metronomeAudioCtx) metronomeAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const interval = 60000 / bpm;
+    tick(); // immediate first tick
+    metronomeInterval = setInterval(tick, interval);
+}
+
+function tick() {
+    if (!metronomeAudioCtx) return;
+    const ctx = metronomeAudioCtx;
+    const now = ctx.currentTime;
+    // Short click sound
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = 1000;
+    gain.gain.setValueAtTime(0.4, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.05);
+}
+
+function stopMetronome() {
+    if (metronomeInterval) { clearInterval(metronomeInterval); metronomeInterval = null; }
+}
+
+function toggleMetronome(btn, bpm) {
+    if (metronomeInterval) {
+        stopMetronome();
+        btn.textContent = btn.textContent.replace('⏸', '▶').replace('Stop', 'Start');
+    } else {
+        startMetronome(bpm);
+        btn.textContent = btn.textContent.replace('▶', '⏸').replace('Start', 'Stop');
+    }
+}
+
+/* ─── STEP 1: Single Note String Walk ─── */
+let step1SelectedNote = stepProgress.step1Note || '';
+
+function buildStep1() {
+    const container = document.getElementById('step1Notes');
+    if (!container) return;
+    NATURALS.forEach(n => {
+        const btn = document.createElement('button');
+        btn.className = 'note-select-btn' + (stepProgress.step1Completions[n] >= 2 ? ' done' : '') + (n === step1SelectedNote ? ' active' : '');
+        btn.textContent = n;
+        btn.style.background = getNoteColor(n);
+        btn.addEventListener('click', () => {
+            step1SelectedNote = n;
+            document.querySelectorAll('#step1Notes .note-select-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('step1PerfectBtn').disabled = false;
+            document.getElementById('step1MissBtn').disabled = false;
+            updateStep1Status();
+        });
+        container.appendChild(btn);
+    });
+    buildStep1ProgressGrid();
+    updateStep1Status();
+}
+
+function updateStep1Status() {
+    const el = document.getElementById('step1Status');
+    if (!step1SelectedNote) { el.textContent = 'Select a note to begin'; return; }
+    const completions = stepProgress.step1Completions[step1SelectedNote] || 0;
+    const streak = step1SelectedNote === stepProgress.step1Note ? stepProgress.step1Streak : 0;
+    el.innerHTML = `Playing <b>${step1SelectedNote}</b> — Perfect runs: <b>${streak}/3</b> | Completions: <b>${completions}/2</b>`;
+}
+
+function buildStep1ProgressGrid() {
+    const grid = document.getElementById('step1Progress');
+    if (!grid) return;
+    grid.innerHTML = '<div class="progress-grid-label">Progress:</div>';
+    NATURALS.forEach(n => {
+        const count = stepProgress.step1Completions[n] || 0;
+        const item = document.createElement('div');
+        item.className = 'progress-note-item' + (count >= 2 ? ' done' : count >= 1 ? ' partial' : '');
+        item.innerHTML = `<span class="pn-note" style="color:${getNoteColor(n)}">${n}</span><span class="pn-count">${count}/2</span>`;
+        grid.appendChild(item);
+    });
+}
+
+document.getElementById('step1PerfectBtn')?.addEventListener('click', async () => {
+    if (!step1SelectedNote) return;
+    await updateProgress({ action: 'complete_note_run', note: step1SelectedNote });
+    await updateProgress({ action: 'log_exercise', exercise: 'step1' });
+    buildStep1ProgressGrid();
+    updateStep1Status();
+    showFeedback('Perfect run recorded! 🎉', 'correct');
+    // Refresh note buttons
+    document.querySelectorAll('#step1Notes .note-select-btn').forEach(btn => {
+        const n = btn.textContent;
+        if ((stepProgress.step1Completions[n] || 0) >= 2) btn.classList.add('done');
+    });
+});
+
+document.getElementById('step1MissBtn')?.addEventListener('click', async () => {
+    await updateProgress({ action: 'reset_note_streak' });
+    updateStep1Status();
+    showFeedback('Streak reset — try again!', 'incorrect');
+});
+
+/* ─── STEP 2: Metronome Natural Notes ─── */
+let step2SelectedNote = '';
+
+function buildStep2() {
+    const container = document.getElementById('step2Notes');
+    if (!container) return;
+    NATURALS.forEach(n => {
+        const btn = document.createElement('button');
+        btn.className = 'note-select-btn' + (stepProgress.step2Notes.includes(n) ? ' done' : '');
+        btn.textContent = n;
+        btn.style.background = getNoteColor(n);
+        btn.addEventListener('click', () => {
+            step2SelectedNote = n;
+            document.querySelectorAll('#step2Notes .note-select-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('step2DoneBtn').disabled = false;
+            document.getElementById('step2Status').innerHTML = `Playing <b>${n}</b> at 40 BPM`;
+        });
+        container.appendChild(btn);
+    });
+    buildStep2ProgressGrid();
+}
+
+function buildStep2ProgressGrid() {
+    const grid = document.getElementById('step2Progress');
+    if (!grid) return;
+    grid.innerHTML = '<div class="progress-grid-label">Completed:</div>';
+    NATURALS.forEach(n => {
+        const done = stepProgress.step2Notes.includes(n);
+        const item = document.createElement('div');
+        item.className = 'progress-note-item' + (done ? ' done' : '');
+        item.innerHTML = `<span class="pn-note" style="color:${getNoteColor(n)}">${n}</span><span class="pn-count">${done ? '✓' : '—'}</span>`;
+        grid.appendChild(item);
+    });
+}
+
+document.getElementById('metro2Toggle')?.addEventListener('click', function() { toggleMetronome(this, 40); });
+
+document.getElementById('step2DoneBtn')?.addEventListener('click', async () => {
+    if (!step2SelectedNote) return;
+    await updateProgress({ action: 'complete_step2_note', note: step2SelectedNote });
+    await updateProgress({ action: 'log_exercise', exercise: 'step2' });
+    buildStep2ProgressGrid();
+    showFeedback(`${step2SelectedNote} mastered at 40 BPM! 🎵`, 'correct');
+    document.querySelectorAll('#step2Notes .note-select-btn').forEach(btn => {
+        if (stepProgress.step2Notes.includes(btn.textContent)) btn.classList.add('done');
+    });
+});
+
+/* ─── STEP 3: Sharps & Flats ─── */
+let step3SelectedNote = '';
+
+function buildStep3() {
+    const container = document.getElementById('step3Notes');
+    if (!container) return;
+    SHARPS.forEach(n => {
+        const btn = document.createElement('button');
+        btn.className = 'note-select-btn' + (stepProgress.step3Notes.includes(n) ? ' done' : '');
+        btn.textContent = n;
+        btn.style.background = getNoteColor(n);
+        btn.addEventListener('click', () => {
+            step3SelectedNote = n;
+            document.querySelectorAll('#step3Notes .note-select-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('step3DoneBtn').disabled = false;
+            document.getElementById('step3Status').innerHTML = `Playing <b>${n}</b> at 40 BPM`;
+        });
+        container.appendChild(btn);
+    });
+    buildStep3ProgressGrid();
+}
+
+function buildStep3ProgressGrid() {
+    const grid = document.getElementById('step3Progress');
+    if (!grid) return;
+    grid.innerHTML = '<div class="progress-grid-label">Completed:</div>';
+    SHARPS.forEach(n => {
+        const done = stepProgress.step3Notes.includes(n);
+        const item = document.createElement('div');
+        item.className = 'progress-note-item' + (done ? ' done' : '');
+        item.innerHTML = `<span class="pn-note" style="color:${getNoteColor(n)}">${n}</span><span class="pn-count">${done ? '✓' : '—'}</span>`;
+        grid.appendChild(item);
+    });
+}
+
+document.getElementById('metro3Toggle')?.addEventListener('click', function() { toggleMetronome(this, 40); });
+
+document.getElementById('step3DoneBtn')?.addEventListener('click', async () => {
+    if (!step3SelectedNote) return;
+    await updateProgress({ action: 'complete_step3_note', note: step3SelectedNote });
+    await updateProgress({ action: 'log_exercise', exercise: 'step3' });
+    buildStep3ProgressGrid();
+    showFeedback(`${step3SelectedNote} done! 🎶`, 'correct');
+    document.querySelectorAll('#step3Notes .note-select-btn').forEach(btn => {
+        if (stepProgress.step3Notes.includes(btn.textContent)) btn.classList.add('done');
+    });
+});
+
+/* ─── STEP 4: Two-Note Pairs ─── */
+let step4Note1 = '', step4Note2 = '';
+
+function buildStep4() {
+    ['step4Note1', 'step4Note2'].forEach((containerId, idx) => {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        NATURALS.forEach(n => {
+            const btn = document.createElement('button');
+            btn.className = 'note-select-btn';
+            btn.textContent = n;
+            btn.style.background = getNoteColor(n);
+            btn.addEventListener('click', () => {
+                document.querySelectorAll(`#${containerId} .note-select-btn`).forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                if (idx === 0) step4Note1 = n; else step4Note2 = n;
+                if (step4Note1 && step4Note2) {
+                    document.getElementById('step4Status').innerHTML = `<b>${step4Note1}</b> up ↑ then <b>${step4Note2}</b> down ↓ — play without stopping!`;
+                }
+            });
+            container.appendChild(btn);
+        });
+    });
+}
+
+document.getElementById('metro4Toggle')?.addEventListener('click', function() { toggleMetronome(this, 40); });
+
+document.getElementById('step4DoneBtn')?.addEventListener('click', async () => {
+    await updateProgress({ action: 'complete_step4' });
+    await updateProgress({ action: 'log_exercise', exercise: 'step4' });
+    showFeedback('Step 4 complete! Moving on 🚀', 'correct');
+});
+
+/* ─── STEP 5: Random Note Sequence ─── */
+let step5Order = [];
+
+function shuffleStep5() {
+    step5Order = [...NATURALS].sort(() => Math.random() - 0.5);
+    const container = document.getElementById('step5Sequence');
+    if (!container) return;
+    container.innerHTML = '';
+    step5Order.forEach((n, i) => {
+        if (i > 0) {
+            const arrow = document.createElement('span');
+            arrow.className = 'seq-arrow';
+            arrow.textContent = i % 2 === 0 ? '↑' : '↓';
+            container.appendChild(arrow);
+        }
+        const note = document.createElement('span');
+        note.className = 'seq-note';
+        note.textContent = n;
+        note.style.background = getNoteColor(n);
+        container.appendChild(note);
+    });
+    document.getElementById('step5Status').innerHTML = `Play: ${step5Order.join(' → ')} alternating up/down`;
+}
+
+document.getElementById('step5Shuffle')?.addEventListener('click', shuffleStep5);
+document.getElementById('metro5Toggle')?.addEventListener('click', function() { toggleMetronome(this, 40); });
+
+document.getElementById('step5DoneBtn')?.addEventListener('click', async () => {
+    await updateProgress({ action: 'complete_step5' });
+    await updateProgress({ action: 'log_exercise', exercise: 'step5' });
+    showFeedback('Step 5 mastered! 🏆', 'correct');
+});
+
+/* ─── STEP 6: Speed Up ─── */
+let step6Bpm = stepProgress.step6Bpm || 40;
+
+document.getElementById('bpmDown')?.addEventListener('click', () => {
+    step6Bpm = Math.max(40, step6Bpm - 5);
+    updateBpmDisplay();
+});
+document.getElementById('bpmUp')?.addEventListener('click', () => {
+    step6Bpm = Math.min(120, step6Bpm + 5);
+    updateBpmDisplay();
+});
+
+function updateBpmDisplay() {
+    const el = document.getElementById('bpmDisplay');
+    if (el) el.textContent = step6Bpm;
+    const fill = document.getElementById('bpmFill');
+    if (fill) fill.style.width = Math.min(100, ((step6Bpm - 40) / 40) * 100) + '%';
+}
+
+document.getElementById('metro6Toggle')?.addEventListener('click', function() { toggleMetronome(this, step6Bpm); });
+
+document.getElementById('step6SaveBpm')?.addEventListener('click', async () => {
+    await updateProgress({ action: 'update_step6_bpm', bpm: step6Bpm });
+    await updateProgress({ action: 'log_exercise', exercise: 'step6' });
+    showFeedback(`Progress saved at ${step6Bpm} BPM!`, 'correct');
+    updateBpmDisplay();
+});
+
+/* ─── REFRESH PATHWAY (after step advances) ─── */
+function refreshPathway() {
+    document.querySelectorAll('.pathway-step').forEach(el => {
+        const step = parseInt(el.dataset.step);
+        el.classList.remove('active', 'completed', 'locked');
+        if (step < stepProgress.currentStep) el.classList.add('completed');
+        else if (step === stepProgress.currentStep) el.classList.add('active');
+        else el.classList.add('locked');
+
+        // Show/hide body
+        const body = el.querySelector('.step-body');
+        if (body) body.style.display = step === stepProgress.currentStep ? '' : 'none';
+    });
+
+    // Allow expanding completed steps
+    document.querySelectorAll('.step-header').forEach(hdr => {
+        hdr.style.cursor = 'pointer';
+        hdr.onclick = () => {
+            const body = hdr.closest('.step-content').querySelector('.step-body');
+            if (body) body.style.display = body.style.display === 'none' ? '' : 'none';
+        };
+    });
+}
+
+/* ─── TUNER (same as before) ─── */
 let pitchDetector = null;
 let micActive = false;
-let walkIndex = 0;
-let walkComplete = false;
-
-// Frequency to note + cents
 const ALL_NOTES_CHROMATIC = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
 function freqToNote(freq) {
@@ -138,20 +723,14 @@ function freqToNote(freq) {
     const semitones = 12 * Math.log2(freq / 440.0);
     const rounded = Math.round(semitones);
     const cents = Math.round((semitones - rounded) * 100);
-    const noteIndex = ((rounded % 12) + 12 + 9) % 12; // A is index 0 at 440
+    const noteIndex = ((rounded % 12) + 12 + 9) % 12;
     const octave = Math.floor((rounded + 9) / 12) + 4;
-    return {
-        note: ALL_NOTES_CHROMATIC[noteIndex],
-        octave: octave,
-        cents: cents,
-    };
+    return { note: ALL_NOTES_CHROMATIC[noteIndex], octave, cents };
 }
 
-// Detect if frequency is close to a target
 function isClose(detectedFreq, targetFreq, toleranceCents = 50) {
     if (detectedFreq <= 0 || targetFreq <= 0) return false;
-    const cents = 1200 * Math.log2(detectedFreq / targetFreq);
-    return Math.abs(cents) <= toleranceCents;
+    return Math.abs(1200 * Math.log2(detectedFreq / targetFreq)) <= toleranceCents;
 }
 
 function getCents(detectedFreq, targetFreq) {
@@ -159,151 +738,71 @@ function getCents(detectedFreq, targetFreq) {
     return Math.round(1200 * Math.log2(detectedFreq / targetFreq));
 }
 
-/* ── Mic Start/Stop ── */
-document.getElementById('micStartBtn').addEventListener('click', async function() {
+document.getElementById('micStartBtn')?.addEventListener('click', async function() {
     if (micActive) {
-        // Stop
         if (pitchDetector) { pitchDetector.stop(); pitchDetector = null; }
         micActive = false;
         this.textContent = '🎤 Start Listening';
-        this.classList.remove('btn-danger');
-        this.classList.add('btn-primary');
+        this.classList.remove('btn-danger'); this.classList.add('btn-primary');
         document.getElementById('tunerNote').textContent = '—';
         document.getElementById('tunerFreq').textContent = 'Play a note...';
         document.getElementById('centsLabel').textContent = '0 cents';
         return;
     }
-
-    // Start
     pitchDetector = new PitchDetector();
     const started = await pitchDetector.start();
-    if (!started) {
-        showFeedback('Mic access denied — check browser permissions', 'incorrect');
-        return;
-    }
-
+    if (!started) { showFeedback('Mic access denied', 'incorrect'); return; }
     micActive = true;
     this.textContent = '🛑 Stop Listening';
-    this.classList.remove('btn-primary');
-    this.classList.add('btn-danger');
-
-    pitchDetector.onNoteDetected = (info) => {
-        if (!micActive) return;
-        updateTunerDisplay(info);
-        checkStringWalk(info);
-    };
+    this.classList.remove('btn-primary'); this.classList.add('btn-danger');
+    pitchDetector.onNoteDetected = (info) => { if (micActive) updateTunerDisplay(info); };
 });
 
 function updateTunerDisplay(info) {
-    const noteEl = document.getElementById('tunerNote');
-    const freqEl = document.getElementById('tunerFreq');
-    const centsEl = document.getElementById('centsLabel');
-    const indicator = document.getElementById('centsIndicator');
-
-    noteEl.textContent = info.note;
-    noteEl.style.color = getNoteColor(info.note);
-    freqEl.textContent = `${info.frequency.toFixed(1)} Hz`;
-
-    // Find nearest target string to show cents relative to it
-    let nearestTarget = null;
-    let nearestDist = Infinity;
-    for (const [name, data] of Object.entries(STRING_NAMES_MAP)) {
+    document.getElementById('tunerNote').textContent = info.note;
+    document.getElementById('tunerNote').style.color = getNoteColor(info.note);
+    document.getElementById('tunerFreq').textContent = `${info.frequency.toFixed(1)} Hz`;
+    let nearestTarget = null, nearestDist = Infinity;
+    for (const [, data] of Object.entries(STRING_NAMES_MAP)) {
         const dist = Math.abs(1200 * Math.log2(info.frequency / data.freq));
-        if (dist < nearestDist) {
-            nearestDist = dist;
-            nearestTarget = data;
-        }
+        if (dist < nearestDist) { nearestDist = dist; nearestTarget = data; }
     }
-
     if (nearestTarget && nearestDist < 200) {
         const cents = getCents(info.frequency, nearestTarget.freq);
-        centsEl.textContent = `${cents > 0 ? '+' : ''}${cents} cents`;
-        // Position indicator: 50% = center (in tune), 0% = -50 cents, 100% = +50 cents
+        document.getElementById('centsLabel').textContent = `${cents > 0 ? '+' : ''}${cents} cents`;
         const pct = Math.max(0, Math.min(100, 50 + cents));
-        indicator.style.left = pct + '%';
-
-        if (Math.abs(cents) < 8) {
-            indicator.style.background = 'var(--success)';
-            indicator.style.width = '6px';
-        } else if (Math.abs(cents) < 25) {
-            indicator.style.background = 'var(--warning)';
-            indicator.style.width = '4px';
-        } else {
-            indicator.style.background = 'var(--error)';
-            indicator.style.width = '4px';
-        }
+        const ind = document.getElementById('centsIndicator');
+        ind.style.left = pct + '%';
+        ind.style.background = Math.abs(cents) < 8 ? 'var(--success)' : Math.abs(cents) < 25 ? 'var(--warning)' : 'var(--error)';
+        ind.style.width = Math.abs(cents) < 8 ? '6px' : '4px';
     }
-
-    // Highlight matching string button
     document.querySelectorAll('.tuner-string-btn').forEach(btn => {
         btn.classList.remove('current');
-        const targetFreq = parseFloat(btn.dataset.freq);
-        if (isClose(info.frequency, targetFreq, 100)) {
-            btn.classList.add('current');
-        }
+        if (isClose(info.frequency, parseFloat(btn.dataset.freq), 100)) btn.classList.add('current');
     });
 }
 
-/* ── String Walk ── */
-function checkStringWalk(info) {
-    if (walkComplete || walkIndex >= STRING_ORDER.length) return;
-
-    const steps = document.querySelectorAll('.string-walk-step');
-    const target = STRING_ORDER[walkIndex];
-    const targetFreq = STRING_NAMES_MAP[target].freq;
-
-    // Check if detected note matches target string (within tolerance)
-    if (isClose(info.frequency, targetFreq, 50)) {
-        // Mark done
-        steps[walkIndex].classList.remove('active');
-        steps[walkIndex].classList.add('done');
-
-        playNoteSound(target === 'e' ? 'E' : target, walkIndex === 5 ? 1 : 6 - walkIndex, 0);
-        showFeedback(`${STRING_NAMES_MAP[target].label} ✓`, 'correct');
-
-        walkIndex++;
-
-        if (walkIndex >= STRING_ORDER.length) {
-            walkComplete = true;
-            document.getElementById('walkMessage').innerHTML =
-                '<span style="color:var(--success); font-weight:700;">All strings confirmed! 🎉</span>';
-        } else {
-            steps[walkIndex].classList.add('active');
-            const next = STRING_ORDER[walkIndex];
-            document.getElementById('walkMessage').textContent =
-                `Play the ${STRING_NAMES_MAP[next].label} string...`;
-        }
-    }
-}
-
-/* ── String Button Click → Play Reference Tone ── */
 document.querySelectorAll('.tuner-string-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         const note = btn.dataset.note;
-        // Map to string number for playNoteSound
         const idx = STRING_ORDER.indexOf(note);
-        const stringNum = idx === 5 ? 1 : 6 - idx; // E=6, A=5, D=4, G=3, B=2, e=1
-        playNoteSound(note === 'e' ? 'E' : note, stringNum, 0);
+        playNoteSound(note === 'e' ? 'E' : note, idx === 5 ? 1 : 6 - idx, 0);
     });
-});
-
-/* ── Reset Walk ── */
-document.getElementById('resetWalk').addEventListener('click', () => {
-    walkIndex = 0;
-    walkComplete = false;
-    const steps = document.querySelectorAll('.string-walk-step');
-    steps.forEach((s, i) => {
-        s.classList.remove('done', 'active');
-        if (i === 0) s.classList.add('active');
-    });
-    document.getElementById('walkMessage').textContent = 'Play the low E string (6th string)...';
 });
 
 function showFeedback(message, type) {
     const toast = document.getElementById('feedbackToast');
     toast.textContent = message;
     toast.className = `feedback-toast ${type} show`;
-    setTimeout(() => toast.classList.remove('show'), 1200);
+    setTimeout(() => toast.classList.remove('show'), 1500);
 }
+
+/* ─── INIT ─── */
+buildStep1();
+buildStep2();
+buildStep3();
+buildStep4();
+shuffleStep5();
+refreshPathway();
 </script>
 {% endblock %}
