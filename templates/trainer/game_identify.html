@@ -147,24 +147,19 @@ function buildFretboard() {
             cell.className = `fret-cell ${f === 0 ? 'fret-0' : ''}`;
 
             // Add inlay dots between strings 4 and 3 (D and G)
+            // Single inlay dots (between D and G strings)
             if (s === 4 && INLAY_FRETS.includes(f)) {
                 const inlay = document.createElement('div');
                 inlay.className = 'inlay-dot';
                 inlay.style.bottom = '-12px';
                 cell.appendChild(inlay);
             }
-            if (s === 4 && DOUBLE_INLAY_FRETS.includes(f)) {
-                const inlay1 = document.createElement('div');
-                inlay1.className = 'inlay-dot';
-                inlay1.style.bottom = '-8px';
-                inlay1.style.left = 'calc(50% - 10px)';
-                cell.appendChild(inlay1);
-                const inlay2 = document.createElement('div');
-                inlay2.className = 'inlay-dot';
-                inlay2.style.bottom = '-8px';
-                inlay2.style.right = 'calc(50% - 10px)';
-                inlay2.style.left = 'auto';
-                cell.appendChild(inlay2);
+            // Double inlay dots at 12th fret (one between A-D, one between G-B)
+            if (DOUBLE_INLAY_FRETS.includes(f) && (s === 5 || s === 3)) {
+                const inlay = document.createElement('div');
+                inlay.className = 'inlay-dot';
+                inlay.style.bottom = '-12px';
+                cell.appendChild(inlay);
             }
 
             const dot = document.createElement('div');

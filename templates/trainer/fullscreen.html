@@ -201,24 +201,19 @@
                     const cell = document.createElement('div');
                     cell.className = `fret-cell ${f === 0 ? 'fret-0' : ''}`;
 
+                    // Single inlay dots (between D and G strings)
                     if (s === 4 && INLAY_FRETS.includes(f)) {
                         const inlay = document.createElement('div');
                         inlay.className = 'inlay-dot';
                         inlay.style.bottom = '-12px';
                         cell.appendChild(inlay);
                     }
-                    if (s === 4 && DOUBLE_INLAY_FRETS.includes(f)) {
-                        const i1 = document.createElement('div');
-                        i1.className = 'inlay-dot';
-                        i1.style.bottom = '-8px';
-                        i1.style.left = 'calc(50% - 10px)';
-                        cell.appendChild(i1);
-                        const i2 = document.createElement('div');
-                        i2.className = 'inlay-dot';
-                        i2.style.bottom = '-8px';
-                        i2.style.right = 'calc(50% - 10px)';
-                        i2.style.left = 'auto';
-                        cell.appendChild(i2);
+                    // Double inlay dots at 12th fret (one between A-D, one between G-B)
+                    if (DOUBLE_INLAY_FRETS.includes(f) && (s === 5 || s === 3)) {
+                        const inlay = document.createElement('div');
+                        inlay.className = 'inlay-dot';
+                        inlay.style.bottom = '-12px';
+                        cell.appendChild(inlay);
                     }
 
                     const dot = document.createElement('div');
