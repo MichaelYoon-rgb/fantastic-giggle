@@ -6,13 +6,22 @@
 
 {% block content %}
 <div class="game-overlay-top">
-    <div>
-        <h1 class="game-title">🎸 Identify the Note</h1>
-        <p class="game-subtitle" id="gameSubtitle">A position is highlighted — name that note!</p>
+    <!-- Filter (inline, left side) -->
+    <div class="inline-filter">
+        <div class="inline-filter-row">
+            <div class="filter-group-pills" id="filterGroupPills">
+                <button class="filter-pill active" data-filter="all">All</button>
+                <button class="filter-pill" data-filter="naturals">Natural</button>
+                <button class="filter-pill" data-filter="sharps">Sharps</button>
+                <button class="filter-pill" data-filter="flats">Flats</button>
+                <button class="filter-pill" data-filter="custom">Custom</button>
+            </div>
+            <button class="flip-toggle" id="flipToggle" title="Flip fretboard orientation">
+                <span class="flip-icon">↕</span> Flip
+            </button>
+        </div>
+        <div class="filter-custom-notes" id="filterNotes" style="display:none;"></div>
     </div>
-    <button class="flip-toggle" id="flipToggle" title="Flip fretboard orientation">
-        <span class="flip-icon">↕</span> Flip
-    </button>
     <div class="game-score">
         <div class="score-item">
             <div class="score-value correct-color" id="scoreCorrect">0</div>
@@ -25,29 +34,6 @@
         <div class="score-item">
             <div class="score-value streak-color" id="scoreStreak">0</div>
             <div class="score-label">Streak</div>
-        </div>
-    </div>
-</div>
-
-<!-- Filter Panel (collapsible, overlaid) -->
-<div class="game-overlay-filter">
-    <div class="filter-panel">
-        <div class="filter-header" id="filterToggle" style="cursor:pointer;">
-            <div class="filter-title">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-                Note Filter
-            </div>
-            <span class="btn btn-ghost btn-sm" id="filterStatus">All Notes ▼</span>
-        </div>
-        <div id="filterBody" style="display:none;">
-            <div class="filter-groups">
-                <button class="filter-group-btn active" data-filter="all">All Notes</button>
-                <button class="filter-group-btn" data-filter="naturals">Naturals</button>
-                <button class="filter-group-btn" data-filter="sharps">Sharps</button>
-                <button class="filter-group-btn" data-filter="flats">Flats</button>
-                <button class="filter-group-btn" data-filter="custom">Custom</button>
-            </div>
-            <div class="filter-notes" id="filterNotes" style="display:none;"></div>
         </div>
     </div>
 </div>
@@ -269,23 +255,12 @@ function updateCustomFilter() {
     getNextNote();
 }
 
-// Toggle filter panel visibility
-document.getElementById('filterToggle').addEventListener('click', function() {
-    const body = document.getElementById('filterBody');
-    const status = document.getElementById('filterStatus');
-    if (body.style.display === 'none') {
-        body.style.display = 'block';
-        status.textContent = status.textContent.replace(' ▼', ' ▲');
-    } else {
-        body.style.display = 'none';
-        status.textContent = status.textContent.replace(' ▲', ' ▼');
-    }
-});
+// Toggle filter panel visibility — removed (inline pills now)
 
 // Filter handlers
-document.querySelectorAll('.filter-group-btn').forEach(btn => {
+document.querySelectorAll('.filter-pill').forEach(btn => {
     btn.addEventListener('click', () => {
-        document.querySelectorAll('.filter-group-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         const filter = btn.dataset.filter;
 
@@ -296,12 +271,6 @@ document.querySelectorAll('.filter-group-btn').forEach(btn => {
             document.getElementById('filterNotes').style.display = 'none';
             currentFilter = filter;
         }
-
-        const label = filter === 'all' ? 'All Notes' :
-            filter === 'naturals' ? 'Natural Notes' :
-            filter === 'sharps' ? 'Sharp Notes' :
-            filter === 'flats' ? 'Flat Notes' : 'Custom';
-        document.getElementById('filterStatus').textContent = label + ' ▲';
 
         // Auto-update: immediately fetch a new note with the new filter
         getNextNote();
@@ -652,28 +621,6 @@ document.getElementById('flipToggle').addEventListener('click', function() {
         }
     }
 });
-
-// Goofy subtitle rotation
-const GOOFY_SUBTITLES = [
-    'A position is highlighted — name that note!',
-    'Can you hear the fretboard whispering? 🤫',
-    'Your guitar teacher would be proud... maybe 😏',
-    'Notes go brrrrr 🎵',
-    'Warning: may cause sudden confidence in jam sessions',
-    'One note at a time, legend 🏆',
-    'Press the right one. No pressure. 😬',
-    'The fretboard has trust issues. Prove yourself. 🎸',
-];
-let subtitleIdx = 0;
-setInterval(() => {
-    subtitleIdx = (subtitleIdx + 1) % GOOFY_SUBTITLES.length;
-    const el = document.getElementById('gameSubtitle');
-    el.style.opacity = '0';
-    setTimeout(() => {
-        el.textContent = GOOFY_SUBTITLES[subtitleIdx];
-        el.style.opacity = '1';
-    }, 300);
-}, 12000);
 
 // Init
 buildFretboard();

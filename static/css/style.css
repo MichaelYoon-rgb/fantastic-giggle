@@ -783,17 +783,51 @@ a:hover { color: var(--accent-hover); }
 .game-overlay-top .game-title { font-size: 1.2rem; margin: 0; }
 .game-overlay-top .game-subtitle { font-size: 0.78rem; margin: 0; }
 
-.game-overlay-filter {
-    position: relative;
-    z-index: 12;
-    margin: 0 1rem 0.25rem;
+/* Inline filter (left side of game header) */
+.inline-filter {
+    flex: 1;
+    min-width: 0;
 }
-
-.game-overlay-filter .filter-panel {
-    background: rgba(255, 252, 248, 0.88);
-    backdrop-filter: blur(12px);
-    border-radius: var(--radius-lg);
-    margin-bottom: 0;
+.inline-filter-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+.filter-group-pills {
+    display: flex;
+    gap: 0.25rem;
+    flex-wrap: wrap;
+}
+.filter-pill {
+    font-family: var(--font-fun);
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.3rem 0.7rem;
+    border-radius: 999px;
+    border: 1.5px solid var(--border);
+    background: rgba(255,255,255,0.6);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+.filter-pill:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+.filter-pill.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+    box-shadow: 0 2px 8px var(--accent-glow);
+}
+.filter-custom-notes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    margin-top: 0.35rem;
+    padding: 0.35rem 0;
 }
 
 .game-overlay-bottom {
