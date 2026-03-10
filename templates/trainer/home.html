@@ -1,0 +1,229 @@
+{% extends "trainer/base.html" %}
+
+{% block title %}Every Guitar Note — Master the Fretboard{% endblock %}
+
+{% block content %}
+<!-- Hero -->
+<div class="hero">
+    <h1>Master Every Note 🎸</h1>
+    <p>Learn every note on the guitar fretboard with adaptive, game-based training that focuses on your weak spots.</p>
+    <div class="hero-actions">
+        <a href="{% url 'game_identify' %}" class="btn btn-lg btn-primary">🎯 Identify Notes</a>
+        <a href="{% url 'game_find' %}" class="btn btn-lg btn-outline">🔍 Find Notes</a>
+        <a href="{% url 'tuner' %}" class="btn btn-lg btn-outline">🎤 Tuner</a>
+    </div>
+</div>
+
+<!-- Quick Stats (logged in) -->
+{% if user.is_authenticated %}
+<div class="stats-row">
+    <div class="stat-card">
+        <div class="stat-value">{{ total_attempts }}</div>
+        <div class="stat-label">Total Attempts</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ total_correct }}</div>
+        <div class="stat-label">Correct</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ accuracy }}%</div>
+        <div class="stat-label">Accuracy</div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Mode Cards -->
+<div class="mode-cards">
+    <a href="{% url 'game_identify' %}" class="mode-card">
+        <div class="mode-icon">🎯</div>
+        <h3>Identify the Note</h3>
+        <p>A random position on the fretboard is highlighted. Can you name the note? Harder notes appear more often.</p>
+    </a>
+    <a href="{% url 'game_find' %}" class="mode-card">
+        <div class="mode-icon">🔍</div>
+        <h3>Find the Note</h3>
+        <p>Given a note name and region, click the correct position. Great for building spatial awareness.</p>
+    </a>
+    <a href="{% url 'tuner' %}" class="mode-card">
+        <div class="mode-icon">🎤</div>
+        <h3>Tuner &amp; String Walk</h3>
+        <p>Use your real guitar! Tune up, then walk each string E→A→D→G→B→e confirming each note.</p>
+    </a>
+    {% if user.is_authenticated %}
+    <a href="{% url 'stats' %}" class="mode-card">
+        <div class="mode-icon">📊</div>
+        <h3>View Your Stats</h3>
+        <p>Accuracy per note, fretboard heatmap, and track your improvement over time.</p>
+    </a>
+    {% else %}
+    <a href="{% url 'signup' %}" class="mode-card">
+        <div class="mode-icon">💾</div>
+        <h3>Save Progress</h3>
+        <p>Create a free account to track which notes you struggle with. The game adapts to your weak spots.</p>
+    </a>
+    {% endif %}
+</div>
+
+<!-- EADGBE Mnemonics -->
+<div class="mnemonics-section">
+    <div class="mnemonics-header">
+        <h2>Remember the Strings: EADGBE</h2>
+        <div class="string-letters">
+            <span class="string-letter">E</span>
+            <span class="string-letter">A</span>
+            <span class="string-letter">D</span>
+            <span class="string-letter">G</span>
+            <span class="string-letter">B</span>
+            <span class="string-letter">e</span>
+        </div>
+    </div>
+    <div class="mnemonics-grid" id="mnemonicsGrid"></div>
+</div>
+
+<!-- Preview Fretboard -->
+<div class="card" style="margin-top: 2rem;">
+    <div class="card-header">
+        <div class="card-title">Guitar Fretboard Reference</div>
+        <button class="btn btn-sm btn-ghost" id="toggleNotes">Show All Notes</button>
+    </div>
+    <div class="fretboard-wrapper">
+        <div class="fretboard" id="previewFretboard">
+            <div class="fret-numbers">
+                <div class="fret-number"></div>
+                <div class="fret-number">1</div>
+                <div class="fret-number">2</div>
+                <div class="fret-number">3</div>
+                <div class="fret-number">4</div>
+                <div class="fret-number">5</div>
+                <div class="fret-number">6</div>
+                <div class="fret-number">7</div>
+                <div class="fret-number">8</div>
+                <div class="fret-number">9</div>
+                <div class="fret-number">10</div>
+                <div class="fret-number">11</div>
+                <div class="fret-number">12</div>
+            </div>
+            <div class="strings-container" id="previewStrings"></div>
+            <div class="fret-markers">
+                <div class="fret-marker"></div>
+                <div class="fret-marker"></div>
+                <div class="fret-marker"></div>
+                <div class="fret-marker"><div class="fret-marker-dot"></div></div>
+                <div class="fret-marker"></div>
+                <div class="fret-marker"><div class="fret-marker-dot"></div></div>
+                <div class="fret-marker"></div>
+                <div class="fret-marker"><div class="fret-marker-dot"></div></div>
+                <div class="fret-marker"></div>
+                <div class="fret-marker"><div class="fret-marker-dot"></div></div>
+                <div class="fret-marker"></div>
+                <div class="fret-marker"></div>
+                <div class="fret-marker">
+                    <div class="fret-marker-dot"></div>
+                    <div class="fret-marker-dot"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const FRETBOARD = {{ fretboard|safe }};
+const STRING_NAMES = {1: 'e', 2: 'B', 3: 'G', 4: 'D', 5: 'A', 6: 'E'};
+const INLAY_FRETS = [3, 5, 7, 9];
+const DOUBLE_INLAY_FRETS = [12];
+
+/* ── Build preview fretboard ── */
+function buildPreviewFretboard() {
+    const container = document.getElementById('previewStrings');
+    for (let s = 6; s >= 1; s--) {
+        const row = document.createElement('div');
+        row.className = 'string-row';
+        const label = document.createElement('div');
+        label.className = 'string-label';
+        label.textContent = STRING_NAMES[s];
+        row.appendChild(label);
+
+        for (let f = 0; f <= 12; f++) {
+            const cell = document.createElement('div');
+            cell.className = `fret-cell ${f === 0 ? 'fret-0' : ''}`;
+
+            if (s === 4 && INLAY_FRETS.includes(f)) {
+                const inlay = document.createElement('div');
+                inlay.className = 'inlay-dot';
+                inlay.style.bottom = '-12px';
+                cell.appendChild(inlay);
+            }
+            if (s === 4 && DOUBLE_INLAY_FRETS.includes(f)) {
+                const i1 = document.createElement('div');
+                i1.className = 'inlay-dot';
+                i1.style.bottom = '-8px';
+                i1.style.left = 'calc(50% - 10px)';
+                cell.appendChild(i1);
+                const i2 = document.createElement('div');
+                i2.className = 'inlay-dot';
+                i2.style.bottom = '-8px';
+                i2.style.right = 'calc(50% - 10px)';
+                i2.style.left = 'auto';
+                cell.appendChild(i2);
+            }
+
+            const dot = document.createElement('div');
+            dot.className = 'note-dot';
+            dot.dataset.string = s;
+            dot.dataset.fret = f;
+            dot.textContent = FRETBOARD[`${s}-${f}`];
+            cell.appendChild(dot);
+            row.appendChild(cell);
+        }
+        container.appendChild(row);
+    }
+}
+
+buildPreviewFretboard();
+
+/* ── Toggle notes visibility ── */
+let showAllNotes = false;
+document.getElementById('toggleNotes').addEventListener('click', function() {
+    showAllNotes = !showAllNotes;
+    this.textContent = showAllNotes ? 'Hide Notes' : 'Show All Notes';
+    document.querySelectorAll('#previewStrings .note-dot').forEach(dot => {
+        if (showAllNotes) {
+            dot.classList.add('show', 'color-coded');
+            const note = FRETBOARD[`${dot.dataset.string}-${dot.dataset.fret}`];
+            dot.style.background = getNoteColor(note);
+        } else {
+            dot.classList.remove('show', 'color-coded');
+            dot.style.background = '';
+        }
+    });
+});
+
+/* ── EADGBE Mnemonics ── */
+const MNEMONICS = [
+    { emoji: '🐘', text: '<b>E</b>very <b>A</b>cid <b>D</b>ealer <b>G</b>ets <b>B</b>usted <b>E</b>ventually' },
+    { emoji: '🍳', text: '<b>E</b>ddie <b>A</b>te <b>D</b>ynamite, <b>G</b>ood <b>B</b>ye <b>E</b>ddie' },
+    { emoji: '🐢', text: '<b>E</b>very <b>A</b>mateur <b>D</b>oes <b>G</b>et <b>B</b>etter <b>E</b>ventually' },
+    { emoji: '🍕', text: '<b>E</b>at <b>A</b>ll <b>D</b>ay, <b>G</b>et <b>B</b>ig <b>E</b>asy' },
+    { emoji: '🎸', text: '<b>E</b>very <b>A</b>coustic <b>D</b>eserves <b>G</b>reat <b>B</b>ig <b>E</b>ars' },
+    { emoji: '🌊', text: '<b>E</b>lephants <b>A</b>nd <b>D</b>onkeys <b>G</b>row <b>B</b>ig <b>E</b>ars' },
+];
+
+function buildMnemonics() {
+    const grid = document.getElementById('mnemonicsGrid');
+    // Pick a random shuffle each page load
+    const shuffled = [...MNEMONICS].sort(() => Math.random() - 0.5);
+    shuffled.forEach(m => {
+        const card = document.createElement('div');
+        card.className = 'mnemonic-card';
+        card.innerHTML = `
+            <span class="mnemonic-emoji">${m.emoji}</span>
+            <span class="mnemonic-text">${m.text}</span>
+        `;
+        grid.appendChild(card);
+    });
+}
+buildMnemonics();
+</script>
+{% endblock %}

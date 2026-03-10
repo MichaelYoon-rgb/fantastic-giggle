@@ -1,0 +1,47 @@
+{% extends "trainer/base.html" %}
+
+{% block title %}Sign Up — Fretboard Trainer{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="card">
+        <h1 class="form-title">Create Account</h1>
+        <p class="form-subtitle">Sign up to save your progress and get adaptive training</p>
+
+        {% if form.errors %}
+        <div class="alert alert-error">
+            {% for field in form %}
+                {% for error in field.errors %}
+                    <div>{{ error }}</div>
+                {% endfor %}
+            {% endfor %}
+            {% for error in form.non_field_errors %}
+                <div>{{ error }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <form method="post" action="{% url 'signup' %}">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="id_username">Username</label>
+                <input type="text" id="id_username" name="username" required autofocus placeholder="Choose a username"
+                    value="{{ form.username.value|default:'' }}">
+            </div>
+            <div class="form-group">
+                <label for="id_password1">Password</label>
+                <input type="password" id="id_password1" name="password1" required placeholder="Choose a password">
+            </div>
+            <div class="form-group">
+                <label for="id_password2">Confirm Password</label>
+                <input type="password" id="id_password2" name="password2" required placeholder="Confirm your password">
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg" style="width:100%; margin-top:0.5rem;">Create Account</button>
+        </form>
+
+        <div class="form-footer">
+            Already have an account? <a href="{% url 'login' %}">Login</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

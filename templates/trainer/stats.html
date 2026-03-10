@@ -1,0 +1,197 @@
+{% extends "trainer/base.html" %}
+
+{% block title %}Your Stats — Fretboard Trainer{% endblock %}
+{% block nav_stats %}active{% endblock %}
+
+{% block content %}
+<div class="game-header">
+    <div>
+        <h1 class="game-title">Your Stats</h1>
+        <p class="game-subtitle">Track your fretboard mastery progress</p>
+    </div>
+</div>
+
+<!-- Summary Stats -->
+<div class="stats-row">
+    <div class="stat-card">
+        <div class="stat-value">{{ total_attempts }}</div>
+        <div class="stat-label">Total Attempts</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ total_correct }}</div>
+        <div class="stat-label">Correct</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" style="color: {% if accuracy >= 80 %}var(--success){% elif accuracy >= 50 %}var(--warning){% else %}var(--error){% endif %}">{{ accuracy }}%</div>
+        <div class="stat-label">Accuracy</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ note_stats|length }}</div>
+        <div class="stat-label">Notes Practiced</div>
+    </div>
+</div>
+
+<!-- Per-Note Stats -->
+<div class="card" style="margin-bottom: 1.5rem;">
+    <div class="card-header">
+        <div class="card-title">Accuracy by Note</div>
+    </div>
+    {% if note_stats %}
+    <div class="stats-grid">
+        {% for stat in note_stats %}
+        <div class="note-stat-card">
+            <div class="note-stat-note">{{ stat.note }}</div>
+            <div class="note-stat-accuracy" style="color: {% if stat.accuracy >= 0.8 %}var(--success){% elif stat.accuracy >= 0.5 %}var(--warning){% else %}var(--error){% endif %}">
+                {{ stat.accuracy_pct }}%
+            </div>
+            <div class="note-stat-detail">{{ stat.correct_attempts }}/{{ stat.total_attempts }} • streak: {{ stat.streak }}</div>
+            <div class="accuracy-bar">
+                <div class="accuracy-fill {% if stat.accuracy >= 0.8 %}good{% elif stat.accuracy >= 0.5 %}medium{% else %}bad{% endif %}"
+                     style="width: {{ stat.accuracy_pct }}%"></div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p style="color: var(--text-muted); text-align: center; padding: 2rem;">No stats yet. Start playing to track your progress!</p>
+    {% endif %}
+</div>
+
+<!-- Fretboard Heatmap -->
+<div class="card" style="margin-bottom: 1.5rem;">
+    <div class="card-header">
+        <div class="card-title">Fretboard Heatmap</div>
+        <span style="font-size: 0.8rem; color: var(--text-muted);">Green = High accuracy, Red = Low accuracy</span>
+    </div>
+    <div class="fretboard-wrapper">
+        <div class="fretboard" id="heatmapFretboard">
+            <div class="fret-numbers">
+                <div class="fret-number"></div>
+                <div class="fret-number">1</div>
+                <div class="fret-number">2</div>
+                <div class="fret-number">3</div>
+                <div class="fret-number">4</div>
+                <div class="fret-number">5</div>
+                <div class="fret-number">6</div>
+                <div class="fret-number">7</div>
+                <div class="fret-number">8</div>
+                <div class="fret-number">9</div>
+                <div class="fret-number">10</div>
+                <div class="fret-number">11</div>
+                <div class="fret-number">12</div>
+            </div>
+            <div class="strings-container" id="heatmapStrings"></div>
+            <div class="fret-markers">
+                <div class="fret-marker"></div>
+                <div class="fret-marker"></div>
+                <div class="fret-marker"></div>
+                <div class="fret-marker"><div class="fret-marker-dot"></div></div>
+                <div class="fret-marker"></div>
+                <div class="fret-marker"><div class="fret-marker-dot"></div></div>
+                <div class="fret-marker"></div>
+                <div class="fret-marker"><div class="fret-marker-dot"></div></div>
+                <div class="fret-marker"></div>
+                <div class="fret-marker"><div class="fret-marker-dot"></div></div>
+                <div class="fret-marker"></div>
+                <div class="fret-marker"></div>
+                <div class="fret-marker">
+                    <div class="fret-marker-dot"></div>
+                    <div class="fret-marker-dot"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Attempts -->
+<div class="card">
+    <div class="card-header">
+        <div class="card-title">Recent Attempts</div>
+    </div>
+    {% if recent_attempts %}
+    <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <th style="padding: 0.5rem; text-align: left; font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">Result</th>
+                    <th style="padding: 0.5rem; text-align: left; font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">Note</th>
+                    <th style="padding: 0.5rem; text-align: left; font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">Position</th>
+                    <th style="padding: 0.5rem; text-align: left; font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">Mode</th>
+                    <th style="padding: 0.5rem; text-align: left; font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for attempt in recent_attempts %}
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 0.5rem;">
+                        {% if attempt.correct %}
+                        <span style="color: var(--success); font-weight: 700;">✓</span>
+                        {% else %}
+                        <span style="color: var(--error); font-weight: 700;">✗</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 0.5rem; font-weight: 600;">{{ attempt.note }}</td>
+                    <td style="padding: 0.5rem; color: var(--text-secondary);">String {{ attempt.string_number }}, Fret {{ attempt.fret_number }}</td>
+                    <td style="padding: 0.5rem; color: var(--text-secondary);">{{ attempt.get_game_mode_display }}</td>
+                    <td style="padding: 0.5rem; color: var(--text-muted); font-size: 0.85rem;">{{ attempt.timestamp|timesince }} ago</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p style="color: var(--text-muted); text-align: center; padding: 2rem;">No attempts yet.</p>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const FRETBOARD = {{ fretboard|safe }};
+const HEATMAP = {{ heatmap|safe }};
+const STRING_NAMES = {1: 'e', 2: 'B', 3: 'G', 4: 'D', 5: 'A', 6: 'E'};
+
+function buildHeatmap() {
+    const container = document.getElementById('heatmapStrings');
+    for (let s = 6; s >= 1; s--) {
+        const row = document.createElement('div');
+        row.className = 'string-row';
+        const label = document.createElement('div');
+        label.className = 'string-label';
+        label.textContent = STRING_NAMES[s];
+        row.appendChild(label);
+
+        for (let f = 0; f <= 12; f++) {
+            const cell = document.createElement('div');
+            cell.className = `fret-cell ${f === 0 ? 'fret-0' : ''}`;
+            const dot = document.createElement('div');
+            dot.className = 'note-dot show';
+            dot.textContent = FRETBOARD[`${s}-${f}`];
+
+            const key = `${s}-${f}`;
+            if (HEATMAP[key]) {
+                const acc = HEATMAP[key].accuracy;
+                const attempts = HEATMAP[key].attempts;
+                if (acc >= 80) {
+                    dot.style.background = `rgba(34, 197, 94, ${0.3 + (acc/100 * 0.4)})`;
+                    dot.style.color = '#22c55e';
+                } else if (acc >= 50) {
+                    dot.style.background = `rgba(245, 158, 11, ${0.3 + (acc/100 * 0.3)})`;
+                    dot.style.color = '#f59e0b';
+                } else {
+                    dot.style.background = `rgba(239, 68, 68, ${0.3 + ((100-acc)/100 * 0.4)})`;
+                    dot.style.color = '#ef4444';
+                }
+                dot.title = `${acc}% accuracy (${attempts} attempts)`;
+            }
+
+            cell.appendChild(dot);
+            row.appendChild(cell);
+        }
+        container.appendChild(row);
+    }
+}
+
+buildHeatmap();
+</script>
+{% endblock %}

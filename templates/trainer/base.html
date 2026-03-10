@@ -1,0 +1,144 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Every Guitar Note{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v={% now 'U' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Grain + noise overlays are in CSS ::before / ::after -->
+
+    <!-- Floating pastel blobs -->
+    <div class="abstract-shapes">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+        <div class="blob blob-4"></div>
+        <div class="blob blob-5"></div>
+    </div>
+
+    <!-- SVG illustrations (guitar, amp, pick, headphones) -->
+    <div class="abstract-shapes">
+        <svg class="music-illustration guitar-1" width="120" viewBox="0 0 120 320">
+            <rect x="48" y="0" width="24" height="50" rx="5" fill="currentColor" opacity="0.7"/>
+            <circle cx="54" cy="12" r="4" fill="currentColor" opacity="0.5"/>
+            <circle cx="66" cy="12" r="4" fill="currentColor" opacity="0.5"/>
+            <circle cx="54" cy="26" r="4" fill="currentColor" opacity="0.5"/>
+            <circle cx="66" cy="26" r="4" fill="currentColor" opacity="0.5"/>
+            <rect x="46" y="48" width="28" height="5" rx="2" fill="currentColor" opacity="0.9"/>
+            <rect x="50" y="53" width="20" height="120" rx="3" fill="currentColor" opacity="0.6"/>
+            <circle cx="60" cy="78" r="2.5" fill="currentColor" opacity="0.3"/>
+            <circle cx="60" cy="98" r="2.5" fill="currentColor" opacity="0.3"/>
+            <circle cx="60" cy="118" r="2.5" fill="currentColor" opacity="0.3"/>
+            <ellipse cx="60" cy="200" rx="42" ry="30" fill="currentColor" opacity="0.5"/>
+            <ellipse cx="60" cy="260" rx="55" ry="45" fill="currentColor" opacity="0.5"/>
+            <ellipse cx="60" cy="230" rx="32" ry="20" fill="currentColor" opacity="0.5"/>
+            <circle cx="60" cy="230" r="18" fill="currentColor" opacity="0.2"/>
+            <circle cx="60" cy="230" r="15" fill="none" stroke="currentColor" stroke-width="2" opacity="0.3"/>
+            <rect x="45" y="268" width="30" height="6" rx="3" fill="currentColor" opacity="0.7"/>
+        </svg>
+
+        <svg class="music-illustration amp-1" width="100" viewBox="0 0 120 140">
+            <rect x="5" y="5" width="110" height="130" rx="10" fill="currentColor" opacity="0.5"/>
+            <rect x="10" y="10" width="100" height="120" rx="8" fill="currentColor" opacity="0.3"/>
+            <rect x="15" y="15" width="90" height="30" rx="5" fill="currentColor" opacity="0.4"/>
+            <circle cx="32" cy="30" r="6" fill="currentColor" opacity="0.6"/>
+            <circle cx="52" cy="30" r="6" fill="currentColor" opacity="0.6"/>
+            <circle cx="72" cy="30" r="6" fill="currentColor" opacity="0.6"/>
+            <circle cx="92" cy="30" r="6" fill="currentColor" opacity="0.6"/>
+            <rect x="15" y="50" width="90" height="75" rx="5" fill="currentColor" opacity="0.2"/>
+            <circle cx="60" cy="87" r="28" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.15"/>
+            <circle cx="60" cy="87" r="6" fill="currentColor" opacity="0.1"/>
+            <path d="M40 5 Q40 -5 50 -5 L70 -5 Q80 -5 80 5" stroke="currentColor" stroke-width="3" fill="none" opacity="0.5" stroke-linecap="round"/>
+        </svg>
+
+        <svg class="music-illustration pick-1" width="50" viewBox="0 0 60 80">
+            <path d="M30 75 C12 55 5 35 10 18 C13 8 20 2 30 2 C40 2 47 8 50 18 C55 35 48 55 30 75Z" fill="currentColor" opacity="0.5"/>
+            <path d="M30 65 C18 50 12 35 16 22 C18 14 23 10 30 10 C37 10 42 14 44 22 C48 35 42 50 30 65Z" fill="none" stroke="currentColor" stroke-width="1" opacity="0.25"/>
+        </svg>
+
+        <svg class="music-illustration headphones-1" width="80" viewBox="0 0 100 100">
+            <path d="M15 55 C15 25 30 8 50 8 C70 8 85 25 85 55" stroke="currentColor" stroke-width="5" fill="none" opacity="0.5" stroke-linecap="round"/>
+            <path d="M35 12 C38 8 45 5 50 5 C55 5 62 8 65 12" stroke="currentColor" stroke-width="8" fill="none" opacity="0.3" stroke-linecap="round"/>
+            <rect x="5" y="48" width="24" height="35" rx="10" fill="currentColor" opacity="0.5"/>
+            <rect x="8" y="51" width="18" height="29" rx="8" fill="currentColor" opacity="0.3"/>
+            <rect x="71" y="48" width="24" height="35" rx="10" fill="currentColor" opacity="0.5"/>
+            <rect x="74" y="51" width="18" height="29" rx="8" fill="currentColor" opacity="0.3"/>
+        </svg>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="{% url 'home' %}" class="nav-brand">
+                <span class="brand-emoji">🎸</span>
+                <span>Every Guitar Note</span>
+            </a>
+            <div class="nav-links" id="navLinks">
+                <a href="{% url 'game_identify' %}" class="nav-link {% block nav_identify %}{% endblock %}">🎯 Identify</a>
+                <a href="{% url 'game_find' %}" class="nav-link {% block nav_find %}{% endblock %}">🔍 Find</a>
+                <a href="{% url 'tuner' %}" class="nav-link {% block nav_tuner %}{% endblock %}">🎤 Tuner</a>
+                {% if user.is_authenticated %}
+                    <a href="{% url 'stats' %}" class="nav-link {% block nav_stats %}{% endblock %}">📊 Stats</a>
+                    <div class="nav-user">
+                        <span class="nav-username">👋 {{ user.username }}</span>
+                        <a href="{% url 'logout' %}" class="btn btn-sm btn-outline">Logout</a>
+                    </div>
+                {% else %}
+                    <a href="{% url 'login' %}" class="btn btn-sm btn-outline">Login</a>
+                    <a href="{% url 'signup' %}" class="btn btn-sm btn-primary">Sign Up</a>
+                {% endif %}
+            </div>
+            <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <script src="{% static 'js/shared.js' %}?v={% now 'U' %}"></script>
+    <script>
+        // Mobile nav toggle
+        document.getElementById('navToggle')?.addEventListener('click', function() {
+            document.getElementById('navLinks').classList.toggle('active');
+            this.classList.toggle('active');
+        });
+
+        // CSRF token helper
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        const csrftoken = getCookie('csrftoken');
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

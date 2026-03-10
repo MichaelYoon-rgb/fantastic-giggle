@@ -1,0 +1,309 @@
+{% extends "trainer/base.html" %}
+
+{% block title %}Tuner & String Walk — Every Guitar Note{% endblock %}
+{% block nav_tuner %}active{% endblock %}
+
+{% block content %}
+<div class="game-header">
+    <div>
+        <h1 class="game-title">Tuner & String Walk</h1>
+        <p class="game-subtitle">Plug in your guitar — tune up and walk each open string</p>
+    </div>
+</div>
+
+<div class="tuner-container">
+    <!-- Tuner Display -->
+    <div class="tuner-display" id="tunerDisplay">
+        <div class="tuner-note-display" id="tunerNote">—</div>
+        <div class="tuner-freq" id="tunerFreq">Play a note...</div>
+        <div class="tuner-cents-bar">
+            <div class="tuner-cents-indicator" id="centsIndicator"></div>
+        </div>
+        <div class="tuner-cents-label" id="centsLabel">0 cents</div>
+
+        <div class="tuner-strings" id="tunerStrings">
+            <button class="tuner-string-btn" data-note="E" data-freq="82.41">E</button>
+            <button class="tuner-string-btn" data-note="A" data-freq="110.00">A</button>
+            <button class="tuner-string-btn" data-note="D" data-freq="146.83">D</button>
+            <button class="tuner-string-btn" data-note="G" data-freq="196.00">G</button>
+            <button class="tuner-string-btn" data-note="B" data-freq="246.94">B</button>
+            <button class="tuner-string-btn" data-note="e" data-freq="329.63">e</button>
+        </div>
+    </div>
+
+    <!-- Mic Controls -->
+    <div style="text-align:center; margin-bottom:1.5rem;">
+        <button class="btn btn-lg btn-primary" id="micStartBtn">🎤 Start Listening</button>
+    </div>
+
+    <!-- String Walk Exercise -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">String Walk Exercise</div>
+            <button class="btn btn-sm btn-ghost" id="resetWalk">Reset</button>
+        </div>
+        <p style="color:var(--text-secondary); font-size:0.88rem; margin-bottom:1rem;">
+            Play each open string from low E to high e. The tuner will detect when you hit the right note!
+        </p>
+        <div class="string-walk" id="stringWalk">
+            <div class="string-walk-step active" data-target="E" data-freq="82.41">E</div>
+            <div class="string-walk-arrow">→</div>
+            <div class="string-walk-step" data-target="A" data-freq="110.00">A</div>
+            <div class="string-walk-arrow">→</div>
+            <div class="string-walk-step" data-target="D" data-freq="146.83">D</div>
+            <div class="string-walk-arrow">→</div>
+            <div class="string-walk-step" data-target="G" data-freq="196.00">G</div>
+            <div class="string-walk-arrow">→</div>
+            <div class="string-walk-step" data-target="B" data-freq="246.94">B</div>
+            <div class="string-walk-arrow">→</div>
+            <div class="string-walk-step" data-target="e" data-freq="329.63">e</div>
+        </div>
+        <div id="walkMessage" style="text-align:center; font-family:var(--font-fun); font-size:0.9rem; color:var(--text-muted); margin-top:0.5rem;">
+            Play the low E string (6th string)...
+        </div>
+    </div>
+
+    <!-- Reference: Standard Tuning -->
+    <div class="card" style="margin-top:1rem;">
+        <div class="card-header">
+            <div class="card-title">Standard Tuning Reference</div>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(6, 1fr); gap:0.5rem; text-align:center;">
+            <div>
+                <div style="font-family:var(--font-fun); font-size:1.4rem; font-weight:700; color:var(--pastel-mint);">E</div>
+                <div style="font-size:0.72rem; color:var(--text-muted);">82.41 Hz</div>
+                <div style="font-size:0.68rem; color:var(--text-muted);">6th string</div>
+            </div>
+            <div>
+                <div style="font-family:var(--font-fun); font-size:1.4rem; font-weight:700; color:var(--pastel-sky);">A</div>
+                <div style="font-size:0.72rem; color:var(--text-muted);">110.0 Hz</div>
+                <div style="font-size:0.68rem; color:var(--text-muted);">5th string</div>
+            </div>
+            <div>
+                <div style="font-family:var(--font-fun); font-size:1.4rem; font-weight:700; color:var(--pastel-yellow);">D</div>
+                <div style="font-size:0.72rem; color:var(--text-muted);">146.8 Hz</div>
+                <div style="font-size:0.68rem; color:var(--text-muted);">4th string</div>
+            </div>
+            <div>
+                <div style="font-family:var(--font-fun); font-size:1.4rem; font-weight:700; color:var(--pastel-peach);">G</div>
+                <div style="font-size:0.72rem; color:var(--text-muted);">196.0 Hz</div>
+                <div style="font-size:0.68rem; color:var(--text-muted);">3rd string</div>
+            </div>
+            <div>
+                <div style="font-family:var(--font-fun); font-size:1.4rem; font-weight:700; color:var(--pastel-lavender);">B</div>
+                <div style="font-size:0.72rem; color:var(--text-muted);">247.0 Hz</div>
+                <div style="font-size:0.68rem; color:var(--text-muted);">2nd string</div>
+            </div>
+            <div>
+                <div style="font-family:var(--font-fun); font-size:1.4rem; font-weight:700; color:var(--pastel-pink);">e</div>
+                <div style="font-size:0.72rem; color:var(--text-muted);">329.6 Hz</div>
+                <div style="font-size:0.68rem; color:var(--text-muted);">1st string</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Feedback Toast -->
+<div class="feedback-toast" id="feedbackToast"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* ─── Tuner & String Walk ─── */
+
+const NOTE_FREQS = {
+    'E2': 82.41, 'A2': 110.00, 'D3': 146.83, 'G3': 196.00, 'B3': 246.94, 'E4': 329.63,
+};
+
+const STRING_ORDER = ['E', 'A', 'D', 'G', 'B', 'e'];
+const STRING_NAMES_MAP = {
+    'E': { label: 'Low E (6th)', freq: 82.41 },
+    'A': { label: 'A (5th)', freq: 110.00 },
+    'D': { label: 'D (4th)', freq: 146.83 },
+    'G': { label: 'G (3rd)', freq: 196.00 },
+    'B': { label: 'B (2nd)', freq: 246.94 },
+    'e': { label: 'High E (1st)', freq: 329.63 },
+};
+
+let pitchDetector = null;
+let micActive = false;
+let walkIndex = 0;
+let walkComplete = false;
+
+// Frequency to note + cents
+const ALL_NOTES_CHROMATIC = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
+function freqToNote(freq) {
+    if (freq <= 0) return { note: '—', octave: 0, cents: 0 };
+    const semitones = 12 * Math.log2(freq / 440.0);
+    const rounded = Math.round(semitones);
+    const cents = Math.round((semitones - rounded) * 100);
+    const noteIndex = ((rounded % 12) + 12 + 9) % 12; // A is index 0 at 440
+    const octave = Math.floor((rounded + 9) / 12) + 4;
+    return {
+        note: ALL_NOTES_CHROMATIC[noteIndex],
+        octave: octave,
+        cents: cents,
+    };
+}
+
+// Detect if frequency is close to a target
+function isClose(detectedFreq, targetFreq, toleranceCents = 50) {
+    if (detectedFreq <= 0 || targetFreq <= 0) return false;
+    const cents = 1200 * Math.log2(detectedFreq / targetFreq);
+    return Math.abs(cents) <= toleranceCents;
+}
+
+function getCents(detectedFreq, targetFreq) {
+    if (detectedFreq <= 0 || targetFreq <= 0) return 0;
+    return Math.round(1200 * Math.log2(detectedFreq / targetFreq));
+}
+
+/* ── Mic Start/Stop ── */
+document.getElementById('micStartBtn').addEventListener('click', async function() {
+    if (micActive) {
+        // Stop
+        if (pitchDetector) { pitchDetector.stop(); pitchDetector = null; }
+        micActive = false;
+        this.textContent = '🎤 Start Listening';
+        this.classList.remove('btn-danger');
+        this.classList.add('btn-primary');
+        document.getElementById('tunerNote').textContent = '—';
+        document.getElementById('tunerFreq').textContent = 'Play a note...';
+        document.getElementById('centsLabel').textContent = '0 cents';
+        return;
+    }
+
+    // Start
+    pitchDetector = new PitchDetector();
+    const started = await pitchDetector.start();
+    if (!started) {
+        showFeedback('Mic access denied — check browser permissions', 'incorrect');
+        return;
+    }
+
+    micActive = true;
+    this.textContent = '🛑 Stop Listening';
+    this.classList.remove('btn-primary');
+    this.classList.add('btn-danger');
+
+    pitchDetector.onNoteDetected = (info) => {
+        if (!micActive) return;
+        updateTunerDisplay(info);
+        checkStringWalk(info);
+    };
+});
+
+function updateTunerDisplay(info) {
+    const noteEl = document.getElementById('tunerNote');
+    const freqEl = document.getElementById('tunerFreq');
+    const centsEl = document.getElementById('centsLabel');
+    const indicator = document.getElementById('centsIndicator');
+
+    noteEl.textContent = info.note;
+    noteEl.style.color = getNoteColor(info.note);
+    freqEl.textContent = `${info.frequency.toFixed(1)} Hz`;
+
+    // Find nearest target string to show cents relative to it
+    let nearestTarget = null;
+    let nearestDist = Infinity;
+    for (const [name, data] of Object.entries(STRING_NAMES_MAP)) {
+        const dist = Math.abs(1200 * Math.log2(info.frequency / data.freq));
+        if (dist < nearestDist) {
+            nearestDist = dist;
+            nearestTarget = data;
+        }
+    }
+
+    if (nearestTarget && nearestDist < 200) {
+        const cents = getCents(info.frequency, nearestTarget.freq);
+        centsEl.textContent = `${cents > 0 ? '+' : ''}${cents} cents`;
+        // Position indicator: 50% = center (in tune), 0% = -50 cents, 100% = +50 cents
+        const pct = Math.max(0, Math.min(100, 50 + cents));
+        indicator.style.left = pct + '%';
+
+        if (Math.abs(cents) < 8) {
+            indicator.style.background = 'var(--success)';
+            indicator.style.width = '6px';
+        } else if (Math.abs(cents) < 25) {
+            indicator.style.background = 'var(--warning)';
+            indicator.style.width = '4px';
+        } else {
+            indicator.style.background = 'var(--error)';
+            indicator.style.width = '4px';
+        }
+    }
+
+    // Highlight matching string button
+    document.querySelectorAll('.tuner-string-btn').forEach(btn => {
+        btn.classList.remove('current');
+        const targetFreq = parseFloat(btn.dataset.freq);
+        if (isClose(info.frequency, targetFreq, 100)) {
+            btn.classList.add('current');
+        }
+    });
+}
+
+/* ── String Walk ── */
+function checkStringWalk(info) {
+    if (walkComplete || walkIndex >= STRING_ORDER.length) return;
+
+    const steps = document.querySelectorAll('.string-walk-step');
+    const target = STRING_ORDER[walkIndex];
+    const targetFreq = STRING_NAMES_MAP[target].freq;
+
+    // Check if detected note matches target string (within tolerance)
+    if (isClose(info.frequency, targetFreq, 50)) {
+        // Mark done
+        steps[walkIndex].classList.remove('active');
+        steps[walkIndex].classList.add('done');
+
+        playNoteSound(target === 'e' ? 'E' : target, walkIndex === 5 ? 1 : 6 - walkIndex, 0);
+        showFeedback(`${STRING_NAMES_MAP[target].label} ✓`, 'correct');
+
+        walkIndex++;
+
+        if (walkIndex >= STRING_ORDER.length) {
+            walkComplete = true;
+            document.getElementById('walkMessage').innerHTML =
+                '<span style="color:var(--success); font-weight:700;">All strings confirmed! 🎉</span>';
+        } else {
+            steps[walkIndex].classList.add('active');
+            const next = STRING_ORDER[walkIndex];
+            document.getElementById('walkMessage').textContent =
+                `Play the ${STRING_NAMES_MAP[next].label} string...`;
+        }
+    }
+}
+
+/* ── String Button Click → Play Reference Tone ── */
+document.querySelectorAll('.tuner-string-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const note = btn.dataset.note;
+        // Map to string number for playNoteSound
+        const idx = STRING_ORDER.indexOf(note);
+        const stringNum = idx === 5 ? 1 : 6 - idx; // E=6, A=5, D=4, G=3, B=2, e=1
+        playNoteSound(note === 'e' ? 'E' : note, stringNum, 0);
+    });
+});
+
+/* ── Reset Walk ── */
+document.getElementById('resetWalk').addEventListener('click', () => {
+    walkIndex = 0;
+    walkComplete = false;
+    const steps = document.querySelectorAll('.string-walk-step');
+    steps.forEach((s, i) => {
+        s.classList.remove('done', 'active');
+        if (i === 0) s.classList.add('active');
+    });
+    document.getElementById('walkMessage').textContent = 'Play the low E string (6th string)...';
+});
+
+function showFeedback(message, type) {
+    const toast = document.getElementById('feedbackToast');
+    toast.textContent = message;
+    toast.className = `feedback-toast ${type} show`;
+    setTimeout(() => toast.classList.remove('show'), 1200);
+}
+</script>
+{% endblock %}

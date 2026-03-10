@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 100" fill="none">
+  <!-- Pedal Board / Effects Pedal - grainy pastel style -->
+  
+  <!-- Pedal body -->
+  <rect x="10" y="10" width="100" height="80" rx="8" fill="currentColor" opacity="0.45"/>
+  <rect x="14" y="14" width="92" height="72" rx="6" fill="currentColor" opacity="0.25"/>
+  
+  <!-- Foot switch (big stomp button) -->
+  <circle cx="60" cy="65" r="16" fill="currentColor" opacity="0.5"/>
+  <circle cx="60" cy="65" r="12" fill="currentColor" opacity="0.3"/>
+  <circle cx="60" cy="65" r="3" fill="currentColor" opacity="0.6"/>
+  
+  <!-- LED indicator -->
+  <circle cx="60" cy="38" r="4" fill="currentColor" opacity="0.7"/>
+  <circle cx="60" cy="38" r="2" fill="currentColor" opacity="0.4"/>
+  
+  <!-- Knobs -->
+  <circle cx="32" cy="30" r="8" fill="currentColor" opacity="0.5"/>
+  <circle cx="32" cy="30" r="4" fill="currentColor" opacity="0.25"/>
+  <line x1="32" y1="22" x2="32" y2="26" stroke="currentColor" stroke-width="1.5" opacity="0.7"/>
+  
+  <circle cx="88" cy="30" r="8" fill="currentColor" opacity="0.5"/>
+  <circle cx="88" cy="30" r="4" fill="currentColor" opacity="0.25"/>
+  <line x1="88" y1="23" x2="90" y2="26" stroke="currentColor" stroke-width="1.5" opacity="0.7"/>
+  
+  <!-- Input/Output jacks -->
+  <circle cx="14" cy="55" r="3" fill="currentColor" opacity="0.4"/>
+  <circle cx="106" cy="55" r="3" fill="currentColor" opacity="0.4"/>
+  
+  <!-- Label area -->
+  <rect x="40" y="18" width="40" height="10" rx="3" fill="currentColor" opacity="0.1"/>
+</svg>

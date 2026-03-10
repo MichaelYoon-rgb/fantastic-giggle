@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 140" fill="none">
+  <!-- Guitar Amplifier - grainy pastel style -->
+  
+  <!-- Main cabinet body -->
+  <rect x="5" y="5" width="110" height="130" rx="10" fill="currentColor" opacity="0.5"/>
+  <rect x="10" y="10" width="100" height="120" rx="8" fill="currentColor" opacity="0.3"/>
+  
+  <!-- Top panel (controls) -->
+  <rect x="15" y="15" width="90" height="30" rx="5" fill="currentColor" opacity="0.4"/>
+  
+  <!-- Knobs row -->
+  <circle cx="32" cy="30" r="6" fill="currentColor" opacity="0.6"/>
+  <circle cx="32" cy="30" r="3" fill="currentColor" opacity="0.3"/>
+  <circle cx="52" cy="30" r="6" fill="currentColor" opacity="0.6"/>
+  <circle cx="52" cy="30" r="3" fill="currentColor" opacity="0.3"/>
+  <circle cx="72" cy="30" r="6" fill="currentColor" opacity="0.6"/>
+  <circle cx="72" cy="30" r="3" fill="currentColor" opacity="0.3"/>
+  <circle cx="92" cy="30" r="6" fill="currentColor" opacity="0.6"/>
+  <circle cx="92" cy="30" r="3" fill="currentColor" opacity="0.3"/>
+  
+  <!-- Knob indicators -->
+  <line x1="32" y1="24" x2="32" y2="27" stroke="currentColor" stroke-width="1.5" opacity="0.8"/>
+  <line x1="52" y1="26" x2="55" y2="28" stroke="currentColor" stroke-width="1.5" opacity="0.8"/>
+  <line x1="72" y1="25" x2="74" y2="28" stroke="currentColor" stroke-width="1.5" opacity="0.8"/>
+  <line x1="92" y1="24" x2="92" y2="27" stroke="currentColor" stroke-width="1.5" opacity="0.8"/>
+  
+  <!-- Label text area -->
+  <rect x="35" y="16" width="50" height="6" rx="2" fill="currentColor" opacity="0.15"/>
+  
+  <!-- Pilot light -->
+  <circle cx="22" cy="22" r="2" fill="currentColor" opacity="0.8"/>
+  
+  <!-- Speaker grille area -->
+  <rect x="15" y="50" width="90" height="75" rx="5" fill="currentColor" opacity="0.2"/>
+  
+  <!-- Speaker grille cloth texture (horizontal lines) -->
+  <line x1="18" y1="56" x2="102" y2="56" stroke="currentColor" stroke-width="0.8" opacity="0.15"/>
+  <line x1="18" y1="62" x2="102" y2="62" stroke="currentColor" stroke-width="0.8" opacity="0.15"/>
+  <line x1="18" y1="68" x2="102" y2="68" stroke="currentColor" stroke-width="0.8" opacity="0.15"/>
+  <line x1="18" y1="74" x2="102" y2="74" stroke="currentColor" stroke-width="0.8" opacity="0.15"/>
+  <line x1="18" y1="80" x2="102" y2="80" stroke="currentColor" stroke-width="0.8" opacity="0.15"/>
+  <line x1="18" y1="86" x2="102" y2="86" stroke="currentColor" stroke-width="0.8" opacity="0.15"/>
+  <line x1="18" y1="92" x2="102" y2="92" stroke="currentColor" stroke-width="0.8" opacity="0.15"/>
+  <line x1="18" y1="98" x2="102" y2="98" stroke="currentColor" stroke-width="0.8" opacity="0.15"/>
+  <line x1="18" y1="104" x2="102" y2="104" stroke="currentColor" stroke-width="0.8" opacity="0.15"/>
+  <line x1="18" y1="110" x2="102" y2="110" stroke="currentColor" stroke-width="0.8" opacity="0.15"/>
+  <line x1="18" y1="116" x2="102" y2="116" stroke="currentColor" stroke-width="0.8" opacity="0.15"/>
+  
+  <!-- Speaker cone (visible through grille) -->
+  <circle cx="60" cy="87" r="28" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.15"/>
+  <circle cx="60" cy="87" r="18" fill="none" stroke="currentColor" stroke-width="1" opacity="0.1"/>
+  <circle cx="60" cy="87" r="6" fill="currentColor" opacity="0.1"/>
+  
+  <!-- Handle on top -->
+  <path d="M40 5 Q40 -5 50 -5 L70 -5 Q80 -5 80 5" stroke="currentColor" stroke-width="3" fill="none" opacity="0.5" stroke-linecap="round"/>
+  
+  <!-- Corner protectors -->
+  <rect x="5" y="5" width="12" height="12" rx="3" fill="none" stroke="currentColor" stroke-width="1" opacity="0.3"/>
+  <rect x="103" y="5" width="12" height="12" rx="3" fill="none" stroke="currentColor" stroke-width="1" opacity="0.3"/>
+  <rect x="5" y="123" width="12" height="12" rx="3" fill="none" stroke="currentColor" stroke-width="1" opacity="0.3"/>
+  <rect x="103" y="123" width="12" height="12" rx="3" fill="none" stroke="currentColor" stroke-width="1" opacity="0.3"/>
+  
+  <!-- Rubber feet -->
+  <rect x="18" y="133" width="8" height="4" rx="2" fill="currentColor" opacity="0.5"/>
+  <rect x="94" y="133" width="8" height="4" rx="2" fill="currentColor" opacity="0.5"/>
+</svg>

@@ -1,0 +1,408 @@
+{% extends "trainer/base.html" %}
+
+{% block title %}Identify Notes — Fretboard Trainer{% endblock %}
+{% block nav_identify %}active{% endblock %}
+
+{% block content %}
+<div class="game-header">
+    <div>
+        <h1 class="game-title">Identify the Note</h1>
+        <p class="game-subtitle">A position is highlighted on the fretboard. Name that note!</p>
+    </div>
+    <div class="game-score">
+        <div class="score-item">
+            <div class="score-value correct-color" id="scoreCorrect">0</div>
+            <div class="score-label">Correct</div>
+        </div>
+        <div class="score-item">
+            <div class="score-value wrong-color" id="scoreWrong">0</div>
+            <div class="score-label">Wrong</div>
+        </div>
+        <div class="score-item">
+            <div class="score-value streak-color" id="scoreStreak">0</div>
+            <div class="score-label">Streak</div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Panel -->
+<div class="filter-panel">
+    <div class="filter-header" id="filterToggle">
+        <div class="filter-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+            Note Filter
+        </div>
+        <span class="btn btn-ghost btn-sm" id="filterStatus">All Notes</span>
+    </div>
+    <div id="filterBody">
+        <div class="filter-groups">
+            <button class="filter-group-btn active" data-filter="all">All Notes</button>
+            <button class="filter-group-btn" data-filter="naturals">Naturals</button>
+            <button class="filter-group-btn" data-filter="sharps">Sharps</button>
+            <button class="filter-group-btn" data-filter="flats">Flats</button>
+            <button class="filter-group-btn" data-filter="custom">Custom</button>
+        </div>
+        <div class="filter-notes" id="filterNotes" style="display:none;"></div>
+    </div>
+</div>
+
+<!-- Fretboard -->
+<div class="fretboard-wrapper">
+    <div class="fretboard" id="gameFretboard">
+        <div class="fret-numbers">
+            <div class="fret-number"></div>
+            <div class="fret-number">1</div>
+            <div class="fret-number">2</div>
+            <div class="fret-number">3</div>
+            <div class="fret-number">4</div>
+            <div class="fret-number">5</div>
+            <div class="fret-number">6</div>
+            <div class="fret-number">7</div>
+            <div class="fret-number">8</div>
+            <div class="fret-number">9</div>
+            <div class="fret-number">10</div>
+            <div class="fret-number">11</div>
+            <div class="fret-number">12</div>
+        </div>
+        <div class="strings-container" id="gameStrings"></div>
+        <div class="fret-markers">
+            <div class="fret-marker"></div>
+            <div class="fret-marker"></div>
+            <div class="fret-marker"></div>
+            <div class="fret-marker"><div class="fret-marker-dot"></div></div>
+            <div class="fret-marker"></div>
+            <div class="fret-marker"><div class="fret-marker-dot"></div></div>
+            <div class="fret-marker"></div>
+            <div class="fret-marker"><div class="fret-marker-dot"></div></div>
+            <div class="fret-marker"></div>
+            <div class="fret-marker"><div class="fret-marker-dot"></div></div>
+            <div class="fret-marker"></div>
+            <div class="fret-marker"></div>
+            <div class="fret-marker">
+                <div class="fret-marker-dot"></div>
+                <div class="fret-marker-dot"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Answer Buttons -->
+<div class="note-buttons" id="noteButtons"></div>
+
+<!-- Feedback Toast -->
+<div class="feedback-toast" id="feedbackToast"></div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const FRETBOARD = {{ fretboard|safe }};
+const ALL_NOTES = {{ all_notes|safe }};
+const ENHARMONIC = {{ enharmonic|safe }};
+const NATURAL_NOTES = {{ natural_notes|safe }};
+const SHARP_NOTES = {{ sharp_notes|safe }};
+const FLAT_NOTES = {{ flat_notes|safe }};
+const STRING_NAMES = {1: 'e', 2: 'B', 3: 'G', 4: 'D', 5: 'A', 6: 'E'};
+
+// Display notes including enharmonics for buttons
+const DISPLAY_NOTES = [
+    'C', 'C#/Db', 'D', 'D#/Eb', 'E', 'F', 'F#/Gb', 'G', 'G#/Ab', 'A', 'A#/Bb', 'B'
+];
+
+let currentNote = null;
+let currentString = null;
+let currentFret = null;
+let scoreCorrect = 0;
+let scoreWrong = 0;
+let streak = 0;
+let waiting = false;
+let currentFilter = 'all';
+let customNotes = [];
+
+// Frets that get inlay dots (between strings 3 and 4)
+const INLAY_FRETS = [3, 5, 7, 9];
+const DOUBLE_INLAY_FRETS = [12];
+
+// Build fretboard with inlay dots
+function buildFretboard() {
+    const container = document.getElementById('gameStrings');
+    container.innerHTML = '';
+    for (let s = 6; s >= 1; s--) {
+        const row = document.createElement('div');
+        row.className = 'string-row';
+        const label = document.createElement('div');
+        label.className = 'string-label';
+        label.textContent = STRING_NAMES[s];
+        row.appendChild(label);
+
+        for (let f = 0; f <= 12; f++) {
+            const cell = document.createElement('div');
+            cell.className = `fret-cell ${f === 0 ? 'fret-0' : ''}`;
+
+            // Add inlay dots between strings 4 and 3 (D and G)
+            if (s === 4 && INLAY_FRETS.includes(f)) {
+                const inlay = document.createElement('div');
+                inlay.className = 'inlay-dot';
+                inlay.style.bottom = '-12px';
+                cell.appendChild(inlay);
+            }
+            if (s === 4 && DOUBLE_INLAY_FRETS.includes(f)) {
+                const inlay1 = document.createElement('div');
+                inlay1.className = 'inlay-dot';
+                inlay1.style.bottom = '-8px';
+                inlay1.style.left = 'calc(50% - 10px)';
+                cell.appendChild(inlay1);
+                const inlay2 = document.createElement('div');
+                inlay2.className = 'inlay-dot';
+                inlay2.style.bottom = '-8px';
+                inlay2.style.right = 'calc(50% - 10px)';
+                inlay2.style.left = 'auto';
+                cell.appendChild(inlay2);
+            }
+
+            const dot = document.createElement('div');
+            dot.className = 'note-dot';
+            dot.id = `note-${s}-${f}`;
+            dot.dataset.string = s;
+            dot.dataset.fret = f;
+            dot.textContent = FRETBOARD[`${s}-${f}`];
+            cell.appendChild(dot);
+            row.appendChild(cell);
+        }
+        container.appendChild(row);
+    }
+}
+
+// Build answer buttons with pastel color coding
+function buildNoteButtons() {
+    const container = document.getElementById('noteButtons');
+    container.innerHTML = '';
+    DISPLAY_NOTES.forEach(note => {
+        const btn = document.createElement('button');
+        btn.className = 'note-btn';
+        btn.textContent = note;
+        btn.dataset.note = note;
+        // Color-code the border with the note's color
+        const baseNote = note.split('/')[0];
+        const color = getNoteColor(baseNote);
+        btn.style.borderColor = color + '40';
+        btn.style.color = color;
+        btn.addEventListener('click', () => handleAnswer(note));
+        container.appendChild(btn);
+    });
+}
+
+// Build filter note buttons
+function buildFilterNotes() {
+    const container = document.getElementById('filterNotes');
+    container.innerHTML = '';
+    ALL_NOTES.forEach(note => {
+        const btn = document.createElement('button');
+        btn.className = 'filter-note-btn';
+        btn.textContent = note;
+        btn.dataset.note = note;
+        btn.addEventListener('click', () => {
+            btn.classList.toggle('active');
+            updateCustomFilter();
+        });
+        // Also add enharmonic
+        if (ENHARMONIC[note]) {
+            const btn2 = document.createElement('button');
+            btn2.className = 'filter-note-btn';
+            btn2.textContent = ENHARMONIC[note];
+            btn2.dataset.note = ENHARMONIC[note];
+            btn2.addEventListener('click', () => {
+                btn2.classList.toggle('active');
+                updateCustomFilter();
+            });
+        }
+        container.appendChild(btn);
+    });
+}
+
+function updateCustomFilter() {
+    customNotes = [];
+    document.querySelectorAll('#filterNotes .filter-note-btn.active').forEach(btn => {
+        customNotes.push(btn.dataset.note);
+    });
+    if (customNotes.length === 0) {
+        currentFilter = 'all';
+    } else {
+        currentFilter = JSON.stringify(customNotes);
+    }
+}
+
+// Filter handlers
+document.querySelectorAll('.filter-group-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-group-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const filter = btn.dataset.filter;
+
+        if (filter === 'custom') {
+            document.getElementById('filterNotes').style.display = 'flex';
+            currentFilter = customNotes.length > 0 ? JSON.stringify(customNotes) : 'all';
+        } else {
+            document.getElementById('filterNotes').style.display = 'none';
+            currentFilter = filter;
+        }
+
+        document.getElementById('filterStatus').textContent =
+            filter === 'all' ? 'All Notes' :
+            filter === 'naturals' ? 'Natural Notes' :
+            filter === 'sharps' ? 'Sharp Notes' :
+            filter === 'flats' ? 'Flat Notes' : 'Custom';
+
+        // Auto-update: immediately fetch a new note with the new filter
+        getNextNote();
+    });
+});
+
+// Get next note
+async function getNextNote() {
+    try {
+        const resp = await fetch(`/api/weighted-note/?filter=${encodeURIComponent(currentFilter)}`);
+        const data = await resp.json();
+        currentNote = data.note;
+        currentString = data.string;
+        currentFret = data.fret;
+
+        // Clear previous highlights
+        document.querySelectorAll('.note-dot').forEach(d => {
+            d.classList.remove('highlighted', 'correct', 'incorrect', 'show', 'color-coded');
+            d.style.background = '';
+        });
+
+        // Highlight the new note
+        const dot = document.getElementById(`note-${currentString}-${currentFret}`);
+        if (dot) {
+            dot.classList.add('highlighted');
+            dot.textContent = '?';
+        }
+
+        // Reset button states
+        document.querySelectorAll('.note-btn').forEach(b => {
+            b.classList.remove('correct', 'incorrect');
+            b.disabled = false;
+        });
+
+        waiting = false;
+    } catch (err) {
+        console.error('Error fetching note:', err);
+    }
+}
+
+// Handle answer
+async function handleAnswer(selectedNote) {
+    if (waiting) return;
+    waiting = true;
+
+    // Check if correct (handle enharmonics)
+    const selectedNotes = selectedNote.split('/');
+    const isCorrect = selectedNotes.includes(currentNote) ||
+                      selectedNotes.some(n => ENHARMONIC[n] === currentNote) ||
+                      selectedNotes.some(n => n === currentNote);
+
+    const dot = document.getElementById(`note-${currentString}-${currentFret}`);
+
+    if (isCorrect) {
+        scoreCorrect++;
+        streak++;
+        if (dot) {
+            dot.textContent = currentNote;
+            dot.classList.remove('highlighted');
+            dot.classList.add('correct');
+            // Color-code the revealed note
+            dot.classList.add('color-coded');
+            dot.style.background = getNoteColor(currentNote);
+        }
+        // Highlight button
+        document.querySelectorAll('.note-btn').forEach(b => {
+            if (b.dataset.note === selectedNote) b.classList.add('correct');
+        });
+        showFeedback('Correct! 🎉', 'correct');
+        // Play the note sound
+        playNoteSound(currentNote, currentString, currentFret);
+    } else {
+        scoreWrong++;
+        streak = 0;
+        if (dot) {
+            dot.textContent = currentNote;
+            dot.classList.remove('highlighted');
+            dot.classList.add('incorrect');
+        }
+        document.querySelectorAll('.note-btn').forEach(b => {
+            if (b.dataset.note === selectedNote) b.classList.add('incorrect');
+        });
+        showFeedback(`Nope! It was ${currentNote}`, 'incorrect');
+        // Play the correct note sound so they learn it
+        playNoteSound(currentNote, currentString, currentFret);
+    }
+
+    updateScore();
+
+    // Record attempt
+    try {
+        await fetch('/api/record-attempt/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken,
+            },
+            body: JSON.stringify({
+                note: currentNote,
+                string: currentString,
+                fret: currentFret,
+                correct: isCorrect,
+                game_mode: 'identify',
+            }),
+        });
+    } catch (err) {
+        console.log('Not logged in or error saving');
+    }
+
+    // Next note after delay
+    setTimeout(() => getNextNote(), isCorrect ? 800 : 1500);
+}
+
+function updateScore() {
+    document.getElementById('scoreCorrect').textContent = scoreCorrect;
+    document.getElementById('scoreWrong').textContent = scoreWrong;
+    document.getElementById('scoreStreak').textContent = streak;
+}
+
+function showFeedback(message, type) {
+    const toast = document.getElementById('feedbackToast');
+    toast.textContent = message;
+    toast.className = `feedback-toast ${type} show`;
+    setTimeout(() => {
+        toast.classList.remove('show');
+    }, 1200);
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+    if (waiting) return;
+    const keyMap = {
+        'c': 'C', 'd': 'D', 'e': 'E', 'f': 'F', 'g': 'G', 'a': 'A', 'b': 'B',
+    };
+    const key = e.key.toLowerCase();
+    if (keyMap[key]) {
+        // Find the matching button
+        const buttons = document.querySelectorAll('.note-btn');
+        for (const btn of buttons) {
+            if (btn.dataset.note.startsWith(keyMap[key])) {
+                handleAnswer(btn.dataset.note);
+                break;
+            }
+        }
+    }
+});
+
+// Init
+buildFretboard();
+buildNoteButtons();
+buildFilterNotes();
+getNextNote();
+</script>
+{% endblock %}

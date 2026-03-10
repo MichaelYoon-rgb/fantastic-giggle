@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 80" fill="none">
+  <!-- Guitar Pick / Plectrum - grainy pastel style -->
+  
+  <!-- Main pick shape -->
+  <path d="M30 75 C12 55 5 35 10 18 C13 8 20 2 30 2 C40 2 47 8 50 18 C55 35 48 55 30 75Z" 
+        fill="currentColor" opacity="0.5"/>
+  
+  <!-- Inner bevel line -->
+  <path d="M30 65 C18 50 12 35 16 22 C18 14 23 10 30 10 C37 10 42 14 44 22 C48 35 42 50 30 65Z" 
+        fill="none" stroke="currentColor" stroke-width="1" opacity="0.25"/>
+  
+  <!-- Grip texture dots -->
+  <circle cx="26" cy="28" r="1.5" fill="currentColor" opacity="0.2"/>
+  <circle cx="34" cy="28" r="1.5" fill="currentColor" opacity="0.2"/>
+  <circle cx="30" cy="24" r="1.5" fill="currentColor" opacity="0.2"/>
+  <circle cx="30" cy="32" r="1.5" fill="currentColor" opacity="0.2"/>
+  <circle cx="26" cy="36" r="1.5" fill="currentColor" opacity="0.2"/>
+  <circle cx="34" cy="36" r="1.5" fill="currentColor" opacity="0.2"/>
+  <circle cx="30" cy="40" r="1.5" fill="currentColor" opacity="0.2"/>
+</svg>
