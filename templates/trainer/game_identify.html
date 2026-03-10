@@ -355,7 +355,7 @@ function revealAllSameNotes(note) {
     const color = getNoteColor(note);
     const enharmonic = ENHARMONIC[note];
     for (let s = 1; s <= 6; s++) {
-        for (let f = 0; f <= 12; f++) {
+        for (let f = 1; f <= 12; f++) {
             const cellNote = FRETBOARD[`${s}-${f}`];
             if (cellNote === note || cellNote === enharmonic) {
                 const d = document.getElementById(`note-${s}-${f}`);
