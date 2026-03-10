@@ -35,7 +35,7 @@
     --fretboard-wood: #ede0cc;
     --fretboard-wood-light: #f5eede;
     --fret-wire: #bbb;
-    --string-color: #7a6a5a;
+    --string-color: #4a3e2e;
     --nut-color: #b8a890;
     --dot-color: rgba(0, 0, 0, 0.22);
     --highlight-note: var(--accent);
@@ -524,19 +524,25 @@ a:hover { color: var(--accent-hover); }
     right: 0.5rem;
     top: 50%;
     height: var(--string-thickness, 1px);
-    background: linear-gradient(90deg, var(--string-color) 0%, var(--string-color) 85%, rgba(122, 106, 90, 0.35) 100%);
-    opacity: 0.85;
+    background: linear-gradient(90deg, var(--string-color) 0%, var(--string-color) 85%, rgba(60, 48, 36, 0.4) 100%);
+    opacity: 1;
     pointer-events: none;
     border-radius: 1px;
-    box-shadow: 0 1px 1px rgba(0,0,0,0.06);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.18);
 }
 
-.string-row:nth-child(1)::after { --string-thickness: 4px; background: linear-gradient(90deg, #6a5a4a, #8a7a6a 85%, rgba(106,90,74,0.3)); }
-.string-row:nth-child(2)::after { --string-thickness: 3.2px; background: linear-gradient(90deg, #706050, #907a6a 85%, rgba(112,96,80,0.3)); }
-.string-row:nth-child(3)::after { --string-thickness: 2.4px; }
-.string-row:nth-child(4)::after { --string-thickness: 1.8px; }
-.string-row:nth-child(5)::after { --string-thickness: 1.2px; background: linear-gradient(90deg, #a09080, #b0a090 85%, rgba(160,144,128,0.3)); }
-.string-row:nth-child(6)::after { --string-thickness: 0.9px; background: linear-gradient(90deg, #b0a090, #c0b0a0 85%, rgba(176,160,144,0.3)); }
+/* Low E (thickest, wound) */
+.string-row:nth-child(1)::after { --string-thickness: 4.5px; background: linear-gradient(90deg, #3a2e22, #4a3e32 85%, rgba(58,46,34,0.35)); box-shadow: 0 1px 3px rgba(0,0,0,0.25); }
+/* A string (wound) */
+.string-row:nth-child(2)::after { --string-thickness: 3.5px; background: linear-gradient(90deg, #443828, #544838 85%, rgba(68,56,40,0.35)); box-shadow: 0 1px 2px rgba(0,0,0,0.22); }
+/* D string (wound) */
+.string-row:nth-child(3)::after { --string-thickness: 2.8px; background: linear-gradient(90deg, #4e4232, #5e5242 85%, rgba(78,66,50,0.35)); }
+/* G string */
+.string-row:nth-child(4)::after { --string-thickness: 2px; background: linear-gradient(90deg, #6a5a48, #7a6a58 85%, rgba(106,90,72,0.35)); }
+/* B string (plain steel, brighter) */
+.string-row:nth-child(5)::after { --string-thickness: 1.4px; background: linear-gradient(90deg, #78685a, #8a7a6a 85%, rgba(120,104,90,0.35)); }
+/* High e (thinnest, plain steel) */
+.string-row:nth-child(6)::after { --string-thickness: 1px; background: linear-gradient(90deg, #887868, #988878 85%, rgba(136,120,104,0.35)); }
 
 /* String vibration animation */
 @keyframes string-vibrate {
