@@ -12,7 +12,6 @@
             <div class="filter-group-pills" id="modeToggle">
                 <button class="filter-pill mode-pill active" data-mode="name">🎯 Name It</button>
                 <button class="filter-pill mode-pill" data-mode="find">📍 Find It</button>
-                <button class="filter-pill mode-pill" data-mode="line">📏 Line</button>
                 <button class="filter-pill mode-pill" data-mode="block">🔲 3×3</button>
             </div>
         </div>
@@ -72,7 +71,7 @@
     </div>
 </div>
 
-<!-- Find It / Line / Block prompt -->
+<!-- Find It / Block prompt -->
 <div class="find-prompt" id="findPrompt" style="display:none;">
     <div class="find-prompt-label" id="findPromptLabel">Play this note:</div>
     <div class="find-prompt-note" id="findPromptNote">A</div>
@@ -176,9 +175,9 @@ let currentFilter = 'all';
 let customNotes = [];
 let fretboardInverted = true;
 let showAllNotes = false;
-let gameMode = 'name'; // 'name' | 'find' | 'line' | 'block'
+let gameMode = 'name'; // 'name' | 'find' | 'block'
 
-// Line/Block mode state
+// Block mode state
 let currentChallenge = null;
 let foundPositions = [];
 let remainingPositions = [];
@@ -246,7 +245,7 @@ function buildFretboard() {
             dot.textContent = FRETBOARD[`${s}-${f}`];
             cell.appendChild(dot);
 
-            // Clickable for find/line/block modes
+            // Clickable for find/block modes
             if (f >= 1) {
                 cell.classList.add('fret-clickable');
                 cell.dataset.string = s;
@@ -378,13 +377,6 @@ function applyModeUI() {
         document.getElementById('findPromptLabel').textContent = 'Play this note:';
         document.getElementById('findPromptString').style.display = '';
         document.getElementById('gameFretboard').classList.add('find-mode');
-    } else if (gameMode === 'line') {
-        findPrompt.style.display = '';
-        document.getElementById('findPromptLabel').textContent = 'Find ALL on this string:';
-        document.getElementById('findPromptString').style.display = '';
-        document.getElementById('findProgress').style.display = 'block';
-        skipBtn.style.display = '';
-        revealBtn.style.display = '';
     } else if (gameMode === 'block') {
         findPrompt.style.display = '';
         document.getElementById('findPromptLabel').textContent = 'Find in the highlighted area:';
@@ -409,8 +401,6 @@ function resetScores() {
 async function startRound() {
     if (gameMode === 'name' || gameMode === 'find') {
         await getNextNote();
-    } else if (gameMode === 'line') {
-        await getLineChallenge();
     } else if (gameMode === 'block') {
         await getBlockChallenge();
     }
@@ -451,49 +441,6 @@ async function getNextNote() {
         revealed = false;
         if (metronomeOn) startMetronome();
     } catch (err) { console.error('Error fetching note:', err); }
-}
-
-// ─── LINE MODE ───
-async function getLineChallenge() {
-    try {
-        const resp = await fetch(`/api/find-challenge/?filter=${encodeURIComponent(currentFilter)}&mode=full`);
-        const data = await resp.json();
-
-        // Pick a random string, find all positions of this note on that string
-        const note = data.note;
-        const enharmonic = data.enharmonic;
-        const randomString = Math.floor(Math.random() * 6) + 1;
-        const positions = [];
-        for (let f = 1; f <= 12; f++) {
-            const n = FRETBOARD[`${randomString}-${f}`];
-            if (n === note || n === enharmonic) {
-                positions.push({string: randomString, fret: f});
-            }
-        }
-        // If no positions on this string, try another
-        if (positions.length === 0) { await getLineChallenge(); return; }
-
-        currentChallenge = { note, enharmonic, valid_positions: positions };
-        currentNote = note;
-        foundPositions = [];
-        remainingPositions = [...positions];
-        revealed = false;
-        waiting = false;
-
-        clearFretboard();
-        document.getElementById('findPromptNote').textContent = note + (enharmonic ? ` / ${enharmonic}` : '');
-        document.getElementById('findPromptNote').style.color = getNoteColor(note);
-        document.getElementById('findPromptStringName').textContent = STRING_NAMES[randomString];
-        document.getElementById('findProgress').style.display = 'block';
-        document.getElementById('foundCount').textContent = '0';
-        document.getElementById('totalCount').textContent = positions.length;
-        document.getElementById('revealBtn').style.display = '';
-        document.getElementById('nextBtn').style.display = 'none';
-
-        // Highlight the target string
-        const row = document.querySelector(`.string-row[data-string="${randomString}"]`);
-        if (row) row.classList.add('target-string');
-    } catch (err) { console.error('Error fetching line challenge:', err); }
 }
 
 // ─── BLOCK MODE ───
@@ -541,16 +488,13 @@ async function getBlockChallenge() {
 // HANDLE CLICKS
 // ═══════════════════════════════════════
 
-// Fret click — used by find/line/block modes
+// Fret click — used by find/block modes
 function handleFretClick(s, f) {
     if (gameMode === 'name') return;
     if (gameMode === 'find') {
         if (waiting) return;
         if (s !== currentString) return;
         handleFindAnswer(s, f);
-    } else if (gameMode === 'line') {
-        if (revealed) return;
-        handleLineClick(s, f);
     } else if (gameMode === 'block') {
         if (waiting && !revealed) return;
         if (revealed) return;
@@ -597,46 +541,6 @@ async function handleFindAnswer(tappedString, tappedFret) {
         }
         updateScore();
         recordAttempt(currentNote, currentString, tappedFret, false, 'identify_find');
-    }
-}
-
-// ─── LINE click ───
-function handleLineClick(s, f) {
-    if (!currentChallenge) return;
-    // Only accept clicks on the target string
-    const targetString = currentChallenge.valid_positions[0]?.string;
-    if (s !== targetString) return;
-
-    const isValid = remainingPositions.some(p => p.string === s && p.fret === f);
-    const dot = document.getElementById(`note-${s}-${f}`);
-    const clickedNote = FRETBOARD[`${s}-${f}`];
-
-    if (isValid) {
-        foundPositions.push({string: s, fret: f});
-        remainingPositions = remainingPositions.filter(p => !(p.string === s && p.fret === f));
-        if (dot) {
-            dot.classList.add('correct', 'color-coded');
-            dot.textContent = clickedNote;
-            dot.style.background = getNoteColor(clickedNote);
-            dot.style.color = '#2a2035';
-        }
-        playNoteSound(currentNote, s, f);
-        vibrateString(s);
-        document.getElementById('foundCount').textContent = foundPositions.length;
-        if (remainingPositions.length === 0) {
-            scoreCorrect++; streak++; updateScore();
-            showFeedback(`🎉 Found all ${foundPositions.length} positions!`, 'correct');
-            recordAttempt(currentNote, s, f, true, 'find_line');
-            setTimeout(() => startRound(), 2000);
-        } else {
-            showFeedback(`✓ Found one! ${remainingPositions.length} left`, 'correct');
-        }
-    } else if (!foundPositions.some(p => p.string === s && p.fret === f)) {
-        scoreWrong++; streak = 0; updateScore();
-        if (dot) { dot.classList.add('incorrect'); dot.textContent = clickedNote; }
-        showFeedback(`Nope! That's ${clickedNote}`, 'incorrect');
-        recordAttempt(currentNote, s, f, false, 'find_line');
-        setTimeout(() => { if (dot) { dot.classList.remove('incorrect'); dot.textContent = FRETBOARD[`${s}-${f}`]; } }, 1000);
     }
 }
 
@@ -971,7 +875,7 @@ document.getElementById('revealBtn').addEventListener('click', function() {
         showFeedback(`It was ${currentNote}`, 'info');
         this.style.display = 'none';
         document.getElementById('nextBtn').style.display = '';
-    } else if (gameMode === 'line' || gameMode === 'block') {
+    } else if (gameMode === 'block') {
         // Reveal all valid positions
         if (currentChallenge) {
             const noteColor = getNoteColor(currentChallenge.note);
