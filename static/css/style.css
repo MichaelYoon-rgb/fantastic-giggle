@@ -2599,6 +2599,7 @@ body.screen-shake {
         border-top: 1px solid var(--border-light);
     }
     .hero h1, .hero-title { font-size: 2.2rem; }
+    .start-here-title { font-size: 3rem !important; }
     .hero p, .hero-subtitle { font-size: 0.92rem; }
     .game-header { flex-direction: column; align-items: flex-start; }
     .fretboard-wrapper { min-width: 0; }
@@ -2607,13 +2608,137 @@ body.screen-shake {
     .string-letter { width: 36px; height: 36px; font-size: 1.4rem; }
     .mnemonics-grid { grid-template-columns: 1fr; }
     .abstract-shapes, .music-illustration { display: none; }
+    .path-step { flex-direction: column; align-items: flex-start; }
+    .path-step-number { margin-bottom: 0.5rem; }
 }
 
 @media (max-width: 480px) {
     .main-content { padding: 1rem 0.75rem 3rem; }
     .hero { padding: 2rem 0.5rem 1.5rem; }
     .hero h1, .hero-title { font-size: 1.8rem; }
+    .start-here-title { font-size: 2.4rem !important; }
     .mode-cards { grid-template-columns: 1fr; gap: 0.7rem; }
     .game-score { gap: 0.7rem; padding: 0.45rem 0.7rem; }
     .score-value { font-size: 1.1rem; }
+}
+
+/* ─── Start Here Landing Page ─── */
+.start-here-hero {
+    padding: 4rem 1rem 2rem;
+}
+
+.start-here-badge {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+}
+
+.start-here-title {
+    font-family: var(--font-fun);
+    font-size: 4.5rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    margin-bottom: 0.75rem;
+    background: linear-gradient(135deg, var(--pastel-coral) 0%, var(--pastel-lavender) 40%, var(--pastel-sky) 70%, var(--pastel-mint) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.start-here-subtitle {
+    color: var(--text-secondary);
+    font-size: 1.2rem;
+    max-width: 520px;
+    margin: 0 auto;
+    line-height: 1.6;
+}
+
+/* Learning Path */
+.learning-path {
+    max-width: 700px;
+    margin: 2.5rem auto 0;
+    padding: 0 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    position: relative;
+}
+
+.learning-path::before {
+    content: '';
+    position: absolute;
+    left: 23px;
+    top: 24px;
+    bottom: 24px;
+    width: 3px;
+    background: linear-gradient(to bottom, var(--pastel-coral), var(--pastel-lavender), var(--pastel-sky), var(--pastel-mint), var(--pastel-yellow));
+    border-radius: 3px;
+    opacity: 0.5;
+}
+
+.path-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.25rem;
+    padding: 1.25rem 0;
+    position: relative;
+}
+
+.path-step-number {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--card-bg);
+    border: 3px solid var(--pastel-lavender);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-fun);
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    z-index: 1;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.path-step:nth-child(1) .path-step-number { border-color: var(--pastel-coral); }
+.path-step:nth-child(2) .path-step-number { border-color: var(--pastel-peach); }
+.path-step:nth-child(3) .path-step-number { border-color: var(--pastel-mint); }
+.path-step:nth-child(4) .path-step-number { border-color: var(--pastel-sky); }
+.path-step:nth-child(5) .path-step-number { border-color: var(--pastel-yellow); }
+
+.path-step-content {
+    flex: 1;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem 1.5rem;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.path-step-content:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.path-step-content h3 {
+    font-family: var(--font-fun);
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+    color: var(--text-primary);
+}
+
+.path-step-content p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.55;
+    margin-bottom: 0.75rem;
+}
+
+.path-step-content .btn {
+    font-size: 0.85rem;
+    padding: 0.4rem 1rem;
 }

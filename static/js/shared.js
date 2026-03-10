@@ -148,12 +148,12 @@ class PitchDetector {
         this.stream = null;
         this.isListening = false;
         this.onNoteDetected = null;
-        this.bufferSize = 4096;
+        this.bufferSize = 8192;
         this.buffer = new Float32Array(this.bufferSize);
         this.detectionInterval = null;
         this.lastDetectedNote = null;
         this.lastDetectedTime = 0;
-        this.confidenceThreshold = 0.9;
+        this.confidenceThreshold = 0.93;
     }
 
     async start() {
@@ -171,13 +171,13 @@ class PitchDetector {
 
             this.analyser = this.audioContext.createAnalyser();
             this.analyser.fftSize = this.bufferSize * 2;
-            this.analyser.smoothingTimeConstant = 0.8;
+            this.analyser.smoothingTimeConstant = 0.85;
 
             source.connect(this.analyser);
             this.isListening = true;
 
             // Start detection loop
-            this.detectionInterval = setInterval(() => this.detect(), 50);
+            this.detectionInterval = setInterval(() => this.detect(), 60);
             return true;
         } catch (e) {
             console.error('Microphone access denied:', e);
@@ -213,12 +213,15 @@ class PitchDetector {
         }
         rms = Math.sqrt(rms / this.buffer.length);
 
-        if (rms < 0.01) return; // Too quiet, skip
+        if (rms < 0.015) return; // Too quiet, skip
 
         // Autocorrelation pitch detection
         const freq = this.autoCorrelate(this.buffer, this.audioContext.sampleRate);
 
         if (freq > 0) {
+            // Sanity check: ignore frequencies outside guitar range (70-1200 Hz)
+            if (freq < 70 || freq > 1200) return;
+
             const noteInfo = this.frequencyToNote(freq);
             const now = Date.now();
 
@@ -235,56 +238,68 @@ class PitchDetector {
     }
 
     autoCorrelate(buf, sampleRate) {
-        // Find a good enough correlation
         let SIZE = buf.length;
-        let MAX_SAMPLES = Math.floor(SIZE / 2);
+
+        // ── Guitar frequency range limits ──
+        // Lowest: E2 ~82Hz → period ~538 samples at 44100
+        // Highest: E4 fret 12 ~660Hz → period ~67 samples
+        const minPeriod = Math.floor(sampleRate / 1200); // ~37 at 44100
+        const maxPeriod = Math.min(Math.floor(SIZE / 2), Math.floor(sampleRate / 70)); // ~630 at 44100
+
+        if (SIZE < maxPeriod * 2) return -1;
+
+        // ── Normalized autocorrelation (proper cross-correlation) ──
+        // For each lag τ, compute: R(τ) = Σ buf[i]*buf[i+τ] / sqrt(Σ buf[i]² · Σ buf[i+τ]²)
         let best_offset = -1;
         let best_correlation = 0;
         let foundGoodCorrelation = false;
-        let correlations = new Array(MAX_SAMPLES);
 
-        // Trim silence from edges
-        let start = 0, end = SIZE - 1;
-        const thresh = 0.2;
-        for (let i = 0; i < SIZE / 2; i++) {
-            if (Math.abs(buf[i]) > thresh) { start = i; break; }
-        }
-        for (let i = SIZE - 1; i >= SIZE / 2; i--) {
-            if (Math.abs(buf[i]) > thresh) { end = i; break; }
-        }
-
-        buf = buf.slice(start, end);
-        SIZE = buf.length;
-        MAX_SAMPLES = Math.floor(SIZE / 2);
-
-        if (SIZE < 100) return -1;
-
-        for (let offset = 8; offset < MAX_SAMPLES; offset++) {
-            let correlation = 0;
-            for (let i = 0; i < MAX_SAMPLES; i++) {
-                correlation += Math.abs((buf[i]) - (buf[i + offset]));
+        for (let tau = minPeriod; tau <= maxPeriod; tau++) {
+            let sum = 0, sumSq1 = 0, sumSq2 = 0;
+            const len = SIZE - tau;
+            for (let i = 0; i < len; i++) {
+                sum += buf[i] * buf[i + tau];
+                sumSq1 += buf[i] * buf[i];
+                sumSq2 += buf[i + tau] * buf[i + tau];
             }
-            correlation = 1 - (correlation / MAX_SAMPLES);
-            correlations[offset] = correlation;
+            const denom = Math.sqrt(sumSq1 * sumSq2);
+            if (denom === 0) continue;
+            const correlation = sum / denom;
 
             if (correlation > this.confidenceThreshold && correlation > best_correlation) {
                 best_correlation = correlation;
-                best_offset = offset;
+                best_offset = tau;
                 foundGoodCorrelation = true;
-            } else if (foundGoodCorrelation) {
-                // We found a peak, now going down — we're done
+            } else if (foundGoodCorrelation && correlation < best_correlation * 0.85) {
+                // Past the peak — stop searching
                 break;
             }
         }
 
-        if (best_correlation > this.confidenceThreshold) {
-            // Refine with parabolic interpolation
+        if (best_correlation > this.confidenceThreshold && best_offset > 0) {
+            // Parabolic interpolation for sub-sample accuracy
             let shift = 0;
-            if (best_offset > 0 && best_offset < MAX_SAMPLES - 1) {
-                const prev = correlations[best_offset - 1] || 0;
-                const curr = correlations[best_offset];
-                const next = correlations[best_offset + 1] || 0;
-                shift = (next - prev) / (2 * (2 * curr - next - prev));
+            if (best_offset > minPeriod && best_offset < maxPeriod) {
+                // Re-compute neighbors for interpolation
+                const calcCorr = (tau) => {
+                    let s = 0, s1 = 0, s2 = 0;
+                    const l = SIZE - tau;
+                    for (let i = 0; i < l; i++) {
+                        s += buf[i] * buf[i + tau];
+                        s1 += buf[i] * buf[i];
+                        s2 += buf[i + tau] * buf[i + tau];
+                    }
+                    const d = Math.sqrt(s1 * s2);
+                    return d > 0 ? s / d : 0;
+                };
+                const prev = calcCorr(best_offset - 1);
+                const curr = best_correlation;
+                const next = calcCorr(best_offset + 1);
+                const denom = 2 * curr - next - prev;
+                if (denom !== 0) {
+                    shift = (next - prev) / (2 * denom);
+                    shift = Math.max(-0.5, Math.min(0.5, shift));
+                }
             }
             return sampleRate / (best_offset + shift);
         }

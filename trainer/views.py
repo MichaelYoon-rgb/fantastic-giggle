@@ -79,18 +79,7 @@ def build_fretboard_data():
 
 def home(request):
     """Landing page."""
-    context = {
-        'fretboard': json.dumps(build_fretboard_data()),
-    }
-    if request.user.is_authenticated:
-        profile, _ = UserProfile.objects.get_or_create(user=request.user)
-        stats = NoteStats.objects.filter(user=request.user)
-        total_attempts = sum(s.total_attempts for s in stats)
-        total_correct = sum(s.correct_attempts for s in stats)
-        context['profile'] = profile
-        context['total_attempts'] = total_attempts
-        context['total_correct'] = total_correct
-        context['accuracy'] = round(total_correct / total_attempts * 100, 1) if total_attempts > 0 else 0
+    context = {}
     return render(request, 'trainer/home.html', context)
 
 
