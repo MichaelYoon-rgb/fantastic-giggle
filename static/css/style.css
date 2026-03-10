@@ -3326,6 +3326,27 @@ body.screen-shake {
     padding: 0.3rem 0.7rem !important;
 }
 
+/* ===== PRACTICE PROMPT ===== */
+.practice-prompt {
+    text-align: center;
+    font-family: var(--font-fun);
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    background: linear-gradient(135deg, rgba(167,139,250,0.12), rgba(251,191,36,0.10));
+    border: 1px solid rgba(167,139,250,0.25);
+    border-radius: 10px;
+    padding: 0.5rem 1rem;
+    margin: 0.3rem auto;
+    max-width: 500px;
+    opacity: 0;
+    transform: translateY(-8px);
+    transition: opacity 0.3s, transform 0.3s;
+}
+.practice-prompt.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
 /* ===== METRONOME CONTROLS ===== */
 .metronome-controls {
     display: none;
