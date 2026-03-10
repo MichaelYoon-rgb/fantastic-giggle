@@ -27,9 +27,6 @@
                 <button class="filter-pill" data-filter="flats">Flats</button>
                 <button class="filter-pill" data-filter="custom">Custom</button>
             </div>
-            <button class="flip-toggle" id="showAllToggle" title="Show/hide all notes on fretboard">
-                <span class="flip-icon">🎹</span> Notes
-            </button>
             <button class="flip-toggle" id="flipToggle" title="Flip fretboard orientation">
                 <span class="flip-icon">↕</span> Flip
             </button>
@@ -174,7 +171,6 @@ let revealed = false;
 let currentFilter = 'all';
 let customNotes = [];
 let fretboardInverted = true;
-let showAllNotes = false;
 let gameMode = 'name'; // 'name' | 'find' | 'block'
 
 // Block mode state
@@ -642,15 +638,8 @@ async function handleNameAnswer(selectedNote) {
 function clearFretboard() {
     document.querySelectorAll('.note-dot').forEach(d => {
         d.classList.remove('highlighted', 'correct', 'incorrect', 'find-correct', 'find-wrong', 'show', 'color-coded');
-        if (!showAllNotes) {
-            d.style.background = '';
-            d.style.opacity = '';
-        } else {
-            const note = FRETBOARD[`${d.dataset.string}-${d.dataset.fret}`];
-            d.classList.add('show', 'color-coded');
-            d.style.background = getNoteColor(note);
-            d.style.opacity = '0.55';
-        }
+        d.style.background = '';
+        d.style.opacity = '';
         d.style.color = '';
         d.textContent = FRETBOARD[`${d.dataset.string}-${d.dataset.fret}`];
     });
@@ -975,38 +964,6 @@ document.addEventListener('keydown', (e) => {
     if (gameMode === 'find') {
         const num = parseInt(e.key);
         if (num >= 1 && num <= 9) handleFindAnswer(currentString, num);
-    }
-});
-
-// ═══════════════════════════════════════
-// SHOW ALL NOTES TOGGLE
-// ═══════════════════════════════════════
-document.getElementById('showAllToggle').addEventListener('click', function() {
-    showAllNotes = !showAllNotes;
-    this.classList.toggle('flipped', showAllNotes);
-    document.querySelectorAll('#gameStrings .note-dot').forEach(d => {
-        if (showAllNotes) {
-            const note = FRETBOARD[`${d.dataset.string}-${d.dataset.fret}`];
-            d.classList.add('show', 'color-coded');
-            d.style.background = getNoteColor(note);
-            d.style.opacity = '0.55';
-            d.textContent = note;
-        } else {
-            if (!d.classList.contains('highlighted') && !d.classList.contains('correct')) {
-                d.classList.remove('show', 'color-coded');
-                d.style.background = ''; d.style.opacity = '';
-                d.textContent = FRETBOARD[`${d.dataset.string}-${d.dataset.fret}`];
-            }
-        }
-    });
-    if (currentNote && !waiting) {
-        if (gameMode === 'name') {
-            const dot = document.getElementById(`note-${currentString}-${currentFret}`);
-            if (dot) { dot.classList.add('highlighted'); dot.textContent = '?'; dot.style.opacity = '1'; }
-        } else if (gameMode === 'find') {
-            const row = document.querySelector(`.string-row[data-string="${currentString}"]`);
-            if (row) row.classList.add('target-string');
-        }
     }
 });
 
