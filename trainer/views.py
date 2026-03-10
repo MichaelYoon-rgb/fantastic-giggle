@@ -359,6 +359,10 @@ def api_get_weighted_note(request):
     else:
         weights = [1.0] * len(available_notes)
 
+    # Avoid repeating the same position — read prev from query param
+    prev_string = request.GET.get('ps', '')
+    prev_fret = request.GET.get('pf', '')
+
     # Weighted random selection
     chosen_note = random.choices(available_notes, weights=weights, k=1)[0]
 
@@ -366,6 +370,17 @@ def api_get_weighted_note(request):
     positions = get_all_positions_for_note(chosen_note)
     # Exclude fret 0 (open strings) so user practises fretting
     positions = [(s, f) for s, f in positions if f > 0]
+
+    # Try to avoid same position as last time
+    if prev_string and prev_fret and len(positions) > 1:
+        try:
+            ps, pf = int(prev_string), int(prev_fret)
+            filtered = [(s, f) for s, f in positions if not (s == ps and f == pf)]
+            if filtered:
+                positions = filtered
+        except ValueError:
+            pass
+
     if positions:
         string_num, fret_num = random.choice(positions)
     else:

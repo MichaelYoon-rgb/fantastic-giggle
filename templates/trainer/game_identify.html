@@ -284,7 +284,9 @@ document.querySelectorAll('.filter-pill').forEach(btn => {
 // Get next note
 async function getNextNote() {
     try {
-        const resp = await fetch(`/api/weighted-note/?filter=${encodeURIComponent(currentFilter)}`);
+        let url = `/api/weighted-note/?filter=${encodeURIComponent(currentFilter)}`;
+        if (currentString && currentFret) url += `&ps=${currentString}&pf=${currentFret}`;
+        const resp = await fetch(url);
         const data = await resp.json();
         currentNote = data.note;
         currentString = data.string;
