@@ -3136,3 +3136,101 @@ body.screen-shake {
     color: var(--text-secondary);
     font-weight: 600;
 }
+
+/* ═══════════════════════════════════════════
+   NOTE EXPLORER PAGE
+   ═══════════════════════════════════════════ */
+
+.explorer-container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 1rem 1rem 2rem;
+}
+
+/* Note selector pills */
+.explorer-pills {
+    display: flex;
+    justify-content: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.75rem;
+}
+
+.explorer-pill {
+    padding: 0.5rem 0.85rem;
+    border-radius: 12px;
+    border: 2.5px solid var(--border-color);
+    background: var(--card-bg);
+    font-family: var(--font-fun);
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.18s ease;
+    user-select: none;
+    min-width: 50px;
+    text-align: center;
+}
+
+.explorer-pill:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.explorer-pill.active {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 14px rgba(0,0,0,0.12);
+    font-weight: 700;
+}
+
+.explorer-pill.sharp {
+    font-size: 0.8rem;
+}
+
+/* Quick action buttons */
+.explorer-actions {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+.explorer-action-btn {
+    padding: 0.35rem 0.8rem;
+    border-radius: 10px;
+    border: 2px solid var(--border-color);
+    background: var(--bg-primary);
+    font-family: var(--font-fun);
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.explorer-action-btn:hover {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+}
+
+.explorer-sep {
+    width: 1px;
+    height: 24px;
+    background: var(--border-color);
+    margin: 0 0.3rem;
+}
+
+/* Note count */
+.explorer-count {
+    text-align: center;
+    font-family: var(--font-fun);
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+}
+
+.explorer-count strong {
+    color: var(--text-primary);
+}

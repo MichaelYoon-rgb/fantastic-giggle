@@ -1,0 +1,308 @@
+{% extends 'trainer/base.html' %}
+{% load static %}
+
+{% block title %}Note Explorer — Every Guitar Note{% endblock %}
+{% block nav_explorer %}active{% endblock %}
+{% block body_class %}explorer-page{% endblock %}
+
+{% block content %}
+<div class="explorer-container">
+    <!-- Note selector pills -->
+    <div class="explorer-pills" id="notePills">
+        <button class="explorer-pill natural" data-note="C">C</button>
+        <button class="explorer-pill sharp" data-note="C#">C♯/D♭</button>
+        <button class="explorer-pill natural" data-note="D">D</button>
+        <button class="explorer-pill sharp" data-note="D#">D♯/E♭</button>
+        <button class="explorer-pill natural" data-note="E">E</button>
+        <button class="explorer-pill natural" data-note="F">F</button>
+        <button class="explorer-pill sharp" data-note="F#">F♯/G♭</button>
+        <button class="explorer-pill natural" data-note="G">G</button>
+        <button class="explorer-pill sharp" data-note="G#">G♯/A♭</button>
+        <button class="explorer-pill natural" data-note="A">A</button>
+        <button class="explorer-pill sharp" data-note="A#">A♯/B♭</button>
+        <button class="explorer-pill natural" data-note="B">B</button>
+    </div>
+
+    <!-- Quick actions -->
+    <div class="explorer-actions">
+        <button class="explorer-action-btn" id="clearAll">Clear All</button>
+        <button class="explorer-action-btn" id="selectNatural">Naturals</button>
+        <button class="explorer-action-btn" id="selectSharps">♯/♭</button>
+        <button class="explorer-action-btn" id="selectAll">All Notes</button>
+        <div class="explorer-sep"></div>
+        <button class="flip-toggle" id="flipToggle" title="Flip fretboard orientation">
+            <span class="flip-icon">↕</span> Flip
+        </button>
+        <button class="explorer-action-btn" id="toggleSound">🔊</button>
+    </div>
+
+    <!-- Count display -->
+    <div class="explorer-count" id="noteCount">Select a note to see it on the fretboard</div>
+
+    <!-- Fretboard -->
+    <div class="fretboard-wrapper">
+        <div class="fretboard" id="explorerFretboard">
+            <div class="fret-numbers">
+                <div class="fret-number"></div>
+                <div class="fret-number" style="font-size:0.6rem;">O</div>
+                <div class="fret-number">1</div>
+                <div class="fret-number">2</div>
+                <div class="fret-number">3</div>
+                <div class="fret-number">4</div>
+                <div class="fret-number">5</div>
+                <div class="fret-number">6</div>
+                <div class="fret-number">7</div>
+                <div class="fret-number">8</div>
+                <div class="fret-number">9</div>
+                <div class="fret-number">10</div>
+                <div class="fret-number">11</div>
+                <div class="fret-number">12</div>
+            </div>
+            <div class="strings-container" id="explorerStrings"></div>
+            <div class="fret-markers">
+                <div class="fret-marker"></div>
+                <div class="fret-marker"></div>
+                <div class="fret-marker"></div>
+                <div class="fret-marker"></div>
+                <div class="fret-marker"><div class="fret-marker-dot"></div></div>
+                <div class="fret-marker"></div>
+                <div class="fret-marker"><div class="fret-marker-dot"></div></div>
+                <div class="fret-marker"></div>
+                <div class="fret-marker"><div class="fret-marker-dot"></div></div>
+                <div class="fret-marker"></div>
+                <div class="fret-marker"><div class="fret-marker-dot"></div></div>
+                <div class="fret-marker"></div>
+                <div class="fret-marker"></div>
+                <div class="fret-marker">
+                    <div class="fret-marker-dot"></div>
+                    <div class="fret-marker-dot"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const FRETBOARD = {{ fretboard|safe }};
+const ENHARMONIC = {
+    'C#': 'Db', 'D#': 'Eb', 'F#': 'Gb', 'G#': 'Ab', 'A#': 'Bb',
+    'Db': 'C#', 'Eb': 'D#', 'Gb': 'F#', 'Ab': 'G#', 'Bb': 'A#',
+};
+const STRING_NAMES = {1: 'e', 2: 'B', 3: 'G', 4: 'D', 5: 'A', 6: 'E'};
+const INLAY_FRETS = [3, 5, 7, 9];
+const DOUBLE_INLAY_FRETS = [12];
+const NATURALS = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+const SHARPS = ['C#', 'D#', 'F#', 'G#', 'A#'];
+
+let selectedNotes = new Set();
+let fretboardInverted = true;
+let soundOn = true;
+
+// ─── Build fretboard ───
+function buildFretboard() {
+    const container = document.getElementById('explorerStrings');
+    container.innerHTML = '';
+    const strings = fretboardInverted ? [1,2,3,4,5,6] : [6,5,4,3,2,1];
+
+    for (const s of strings) {
+        const row = document.createElement('div');
+        row.className = 'string-row';
+        row.dataset.string = s;
+
+        const label = document.createElement('div');
+        label.className = 'string-label';
+        label.textContent = STRING_NAMES[s];
+        row.appendChild(label);
+
+        for (let f = 0; f <= 12; f++) {
+            const cell = document.createElement('div');
+            cell.className = `fret-cell ${f === 0 ? 'fret-0' : ''}`;
+
+            // Inlay dots
+            if (fretboardInverted) {
+                if (s === 3 && INLAY_FRETS.includes(f)) {
+                    const inlay = document.createElement('div');
+                    inlay.className = 'inlay-dot';
+                    inlay.style.bottom = '-12px';
+                    cell.appendChild(inlay);
+                }
+                if (DOUBLE_INLAY_FRETS.includes(f) && (s === 2 || s === 4)) {
+                    const inlay = document.createElement('div');
+                    inlay.className = 'inlay-dot';
+                    inlay.style.bottom = '-12px';
+                    cell.appendChild(inlay);
+                }
+            } else {
+                if (s === 4 && INLAY_FRETS.includes(f)) {
+                    const inlay = document.createElement('div');
+                    inlay.className = 'inlay-dot';
+                    inlay.style.bottom = '-12px';
+                    cell.appendChild(inlay);
+                }
+                if (DOUBLE_INLAY_FRETS.includes(f) && (s === 5 || s === 3)) {
+                    const inlay = document.createElement('div');
+                    inlay.className = 'inlay-dot';
+                    inlay.style.bottom = '-12px';
+                    cell.appendChild(inlay);
+                }
+            }
+
+            const dot = document.createElement('div');
+            dot.className = 'note-dot';
+            dot.id = `exp-${s}-${f}`;
+            dot.dataset.string = s;
+            dot.dataset.fret = f;
+            const note = FRETBOARD[`${s}-${f}`];
+            dot.textContent = note;
+
+            cell.addEventListener('click', () => {
+                if (soundOn) {
+                    playNoteSound(note, s, f);
+                    vibrateString(s);
+                }
+            });
+
+            cell.appendChild(dot);
+            row.appendChild(cell);
+        }
+        container.appendChild(row);
+    }
+    updateFretboard();
+}
+
+function vibrateString(stringNum) {
+    const row = document.querySelector(`#explorerStrings .string-row[data-string="${stringNum}"]`);
+    if (row) {
+        row.classList.remove('vibrating');
+        void row.offsetWidth;
+        row.classList.add('vibrating');
+        setTimeout(() => row.classList.remove('vibrating'), 700);
+    }
+}
+
+// ─── Check if a fretboard note matches any selected note ───
+function noteMatches(fretNote) {
+    if (selectedNotes.has(fretNote)) return true;
+    // Check enharmonic
+    const enh = ENHARMONIC[fretNote];
+    if (enh && selectedNotes.has(enh)) return true;
+    return false;
+}
+
+// ─── Update fretboard display ───
+function updateFretboard() {
+    let count = 0;
+    document.querySelectorAll('#explorerStrings .note-dot').forEach(dot => {
+        const note = FRETBOARD[`${dot.dataset.string}-${dot.dataset.fret}`];
+        if (selectedNotes.size > 0 && noteMatches(note)) {
+            dot.classList.add('show', 'color-coded');
+            dot.style.background = getNoteColor(note);
+            dot.style.opacity = '1';
+            count++;
+        } else if (selectedNotes.size === 0) {
+            dot.classList.remove('show', 'color-coded');
+            dot.style.background = '';
+            dot.style.opacity = '';
+        } else {
+            // Dim unselected notes
+            dot.classList.remove('show', 'color-coded');
+            dot.style.background = '';
+            dot.style.opacity = '0.15';
+        }
+    });
+
+    // Update count
+    const countEl = document.getElementById('noteCount');
+    if (selectedNotes.size === 0) {
+        countEl.textContent = 'Select a note to see it on the fretboard';
+    } else {
+        const names = [...selectedNotes].join(', ');
+        countEl.innerHTML = `<strong>${count}</strong> positions for <strong>${names}</strong> across the fretboard`;
+    }
+}
+
+// ─── Pill click handlers ───
+document.querySelectorAll('.explorer-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+        const note = pill.dataset.note;
+        if (selectedNotes.has(note)) {
+            selectedNotes.delete(note);
+            pill.classList.remove('active');
+            pill.style.background = '';
+            pill.style.borderColor = '';
+            pill.style.color = '';
+        } else {
+            selectedNotes.add(note);
+            pill.classList.add('active');
+            pill.style.background = getNoteColor(note);
+            pill.style.borderColor = getNoteColor(note);
+            pill.style.color = '#2a2035';
+        }
+        updateFretboard();
+    });
+});
+
+function syncPills() {
+    document.querySelectorAll('.explorer-pill').forEach(pill => {
+        const note = pill.dataset.note;
+        if (selectedNotes.has(note)) {
+            pill.classList.add('active');
+            pill.style.background = getNoteColor(note);
+            pill.style.borderColor = getNoteColor(note);
+            pill.style.color = '#2a2035';
+        } else {
+            pill.classList.remove('active');
+            pill.style.background = '';
+            pill.style.borderColor = '';
+            pill.style.color = '';
+        }
+    });
+}
+
+// ─── Quick action buttons ───
+document.getElementById('clearAll').addEventListener('click', () => {
+    selectedNotes.clear();
+    syncPills();
+    updateFretboard();
+});
+
+document.getElementById('selectNatural').addEventListener('click', () => {
+    selectedNotes.clear();
+    NATURALS.forEach(n => selectedNotes.add(n));
+    syncPills();
+    updateFretboard();
+});
+
+document.getElementById('selectSharps').addEventListener('click', () => {
+    selectedNotes.clear();
+    SHARPS.forEach(n => selectedNotes.add(n));
+    syncPills();
+    updateFretboard();
+});
+
+document.getElementById('selectAll').addEventListener('click', () => {
+    selectedNotes.clear();
+    [...NATURALS, ...SHARPS].forEach(n => selectedNotes.add(n));
+    syncPills();
+    updateFretboard();
+});
+
+// Flip toggle
+document.getElementById('flipToggle').addEventListener('click', function() {
+    fretboardInverted = !fretboardInverted;
+    this.classList.toggle('flipped', !fretboardInverted);
+    buildFretboard();
+});
+
+// Sound toggle
+document.getElementById('toggleSound').addEventListener('click', function() {
+    soundOn = !soundOn;
+    this.textContent = soundOn ? '🔊' : '🔇';
+});
+
+// ─── Init ───
+buildFretboard();
+</script>
+{% endblock %}

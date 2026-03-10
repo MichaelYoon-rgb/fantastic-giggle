@@ -207,6 +207,14 @@ def strum_view(request):
     return render(request, 'trainer/strum.html')
 
 
+def note_explorer_view(request):
+    """Note explorer — select notes and see all positions on fretboard."""
+    context = {
+        'fretboard': json.dumps(build_fretboard_data()),
+    }
+    return render(request, 'trainer/note_explorer.html', context)
+
+
 @login_required
 def stats_view(request):
     """View user's progress stats."""
