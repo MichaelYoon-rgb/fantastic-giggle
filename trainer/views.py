@@ -309,9 +309,11 @@ def api_get_weighted_note(request):
 
 
 def api_get_find_challenge(request):
-    """Get a challenge: find a specific note in a region of the fretboard."""
+    """Get a challenge: find a specific note in a region of the fretboard.
+    Supports 3x3 blocks (3 frets × 3 strings) with no duplicate notes."""
     filter_param = request.GET.get('filter', 'all')
     region = request.GET.get('region', 'all')  # e.g. '0-4', '5-8', '9-12', 'all'
+    mode = request.GET.get('mode', 'block')  # 'block' (3x3) or 'full' (all frets)
 
     # Determine notes
     if filter_param == 'all':
@@ -331,38 +333,111 @@ def api_get_find_challenge(request):
     if not available_notes:
         available_notes = ALL_NOTES[:]
 
-    # Determine fret range
-    if region == 'all':
-        fret_range = list(range(0, 13))
-    else:
-        try:
-            parts = region.split('-')
-            fret_range = list(range(int(parts[0]), int(parts[1]) + 1))
-        except (ValueError, IndexError):
-            fret_range = list(range(0, 13))
+    if mode == 'full':
+        # Full fretboard mode — find ALL instances of a note
+        if request.user.is_authenticated:
+            stats = {s.note: s for s in NoteStats.objects.filter(user=request.user, note__in=available_notes)}
+            weights = [stats[n].weight if n in stats else 5.0 for n in available_notes]
+        else:
+            weights = [1.0] * len(available_notes)
 
-    # Weighted selection
-    if request.user.is_authenticated:
-        stats = {s.note: s for s in NoteStats.objects.filter(user=request.user, note__in=available_notes)}
-        weights = []
-        for note in available_notes:
-            if note in stats:
-                weights.append(stats[note].weight)
-            else:
-                weights.append(5.0)
-    else:
-        weights = [1.0] * len(available_notes)
+        chosen_note = random.choices(available_notes, weights=weights, k=1)[0]
+        positions = get_all_positions_for_note(chosen_note)
 
-    chosen_note = random.choices(available_notes, weights=weights, k=1)[0]
+        return JsonResponse({
+            'note': chosen_note,
+            'enharmonic': ENHARMONIC.get(chosen_note, None),
+            'valid_positions': [{'string': s, 'fret': f} for s, f in positions],
+            'region': 'all',
+            'mode': 'full',
+            'block': None,
+        })
 
-    # Get valid positions in the region
-    positions = get_all_positions_for_note(chosen_note, fret_range=fret_range)
+    # Block mode — pick a random 3x3 block and ensure no duplicate notes
+    max_attempts = 50
+    for _ in range(max_attempts):
+        # Random start fret (0-10 so we can have 3 frets: start, start+1, start+2)
+        start_fret = random.randint(0, 10)
+        fret_range = [start_fret, start_fret + 1, start_fret + 2]
+
+        # Random start string (1-4 so we can have 3 strings: start, start+1, start+2)
+        start_string = random.randint(1, 4)
+        string_range = [start_string, start_string + 1, start_string + 2]
+
+        # Collect notes in this block
+        block_notes = set()
+        has_duplicate = False
+        for s in string_range:
+            for f in fret_range:
+                note = get_note_at_position(s, f)
+                if note in block_notes:
+                    has_duplicate = True
+                    break
+                block_notes.add(note)
+            if has_duplicate:
+                break
+
+        if not has_duplicate:
+            # Filter to only notes the user is practicing
+            valid_block_notes = [n for n in block_notes if n in available_notes]
+            if valid_block_notes:
+                # Weighted selection from valid notes in this block
+                if request.user.is_authenticated:
+                    stats = {s.note: s for s in NoteStats.objects.filter(user=request.user, note__in=valid_block_notes)}
+                    weights = [stats[n].weight if n in stats else 5.0 for n in valid_block_notes]
+                else:
+                    weights = [1.0] * len(valid_block_notes)
+
+                chosen_note = random.choices(valid_block_notes, weights=weights, k=1)[0]
+
+                # Get valid positions within this block
+                positions = []
+                for s in string_range:
+                    for f in fret_range:
+                        n = get_note_at_position(s, f)
+                        if n == chosen_note or (chosen_note in ENHARMONIC and n == ENHARMONIC[chosen_note]):
+                            positions.append((s, f))
+
+                return JsonResponse({
+                    'note': chosen_note,
+                    'enharmonic': ENHARMONIC.get(chosen_note, None),
+                    'valid_positions': [{'string': s, 'fret': f} for s, f in positions],
+                    'region': f'{start_fret}-{start_fret + 2}',
+                    'mode': 'block',
+                    'block': {
+                        'fret_start': start_fret,
+                        'fret_end': start_fret + 2,
+                        'string_start': start_string,
+                        'string_end': start_string + 2,
+                    },
+                })
+
+    # Fallback: if we couldn't find a no-duplicate block, just use any random block
+    start_fret = random.randint(0, 10)
+    start_string = random.randint(1, 4)
+    fret_range = list(range(start_fret, start_fret + 3))
+    string_range = list(range(start_string, start_string + 3))
+
+    chosen_note = random.choice(available_notes)
+    positions = []
+    for s in string_range:
+        for f in fret_range:
+            n = get_note_at_position(s, f)
+            if n == chosen_note or (chosen_note in ENHARMONIC and n == ENHARMONIC[chosen_note]):
+                positions.append((s, f))
 
     return JsonResponse({
         'note': chosen_note,
         'enharmonic': ENHARMONIC.get(chosen_note, None),
         'valid_positions': [{'string': s, 'fret': f} for s, f in positions],
-        'region': region,
+        'region': f'{start_fret}-{start_fret + 2}',
+        'mode': 'block',
+        'block': {
+            'fret_start': start_fret,
+            'fret_end': start_fret + 2,
+            'string_start': start_string,
+            'string_end': start_string + 2,
+        },
     })
 
 

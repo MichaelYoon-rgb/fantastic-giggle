@@ -7,7 +7,7 @@
 <div class="game-header">
     <div>
         <h1 class="game-title">Find the Note</h1>
-        <p class="game-subtitle">Find the specified note on the fretboard in the given region.</p>
+        <p class="game-subtitle">Find the note on the fretboard — click or play it on your guitar!</p>
     </div>
     <div class="game-score">
         <div class="score-item">
@@ -25,45 +25,33 @@
     </div>
 </div>
 
-<!-- Filter Panel -->
-<div class="filter-panel">
-    <div class="filter-header">
+<!-- Settings Panel (collapsible) -->
+<div class="filter-panel" style="margin-bottom: 0.5rem;">
+    <div class="filter-header" id="settingsToggle" style="cursor:pointer;">
         <div class="filter-title">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
             Settings
         </div>
+        <span class="btn btn-ghost btn-sm" id="settingsStatus">Block Mode ▼</span>
     </div>
-    <div style="display:flex; flex-wrap:wrap; gap:1rem; align-items:flex-start;">
-        <div>
-            <div style="font-size:0.8rem; font-weight:600; color:var(--text-muted); margin-bottom:0.5rem; text-transform:uppercase; letter-spacing:0.05em; font-family:var(--font-fun);">Note Filter</div>
-            <div class="filter-groups">
-                <button class="filter-group-btn active" data-filter="all">All Notes</button>
-                <button class="filter-group-btn" data-filter="naturals">Naturals</button>
-                <button class="filter-group-btn" data-filter="sharps">Sharps</button>
-                <button class="filter-group-btn" data-filter="flats">Flats</button>
-                <button class="filter-group-btn" data-filter="custom">Custom</button>
+    <div id="settingsBody" style="display:none;">
+        <div style="display:flex; flex-wrap:wrap; gap:1rem; align-items:flex-start;">
+            <div>
+                <div style="font-size:0.8rem; font-weight:600; color:var(--text-muted); margin-bottom:0.5rem; text-transform:uppercase; letter-spacing:0.05em; font-family:var(--font-fun);">Note Filter</div>
+                <div class="filter-groups">
+                    <button class="filter-group-btn active" data-filter="all">All Notes</button>
+                    <button class="filter-group-btn" data-filter="naturals">Naturals</button>
+                    <button class="filter-group-btn" data-filter="sharps">Sharps</button>
+                    <button class="filter-group-btn" data-filter="flats">Flats</button>
+                    <button class="filter-group-btn" data-filter="custom">Custom</button>
+                </div>
+                <div class="filter-notes" id="filterNotes" style="display:none; margin-top:0.5rem;"></div>
             </div>
-            <div class="filter-notes" id="filterNotes" style="display:none; margin-top:0.5rem;"></div>
-        </div>
-        <div>
-            <div style="font-size:0.8rem; font-weight:600; color:var(--text-muted); margin-bottom:0.5rem; text-transform:uppercase; letter-spacing:0.05em; font-family:var(--font-fun);">Fretboard Region</div>
-            <div class="region-selector">
-                <button class="region-btn active" data-region="all">All (0-12)</button>
-                <button class="region-btn" data-region="0-4">Frets 0-4</button>
-                <button class="region-btn" data-region="5-8">Frets 5-8</button>
-                <button class="region-btn" data-region="9-12">Frets 9-12</button>
-                <button class="region-btn" data-region="custom-3x3">3×3 Random</button>
-            </div>
-        </div>
-        <div>
-            <div style="font-size:0.8rem; font-weight:600; color:var(--text-muted); margin-bottom:0.5rem; text-transform:uppercase; letter-spacing:0.05em; font-family:var(--font-fun);">Options</div>
-            <div style="display:flex; flex-direction:column; gap:0.5rem;">
-                <div class="toggle-row">
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="toggleBlock" checked>
-                        <span class="toggle-slider"></span>
-                    </label>
-                    <span class="toggle-label">Show 3×3 block highlight</span>
+            <div>
+                <div style="font-size:0.8rem; font-weight:600; color:var(--text-muted); margin-bottom:0.5rem; text-transform:uppercase; letter-spacing:0.05em; font-family:var(--font-fun);">Game Mode</div>
+                <div class="region-selector">
+                    <button class="region-btn active" data-mode="block">3×3 Block</button>
+                    <button class="region-btn" data-mode="full">Full Fretboard</button>
                 </div>
             </div>
         </div>
@@ -79,9 +67,18 @@
 
 <!-- Challenge Prompt -->
 <div class="challenge-prompt" id="challengePrompt">
-    <div class="challenge-text">Find this note on the fretboard:</div>
+    <div class="challenge-text" id="challengeText">Find this note on the fretboard:</div>
     <div class="challenge-note" id="challengeNote">—</div>
     <div class="challenge-region" id="challengeRegion"></div>
+    <div id="findProgress" style="margin-top: 0.5rem; font-family: var(--font-fun); font-size: 0.85rem; color: var(--text-muted); display:none;">
+        Found: <span id="foundCount">0</span> / <span id="totalCount">0</span>
+    </div>
+</div>
+
+<!-- Action Buttons -->
+<div style="display:flex; gap:0.5rem; justify-content:center; margin-bottom:0.75rem; flex-wrap:wrap;">
+    <button class="btn btn-primary" id="revealBtn" style="display:none;">👁 Reveal All Answers</button>
+    <button class="btn btn-ghost" id="skipBtn">⏭ Skip</button>
 </div>
 
 <!-- Fretboard -->
@@ -89,6 +86,7 @@
     <div class="fretboard" id="gameFretboard">
         <div class="fret-numbers">
             <div class="fret-number"></div>
+            <div class="fret-number" style="font-size:0.6rem;">O</div>
             <div class="fret-number">1</div>
             <div class="fret-number">2</div>
             <div class="fret-number">3</div>
@@ -104,6 +102,7 @@
         </div>
         <div class="strings-container" id="gameStrings"></div>
         <div class="fret-markers">
+            <div class="fret-marker"></div>
             <div class="fret-marker"></div>
             <div class="fret-marker"></div>
             <div class="fret-marker"></div>
@@ -145,13 +144,17 @@ let scoreWrong = 0;
 let streak = 0;
 let waiting = false;
 let currentFilter = 'all';
-let currentRegion = 'all';
+let gameMode = 'block'; // 'block' or 'full'
 let customNotes = [];
-let showBlockHighlight = true;
 let pitchDetector = null;
 let micActive = false;
 
-// Build fretboard with inlay dots
+// Full-fretboard mode tracking
+let foundPositions = [];
+let remainingPositions = [];
+let revealed = false;
+
+// ─── BUILD FRETBOARD ───
 function buildFretboard() {
     const container = document.getElementById('gameStrings');
     container.innerHTML = '';
@@ -167,7 +170,6 @@ function buildFretboard() {
             const cell = document.createElement('div');
             cell.className = `fret-cell ${f === 0 ? 'fret-0' : ''}`;
 
-            // Add inlay dots between strings 4 and 3 (D and G)
             if (s === 4 && INLAY_FRETS.includes(f)) {
                 const inlay = document.createElement('div');
                 inlay.className = 'inlay-dot';
@@ -202,7 +204,7 @@ function buildFretboard() {
     }
 }
 
-// Build filter note buttons
+// ─── BUILD FILTER NOTES ───
 function buildFilterNotes() {
     const container = document.getElementById('filterNotes');
     container.innerHTML = '';
@@ -224,14 +226,23 @@ function updateCustomFilter() {
     document.querySelectorAll('#filterNotes .filter-note-btn.active').forEach(btn => {
         customNotes.push(btn.dataset.note);
     });
-    if (customNotes.length === 0) {
-        currentFilter = 'all';
-    } else {
-        currentFilter = JSON.stringify(customNotes);
-    }
+    currentFilter = customNotes.length > 0 ? JSON.stringify(customNotes) : 'all';
 }
 
-// Filter handlers — with auto-update fix
+// ─── SETTINGS TOGGLE ───
+document.getElementById('settingsToggle').addEventListener('click', function() {
+    const body = document.getElementById('settingsBody');
+    const status = document.getElementById('settingsStatus');
+    if (body.style.display === 'none') {
+        body.style.display = 'block';
+        status.textContent = status.textContent.replace(' ▼', ' ▲');
+    } else {
+        body.style.display = 'none';
+        status.textContent = status.textContent.replace(' ▲', ' ▼');
+    }
+});
+
+// ─── FILTER HANDLERS ───
 document.querySelectorAll('.filter-group-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         document.querySelectorAll('.filter-group-btn').forEach(b => b.classList.remove('active'));
@@ -244,48 +255,32 @@ document.querySelectorAll('.filter-group-btn').forEach(btn => {
             document.getElementById('filterNotes').style.display = 'none';
             currentFilter = filter;
         }
-        // Auto-update: immediately fetch new challenge with new filter
         getNextChallenge();
     });
 });
 
-// Region handlers
+// ─── MODE SELECTOR ───
 document.querySelectorAll('.region-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         document.querySelectorAll('.region-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        currentRegion = btn.dataset.region;
-
-        if (currentRegion === 'custom-3x3') {
-            // Random 3x3 block
-            const startFret = Math.floor(Math.random() * 10);
-            currentRegion = `${startFret}-${startFret + 3}`;
-        }
-        // Auto-update on region change too
+        gameMode = btn.dataset.mode;
+        const statusEl = document.getElementById('settingsStatus');
+        statusEl.textContent = (gameMode === 'block' ? 'Block Mode' : 'Full Fretboard') +
+            (statusEl.textContent.includes('▲') ? ' ▲' : ' ▼');
         getNextChallenge();
     });
 });
 
-// 3x3 block toggle
-document.getElementById('toggleBlock').addEventListener('change', function() {
-    showBlockHighlight = this.checked;
-    // Re-render block highlight
-    updateBlockHighlight();
-});
-
+// ─── BLOCK HIGHLIGHT (fancy overlay) ───
 function updateBlockHighlight() {
-    // Clear all block highlights
     document.querySelectorAll('.fret-cell.in-block').forEach(c => c.classList.remove('in-block'));
 
-    if (!showBlockHighlight || !currentChallenge) return;
-    if (currentChallenge.region === 'all') return;
+    if (!currentChallenge || !currentChallenge.block) return;
 
-    const parts = currentChallenge.region.split('-');
-    const fretMin = parseInt(parts[0]);
-    const fretMax = parseInt(parts[1]);
-
-    for (let s = 1; s <= 6; s++) {
-        for (let f = fretMin; f <= fretMax; f++) {
+    const b = currentChallenge.block;
+    for (let s = b.string_start; s <= b.string_end; s++) {
+        for (let f = b.fret_start; f <= b.fret_end; f++) {
             const dot = document.getElementById(`note-${s}-${f}`);
             if (dot && dot.parentElement) {
                 dot.parentElement.classList.add('in-block');
@@ -297,18 +292,13 @@ function updateBlockHighlight() {
 // ─── MICROPHONE INPUT ───
 document.getElementById('micToggle').addEventListener('click', async function() {
     if (micActive) {
-        // Stop mic
-        if (pitchDetector) {
-            pitchDetector.stop();
-            pitchDetector = null;
-        }
+        if (pitchDetector) { pitchDetector.stop(); pitchDetector = null; }
         micActive = false;
         this.classList.remove('active');
         this.textContent = '🎤 Use Microphone';
         document.getElementById('micStatus').textContent = 'Microphone off';
         document.getElementById('micDetected').textContent = '';
     } else {
-        // Start mic
         pitchDetector = new PitchDetector();
         const started = await pitchDetector.start();
         if (started) {
@@ -319,17 +309,28 @@ document.getElementById('micToggle').addEventListener('click', async function() 
 
             pitchDetector.onNoteDetected = (noteInfo) => {
                 document.getElementById('micDetected').textContent = noteInfo.note;
-
-                // If we have an active challenge, check if the played note matches
                 if (!waiting && currentChallenge) {
-                    const pos = pitchDetector.guessPosition(noteInfo.frequency);
-                    if (pos.string && pos.fret !== null) {
-                        // Check if this position is a valid answer
-                        const isValid = currentChallenge.valid_positions.some(
-                            p => p.string === pos.string && p.fret === pos.fret
-                        );
-                        if (isValid) {
-                            handleClick(pos.string, pos.fret);
+                    const detectedNote = noteInfo.note.replace(/\d/g, ''); // strip octave
+                    const targetNote = currentChallenge.note;
+                    const targetEnharmonic = currentChallenge.enharmonic;
+
+                    // Check if detected note matches the target
+                    if (detectedNote === targetNote || detectedNote === targetEnharmonic) {
+                        if (gameMode === 'full') {
+                            // In full mode, accept the mic detection as finding any remaining position
+                            if (remainingPositions.length > 0) {
+                                const pos = remainingPositions[0];
+                                handleClick(pos.string, pos.fret);
+                            }
+                        } else {
+                            // In block mode, try to guess the position
+                            const pos = pitchDetector.guessPosition(noteInfo.frequency);
+                            if (pos.string && pos.fret !== null) {
+                                const isValid = currentChallenge.valid_positions.some(
+                                    p => p.string === pos.string && p.fret === pos.fret
+                                );
+                                if (isValid) handleClick(pos.string, pos.fret);
+                            }
                         }
                     }
                 }
@@ -340,23 +341,69 @@ document.getElementById('micToggle').addEventListener('click', async function() 
     }
 });
 
-// Get next challenge
+// ─── REVEAL BUTTON ───
+document.getElementById('revealBtn').addEventListener('click', function() {
+    if (!currentChallenge) return;
+    revealed = true;
+
+    const noteColor = getNoteColor(currentChallenge.note);
+    currentChallenge.valid_positions.forEach(p => {
+        const d = document.getElementById(`note-${p.string}-${p.fret}`);
+        if (d) {
+            d.classList.add('show', 'color-coded');
+            d.style.opacity = '1';
+            d.style.background = noteColor;
+            d.style.color = '#2a2035';
+            d.textContent = currentChallenge.note;
+        }
+    });
+
+    this.style.display = 'none';
+    showFeedback('All positions revealed!', 'correct');
+    setTimeout(() => getNextChallenge(), 2500);
+});
+
+// ─── SKIP BUTTON ───
+document.getElementById('skipBtn').addEventListener('click', function() {
+    getNextChallenge();
+});
+
+// ─── GET NEXT CHALLENGE ───
 async function getNextChallenge() {
     try {
-        const resp = await fetch(`/api/find-challenge/?filter=${encodeURIComponent(currentFilter)}&region=${encodeURIComponent(currentRegion)}`);
+        const resp = await fetch(
+            `/api/find-challenge/?filter=${encodeURIComponent(currentFilter)}&mode=${gameMode}`
+        );
         const data = await resp.json();
         currentChallenge = data;
+        revealed = false;
+        foundPositions = [];
+        remainingPositions = [...data.valid_positions];
 
-        // Update prompt with color
+        // Update prompt
         const noteEl = document.getElementById('challengeNote');
         const displayText = data.note + (data.enharmonic ? ` / ${data.enharmonic}` : '');
         noteEl.textContent = displayText;
         noteEl.style.color = getNoteColor(data.note);
         noteEl.style.textShadow = `0 0 50px ${getNoteColor(data.note)}40`;
 
-        const regionText = data.region === 'all' ? 'Anywhere on the fretboard' :
-            `Frets ${data.region}`;
-        document.getElementById('challengeRegion').textContent = regionText;
+        // Update region/mode text
+        const progressEl = document.getElementById('findProgress');
+        if (gameMode === 'full') {
+            document.getElementById('challengeText').textContent = 'Find ALL instances of this note:';
+            document.getElementById('challengeRegion').textContent = 'Tap every position on the fretboard!';
+            progressEl.style.display = 'block';
+            document.getElementById('foundCount').textContent = '0';
+            document.getElementById('totalCount').textContent = data.valid_positions.length;
+            document.getElementById('revealBtn').style.display = 'inline-flex';
+        } else {
+            document.getElementById('challengeText').textContent = 'Find this note in the highlighted area:';
+            const b = data.block;
+            const regionText = b ? `Frets ${b.fret_start}–${b.fret_end}, Strings ${STRING_NAMES[b.string_end]}–${STRING_NAMES[b.string_start]}` : '';
+            document.getElementById('challengeRegion').textContent = regionText;
+            progressEl.style.display = 'none';
+            document.getElementById('revealBtn').style.display = 'inline-flex';
+        }
 
         // Clear fretboard
         document.querySelectorAll('.note-dot').forEach(d => {
@@ -367,20 +414,22 @@ async function getNextChallenge() {
             d.style.color = '';
         });
 
-        // Clear block highlights and re-apply
+        // Apply block highlight for block mode
         updateBlockHighlight();
 
-        // Subtle region hint on dots
-        if (data.region !== 'all') {
-            const parts = data.region.split('-');
-            const fretMin = parseInt(parts[0]);
-            const fretMax = parseInt(parts[1]);
+        // In block mode, subtly dim notes outside the block
+        if (gameMode === 'block' && data.block) {
+            const b = data.block;
             for (let s = 1; s <= 6; s++) {
-                for (let f = fretMin; f <= fretMax; f++) {
+                for (let f = 0; f <= 12; f++) {
                     const dot = document.getElementById(`note-${s}-${f}`);
                     if (dot) {
-                        dot.style.opacity = '0.25';
-                        dot.style.background = 'rgba(255,255,255,0.03)';
+                        const inBlock = s >= b.string_start && s <= b.string_end &&
+                                       f >= b.fret_start && f <= b.fret_end;
+                        if (inBlock) {
+                            dot.style.opacity = '0.3';
+                            dot.style.background = 'rgba(255,255,255,0.05)';
+                        }
                     }
                 }
             }
@@ -392,57 +441,126 @@ async function getNextChallenge() {
     }
 }
 
-// Handle fretboard click
+// ─── HANDLE FRETBOARD CLICK ───
 async function handleClick(string, fret) {
-    if (waiting) return;
-    waiting = true;
+    if (waiting && gameMode !== 'full') return;
+    if (revealed) return;
 
     const clickedNote = FRETBOARD[`${string}-${fret}`];
     const targetNote = currentChallenge.note;
-
-    // Check if this position is valid
-    const isCorrect = currentChallenge.valid_positions.some(
-        p => p.string === string && p.fret === fret
-    );
-
     const dot = document.getElementById(`note-${string}-${fret}`);
 
-    if (isCorrect) {
-        scoreCorrect++;
-        streak++;
-        if (dot) {
-            dot.classList.add('correct', 'color-coded');
-            dot.textContent = clickedNote;
-            dot.style.background = getNoteColor(clickedNote);
-        }
-        showFeedback('Correct! 🎉', 'correct');
+    if (gameMode === 'full') {
+        // Full fretboard mode — find all instances one at a time
+        const isValid = remainingPositions.some(
+            p => p.string === string && p.fret === fret
+        );
 
-        // Play the note sound
-        playNoteSound(targetNote, string, fret);
+        if (isValid) {
+            // Mark as found
+            foundPositions.push({string, fret});
+            remainingPositions = remainingPositions.filter(
+                p => !(p.string === string && p.fret === fret)
+            );
 
-        // Show all valid positions with color coding
-        currentChallenge.valid_positions.forEach(p => {
-            const d = document.getElementById(`note-${p.string}-${p.fret}`);
-            if (d && !d.classList.contains('correct')) {
-                d.classList.add('show', 'color-coded');
-                d.style.opacity = '1';
-                d.style.background = getNoteColor(targetNote) + '30';
-                d.style.color = getNoteColor(targetNote);
+            if (dot) {
+                dot.classList.add('correct', 'color-coded');
+                dot.textContent = clickedNote;
+                dot.style.background = getNoteColor(clickedNote);
+                dot.style.color = '#2a2035';
             }
-        });
-    } else {
-        scoreWrong++;
-        streak = 0;
-        if (dot) {
-            dot.classList.add('incorrect');
-            dot.textContent = clickedNote;
+
+            playNoteSound(targetNote, string, fret);
+            document.getElementById('foundCount').textContent = foundPositions.length;
+
+            if (remainingPositions.length === 0) {
+                // Found all!
+                scoreCorrect++;
+                streak++;
+                updateScore();
+                showFeedback(`🎉 Found all ${foundPositions.length} positions!`, 'correct');
+                document.getElementById('revealBtn').style.display = 'none';
+
+                // Record attempt
+                recordAttempt(targetNote, string, fret, true);
+                setTimeout(() => getNextChallenge(), 2000);
+            } else {
+                showFeedback(`✓ Found one! ${remainingPositions.length} left`, 'correct');
+            }
+        } else if (!foundPositions.some(p => p.string === string && p.fret === fret)) {
+            // Wrong — but only if not already found
+            scoreWrong++;
+            streak = 0;
+            updateScore();
+            if (dot) {
+                dot.classList.add('incorrect');
+                dot.textContent = clickedNote;
+            }
+            showFeedback(`Nope! That's ${clickedNote}`, 'incorrect');
+            recordAttempt(targetNote, string, fret, false);
+            setTimeout(() => {
+                if (dot) {
+                    dot.classList.remove('incorrect');
+                    dot.textContent = FRETBOARD[`${string}-${fret}`];
+                }
+            }, 1000);
         }
-        showFeedback(`Nope! That's ${clickedNote}`, 'incorrect');
+
+    } else {
+        // Block mode — single correct answer in the 3×3 area
+        waiting = true;
+        const isCorrect = currentChallenge.valid_positions.some(
+            p => p.string === string && p.fret === fret
+        );
+
+        if (isCorrect) {
+            scoreCorrect++;
+            streak++;
+            if (dot) {
+                dot.classList.add('correct', 'color-coded');
+                dot.textContent = clickedNote;
+                dot.style.background = getNoteColor(clickedNote);
+                dot.style.color = '#2a2035';
+            }
+            showFeedback('Correct! 🎉', 'correct');
+            playNoteSound(targetNote, string, fret);
+
+            // Show all valid positions too
+            currentChallenge.valid_positions.forEach(p => {
+                const d = document.getElementById(`note-${p.string}-${p.fret}`);
+                if (d && !d.classList.contains('correct')) {
+                    d.classList.add('show', 'color-coded');
+                    d.style.opacity = '1';
+                    d.style.background = getNoteColor(targetNote) + '50';
+                    d.style.color = '#2a2035';
+                }
+            });
+        } else {
+            scoreWrong++;
+            streak = 0;
+            if (dot) {
+                dot.classList.add('incorrect');
+                dot.textContent = clickedNote;
+            }
+            showFeedback(`Nope! That's ${clickedNote}`, 'incorrect');
+        }
+
+        updateScore();
+        recordAttempt(targetNote, string, fret, isCorrect);
+
+        setTimeout(() => {
+            document.querySelectorAll('.note-dot').forEach(d => {
+                d.style.opacity = '';
+                d.style.background = '';
+                d.style.color = '';
+            });
+            getNextChallenge();
+        }, isCorrect ? 1200 : 1800);
     }
+}
 
-    updateScore();
-
-    // Record attempt
+// ─── RECORD ATTEMPT ───
+async function recordAttempt(note, string, fret, correct) {
     try {
         await fetch('/api/record-attempt/', {
             method: 'POST',
@@ -451,26 +569,16 @@ async function handleClick(string, fret) {
                 'X-CSRFToken': csrftoken,
             },
             body: JSON.stringify({
-                note: targetNote,
+                note: note,
                 string: string,
                 fret: fret,
-                correct: isCorrect,
+                correct: correct,
                 game_mode: 'find',
             }),
         });
     } catch (err) {
         console.log('Not logged in or error saving');
     }
-
-    // Reset styles and get next challenge
-    setTimeout(() => {
-        document.querySelectorAll('.note-dot').forEach(d => {
-            d.style.opacity = '';
-            d.style.background = '';
-            d.style.color = '';
-        });
-        getNextChallenge();
-    }, isCorrect ? 1000 : 1800);
 }
 
 function updateScore() {
@@ -483,12 +591,10 @@ function showFeedback(message, type) {
     const toast = document.getElementById('feedbackToast');
     toast.textContent = message;
     toast.className = `feedback-toast ${type} show`;
-    setTimeout(() => {
-        toast.classList.remove('show');
-    }, 1200);
+    setTimeout(() => { toast.classList.remove('show'); }, 1200);
 }
 
-// Init
+// ─── INIT ───
 buildFretboard();
 buildFilterNotes();
 getNextChallenge();

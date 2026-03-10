@@ -37,7 +37,7 @@
     --fret-wire: #bbb;
     --string-color: #a89888;
     --nut-color: #d4c8b4;
-    --dot-color: rgba(0, 0, 0, 0.07);
+    --dot-color: rgba(0, 0, 0, 0.22);
     --highlight-note: var(--accent);
     --highlight-glow: var(--accent-glow);
     --radius-sm: 10px;
@@ -469,7 +469,7 @@ a:hover { color: var(--accent-hover); }
 
 .fretboard {
     position: relative;
-    min-width: 880px;
+    min-width: 960px;
     background: linear-gradient(180deg, var(--fretboard-wood) 0%, var(--fretboard-wood-light) 100%);
     border-radius: var(--radius-lg);
     padding: 1.75rem 1rem 1.25rem;
@@ -490,7 +490,7 @@ a:hover { color: var(--accent-hover); }
 
 .fret-numbers {
     display: grid;
-    grid-template-columns: 55px repeat(12, 1fr);
+    grid-template-columns: 55px repeat(13, 1fr);
     margin-bottom: 0.4rem;
     padding: 0 0.5rem;
 }
@@ -511,7 +511,7 @@ a:hover { color: var(--accent-hover); }
 
 .string-row {
     display: grid;
-    grid-template-columns: 55px repeat(12, 1fr);
+    grid-template-columns: 55px repeat(13, 1fr);
     align-items: center;
     height: 36px;
     position: relative;
@@ -577,19 +577,31 @@ a:hover { color: var(--accent-hover); }
 
 .inlay-dot {
     position: absolute;
-    width: 9px;
-    height: 9px;
+    width: 14px;
+    height: 14px;
     border-radius: 50%;
-    background: rgba(0, 0, 0, 0.07);
-    box-shadow: inset 0 1px 2px rgba(0,0,0,0.08);
+    background: rgba(80, 60, 40, 0.18);
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.15), 0 1px 1px rgba(255,255,255,0.3);
     pointer-events: none;
     left: 50%;
     transform: translateX(-50%);
 }
 
 .fret-cell.in-block {
-    background: rgba(196, 176, 232, 0.1);
+    background: rgba(176, 140, 220, 0.12);
     border-radius: 6px;
+    position: relative;
+}
+
+.fret-cell.in-block::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 6px;
+    background: linear-gradient(135deg, rgba(196, 176, 232, 0.15), rgba(168, 230, 207, 0.08));
+    border: 2px solid rgba(176, 140, 220, 0.25);
+    pointer-events: none;
+    z-index: 1;
 }
 
 .note-dot {
@@ -664,7 +676,7 @@ a:hover { color: var(--accent-hover); }
 
 .fret-markers {
     display: grid;
-    grid-template-columns: 55px repeat(12, 1fr);
+    grid-template-columns: 55px repeat(13, 1fr);
     padding: 0.4rem 0.5rem 0;
 }
 
@@ -677,11 +689,11 @@ a:hover { color: var(--accent-hover); }
 }
 
 .fret-marker-dot {
-    width: 8px;
-    height: 8px;
+    width: 12px;
+    height: 12px;
     border-radius: 50%;
     background: var(--dot-color);
-    box-shadow: inset 0 1px 2px rgba(0,0,0,0.06);
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.12), 0 1px 1px rgba(255,255,255,0.3);
 }
 
 @keyframes pulse-glow {
@@ -775,12 +787,12 @@ a:hover { color: var(--accent-hover); }
     width: 54px;
     height: 54px;
     border-radius: var(--radius-md);
-    border: 2px solid var(--border);
+    border: 2px solid transparent;
     background: var(--bg-card-solid);
     color: var(--text-primary);
     font-family: var(--font-fun);
     font-size: 0.9rem;
-    font-weight: 600;
+    font-weight: 700;
     cursor: pointer;
     transition: all var(--transition);
     display: flex;
@@ -803,10 +815,9 @@ a:hover { color: var(--accent-hover); }
 }
 
 .note-btn:hover {
-    border-color: var(--accent);
-    background: rgba(196, 176, 232, 0.08);
-    transform: translateY(-3px);
+    transform: translateY(-3px) scale(1.05);
     box-shadow: var(--shadow-md);
+    filter: brightness(1.05);
 }
 
 .note-btn.correct {
@@ -921,31 +932,34 @@ a:hover { color: var(--accent-hover); }
 
 .filter-group-btn,
 .region-btn {
-    padding: 0.28rem 0.75rem;
-    border-radius: var(--radius-pill);
-    border: 1.5px solid var(--border);
-    background: transparent;
-    color: var(--text-muted);
+    padding: 0.4rem 0.85rem;
+    border-radius: var(--radius-md);
+    border: 2px solid var(--border);
+    background: var(--bg-card-solid);
+    color: var(--text-secondary);
     font-family: var(--font-fun);
-    font-size: 0.76rem;
-    font-weight: 400;
+    font-size: 0.78rem;
+    font-weight: 600;
     cursor: pointer;
     transition: all var(--transition);
+    box-shadow: var(--shadow-sm);
 }
 
 .filter-group-btn:hover,
 .region-btn:hover {
     border-color: var(--accent);
     color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
 }
 
 .filter-group-btn.active,
 .region-btn.active {
-    background: linear-gradient(135deg, var(--pastel-lavender), rgba(212, 165, 216, 0.5));
-    border-color: transparent;
+    background: linear-gradient(135deg, var(--pastel-lavender), rgba(212, 165, 216, 0.6));
+    border-color: var(--pastel-lavender);
     color: #2a2035;
-    font-weight: 500;
-    box-shadow: 0 2px 8px rgba(196, 176, 232, 0.25);
+    font-weight: 700;
+    box-shadow: 0 3px 12px rgba(196, 176, 232, 0.3);
 }
 
 .filter-notes {
@@ -955,28 +969,32 @@ a:hover { color: var(--accent-hover); }
 }
 
 .filter-note-btn {
-    width: 40px;
-    height: 30px;
-    border-radius: var(--radius-sm);
-    border: 1.5px solid var(--border);
-    background: transparent;
-    color: var(--text-muted);
+    width: 42px;
+    height: 34px;
+    border-radius: var(--radius-md);
+    border: 2px solid var(--border);
+    background: var(--bg-card-solid);
+    color: var(--text-secondary);
     font-family: var(--font-fun);
-    font-size: 0.73rem;
-    font-weight: 500;
+    font-size: 0.75rem;
+    font-weight: 600;
     cursor: pointer;
     transition: all var(--transition);
+    box-shadow: var(--shadow-sm);
 }
 
 .filter-note-btn:hover {
     border-color: var(--accent);
     color: var(--accent);
+    transform: translateY(-1px);
 }
 
 .filter-note-btn.active {
     background: var(--pastel-lavender);
     border-color: var(--pastel-lavender);
     color: #2a2035;
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(196, 176, 232, 0.25);
 }
 
 /* Region Selector */

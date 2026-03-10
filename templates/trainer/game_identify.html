@@ -25,16 +25,16 @@
     </div>
 </div>
 
-<!-- Filter Panel -->
-<div class="filter-panel">
-    <div class="filter-header" id="filterToggle">
+<!-- Filter Panel (collapsible) -->
+<div class="filter-panel" style="margin-bottom: 0.5rem;">
+    <div class="filter-header" id="filterToggle" style="cursor:pointer;">
         <div class="filter-title">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
             Note Filter
         </div>
-        <span class="btn btn-ghost btn-sm" id="filterStatus">All Notes</span>
+        <span class="btn btn-ghost btn-sm" id="filterStatus">All Notes ▼</span>
     </div>
-    <div id="filterBody">
+    <div id="filterBody" style="display:none;">
         <div class="filter-groups">
             <button class="filter-group-btn active" data-filter="all">All Notes</button>
             <button class="filter-group-btn" data-filter="naturals">Naturals</button>
@@ -51,6 +51,7 @@
     <div class="fretboard" id="gameFretboard">
         <div class="fret-numbers">
             <div class="fret-number"></div>
+            <div class="fret-number" style="font-size:0.6rem;">O</div>
             <div class="fret-number">1</div>
             <div class="fret-number">2</div>
             <div class="fret-number">3</div>
@@ -66,6 +67,7 @@
         </div>
         <div class="strings-container" id="gameStrings"></div>
         <div class="fret-markers">
+            <div class="fret-marker"></div>
             <div class="fret-marker"></div>
             <div class="fret-marker"></div>
             <div class="fret-marker"></div>
@@ -173,7 +175,7 @@ function buildFretboard() {
     }
 }
 
-// Build answer buttons with pastel color coding
+// Build answer buttons with pastel color coding (filled backgrounds)
 function buildNoteButtons() {
     const container = document.getElementById('noteButtons');
     container.innerHTML = '';
@@ -182,11 +184,12 @@ function buildNoteButtons() {
         btn.className = 'note-btn';
         btn.textContent = note;
         btn.dataset.note = note;
-        // Color-code the border with the note's color
+        // Filled pastel background like the EADGBE string letters
         const baseNote = note.split('/')[0];
         const color = getNoteColor(baseNote);
-        btn.style.borderColor = color + '40';
-        btn.style.color = color;
+        btn.style.background = color;
+        btn.style.borderColor = color;
+        btn.style.color = '#2a2035';
         btn.addEventListener('click', () => handleAnswer(note));
         container.appendChild(btn);
     });
@@ -232,6 +235,19 @@ function updateCustomFilter() {
     }
 }
 
+// Toggle filter panel visibility
+document.getElementById('filterToggle').addEventListener('click', function() {
+    const body = document.getElementById('filterBody');
+    const status = document.getElementById('filterStatus');
+    if (body.style.display === 'none') {
+        body.style.display = 'block';
+        status.textContent = status.textContent.replace(' ▼', ' ▲');
+    } else {
+        body.style.display = 'none';
+        status.textContent = status.textContent.replace(' ▲', ' ▼');
+    }
+});
+
 // Filter handlers
 document.querySelectorAll('.filter-group-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -247,11 +263,11 @@ document.querySelectorAll('.filter-group-btn').forEach(btn => {
             currentFilter = filter;
         }
 
-        document.getElementById('filterStatus').textContent =
-            filter === 'all' ? 'All Notes' :
+        const label = filter === 'all' ? 'All Notes' :
             filter === 'naturals' ? 'Natural Notes' :
             filter === 'sharps' ? 'Sharp Notes' :
             filter === 'flats' ? 'Flat Notes' : 'Custom';
+        document.getElementById('filterStatus').textContent = label + ' ▲';
 
         // Auto-update: immediately fetch a new note with the new filter
         getNextNote();
@@ -279,6 +295,9 @@ async function getNextNote() {
             dot.classList.add('highlighted');
             dot.textContent = '?';
         }
+
+        // Play the note sound so the user can hear it
+        playNoteSound(currentNote, currentString, currentFret, 1.2);
 
         // Reset button states
         document.querySelectorAll('.note-btn').forEach(b => {
