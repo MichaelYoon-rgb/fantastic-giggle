@@ -238,6 +238,8 @@ function updateCustomFilter() {
     } else {
         currentFilter = JSON.stringify(customNotes);
     }
+    // Immediately fetch a new note matching the updated filter
+    getNextNote();
 }
 
 // Toggle filter panel visibility

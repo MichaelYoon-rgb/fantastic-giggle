@@ -228,6 +228,8 @@ function updateCustomFilter() {
         customNotes.push(btn.dataset.note);
     });
     currentFilter = customNotes.length > 0 ? JSON.stringify(customNotes) : 'all';
+    // Immediately fetch a new challenge matching the updated filter
+    getNextChallenge();
 }
 
 // ─── SETTINGS TOGGLE ───
