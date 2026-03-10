@@ -202,6 +202,11 @@ def fullscreen_view(request):
     return render(request, 'trainer/fullscreen.html', context)
 
 
+def strum_view(request):
+    """Strumming exercise with metronome and mic detection."""
+    return render(request, 'trainer/strum.html')
+
+
 @login_required
 def stats_view(request):
     """View user's progress stats."""

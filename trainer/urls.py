@@ -12,6 +12,7 @@ urlpatterns = [
     path('leaderboard/', views.leaderboard_view, name='leaderboard'),
     path('tuner/', views.tuner_view, name='tuner'),
     path('fullscreen/', views.fullscreen_view, name='fullscreen'),
+    path('strum/', views.strum_view, name='strum'),
 
     # API
     path('api/record-attempt/', views.api_record_attempt, name='api_record_attempt'),

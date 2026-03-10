@@ -122,6 +122,7 @@ let scoreCorrect = 0;
 let scoreWrong = 0;
 let streak = 0;
 let bestStreak = 0;
+let wrongStreak = 0; // consecutive wrong answers — 2 kills the streak
 let waiting = false;
 let revealed = false;
 let currentFilter = 'all';
@@ -426,6 +427,7 @@ async function handleAnswer(selectedNote) {
         waiting = true;
         scoreCorrect++;
         streak++;
+        wrongStreak = 0; // reset consecutive wrong counter on correct
         if (streak > bestStreak) bestStreak = streak;
         if (dot) {
             dot.classList.remove('highlighted');
@@ -471,9 +473,16 @@ async function handleAnswer(selectedNote) {
     } else {
         // Wrong — mark button but let user keep trying
         scoreWrong++;
-        // Save the broken streak to leaderboard before resetting
-        if (streak >= 2) recordStreak(streak);
-        streak = 0;
+        wrongStreak++;
+        // Two consecutive wrong answers kills the streak
+        if (wrongStreak >= 2 && streak > 0) {
+            if (streak >= 2) recordStreak(streak);
+            streak = 0;
+            showFeedback('💔 Streak lost!', 'incorrect');
+        } else if (wrongStreak === 1 && streak >= 2) {
+            // First wrong — warning
+            showFeedback('⚠️ One more wrong kills the streak!', 'incorrect');
+        }
         document.querySelectorAll('.note-btn').forEach(b => {
             if (b.dataset.note === selectedNote) {
                 b.classList.add('incorrect');
@@ -481,15 +490,19 @@ async function handleAnswer(selectedNote) {
                 b.style.pointerEvents = 'none'; // disable this wrong button
             }
         });
-        // Goofy wrong-answer messages
-        const wrongMessages = [
-            'Nope! 😅', 'Not quite, chief 🫠', 'Swing and a miss! ⚾',
-            'The fretboard said no 🙅', 'Close... but no 🎸', 'Try again, rockstar! 🤘',
-            'That ain\'t it 💀', 'Bruh. 😐', 'Almost... jk not really 😂',
-            'Your guitar is judging you 👀', 'The pick slipped, right? 🎵',
-            'Wrong note, great confidence! 💅', 'Even the amp cringed 🔌',
-        ];
-        showFeedback(wrongMessages[Math.floor(Math.random() * wrongMessages.length)], 'incorrect');
+        // Goofy wrong-answer messages (only if no streak warning/break shown)
+        if (wrongStreak >= 2 || (wrongStreak === 1 && streak < 2)) {
+            if (streak === 0 && wrongStreak < 2) {
+                const wrongMessages = [
+                    'Nope! 😅', 'Not quite, chief 🫠', 'Swing and a miss! ⚾',
+                    'The fretboard said no 🙅', 'Close... but no 🎸', 'Try again, rockstar! 🤘',
+                    'That ain\'t it 💀', 'Bruh. 😐', 'Almost... jk not really 😂',
+                    'Your guitar is judging you 👀', 'The pick slipped, right? 🎵',
+                    'Wrong note, great confidence! 💅', 'Even the amp cringed 🔌',
+                ];
+                showFeedback(wrongMessages[Math.floor(Math.random() * wrongMessages.length)], 'incorrect');
+            }
+        }
 
         updateScore();
 
@@ -530,69 +543,148 @@ function showFeedback(message, type) {
     }, 1800);
 }
 
-// Animated fire SVG builder — grows from ember to inferno
+// Animated fire SVG builder — lifelike with turbulence, multiple layers, smoke & embers
 function buildFireSVG(tier) {
     // tier 0=spark, 1=ember, 2=small, 3=medium, 4=large, 5=inferno
-    const flames = Math.min(tier + 1, 6);
-    const h = 40 + tier * 12;
-    const w = 30 + tier * 6;
+    const h = 50 + tier * 14;
+    const w = 36 + tier * 8;
     const colors = [
-        ['#ff9800', '#ff5722', '#f44336'],  // 0: warm orange
-        ['#ff9800', '#ff5722', '#e91e63'],  // 1: orange-pink
-        ['#ffeb3b', '#ff9800', '#f44336'],  // 2: yellow-orange
-        ['#ffeb3b', '#ff5722', '#d50000'],  // 3: yellow-red
-        ['#fff176', '#ff9800', '#b71c1c'],  // 4: bright yellow-deep red
-        ['#ffffff', '#ffeb3b', '#ff1744'],  // 5: white-hot
+        { outer: '#ff9800', mid: '#ff5722', inner: '#ffeb3b', core: '#fff8e1' },
+        { outer: '#ff5722', mid: '#ff9800', inner: '#ffeb3b', core: '#fff8e1' },
+        { outer: '#f44336', mid: '#ff5722', inner: '#ff9800', core: '#ffeb3b' },
+        { outer: '#d50000', mid: '#ff5722', inner: '#ffeb3b', core: '#fff176' },
+        { outer: '#b71c1c', mid: '#f44336', inner: '#ff9800', core: '#fff176' },
+        { outer: '#880e4f', mid: '#ff1744', inner: '#ffeb3b', core: '#ffffff' },
     ];
-    const [c1, c2, c3] = colors[Math.min(tier, 5)];
-    const id = `fire-${Date.now()}`;
-    let paths = '';
-    // Core flame
-    paths += `<path d="M${w/2} ${h*0.05} Q${w*0.2} ${h*0.45} ${w*0.15} ${h*0.65} Q${w*0.1} ${h*0.85} ${w/2} ${h} Q${w*0.9} ${h*0.85} ${w*0.85} ${h*0.65} Q${w*0.8} ${h*0.45} ${w/2} ${h*0.05}Z" fill="url(#${id}-g1)">
-        <animate attributeName="d" dur="0.5s" repeatCount="indefinite" values="
-            M${w/2} ${h*0.05} Q${w*0.2} ${h*0.45} ${w*0.15} ${h*0.65} Q${w*0.1} ${h*0.85} ${w/2} ${h} Q${w*0.9} ${h*0.85} ${w*0.85} ${h*0.65} Q${w*0.8} ${h*0.45} ${w/2} ${h*0.05}Z;
-            M${w/2} ${h*0.08} Q${w*0.18} ${h*0.42} ${w*0.13} ${h*0.62} Q${w*0.12} ${h*0.88} ${w/2} ${h} Q${w*0.88} ${h*0.88} ${w*0.87} ${h*0.62} Q${w*0.82} ${h*0.42} ${w/2} ${h*0.08}Z;
-            M${w/2} ${h*0.05} Q${w*0.2} ${h*0.45} ${w*0.15} ${h*0.65} Q${w*0.1} ${h*0.85} ${w/2} ${h} Q${w*0.9} ${h*0.85} ${w*0.85} ${h*0.65} Q${w*0.8} ${h*0.45} ${w/2} ${h*0.05}Z
+    const c = colors[Math.min(tier, 5)];
+    const id = `fire-${Date.now()}-${Math.random().toString(36).slice(2,6)}`;
+    const dur1 = (0.35 + Math.random()*0.15).toFixed(2);
+    const dur2 = (0.28 + Math.random()*0.12).toFixed(2);
+    const dur3 = (0.22 + Math.random()*0.1).toFixed(2);
+
+    // Build multiple flame paths with organic wobble
+    const cx = w/2;
+    let svg = '';
+
+    // Outer flame — big, slow, translucent
+    svg += `<path d="M${cx} ${h*0.02}
+        C${w*0.12} ${h*0.35} ${w*0.05} ${h*0.55} ${w*0.1} ${h*0.72}
+        C${w*0.15} ${h*0.88} ${w*0.32} ${h*0.98} ${cx} ${h}
+        C${w*0.68} ${h*0.98} ${w*0.85} ${h*0.88} ${w*0.9} ${h*0.72}
+        C${w*0.95} ${h*0.55} ${w*0.88} ${h*0.35} ${cx} ${h*0.02}Z"
+        fill="url(#${id}-g1)" opacity="0.85" filter="url(#${id}-turb)">
+        <animate attributeName="d" dur="${dur1}s" repeatCount="indefinite" calcMode="spline"
+            keySplines="0.4 0 0.6 1; 0.4 0 0.6 1" values="
+            M${cx} ${h*0.02} C${w*0.12} ${h*0.35} ${w*0.05} ${h*0.55} ${w*0.1} ${h*0.72} C${w*0.15} ${h*0.88} ${w*0.32} ${h*0.98} ${cx} ${h} C${w*0.68} ${h*0.98} ${w*0.85} ${h*0.88} ${w*0.9} ${h*0.72} C${w*0.95} ${h*0.55} ${w*0.88} ${h*0.35} ${cx} ${h*0.02}Z;
+            M${cx} ${h*0.06} C${w*0.1} ${h*0.32} ${w*0.07} ${h*0.58} ${w*0.13} ${h*0.74} C${w*0.18} ${h*0.9} ${w*0.35} ${h*0.99} ${cx} ${h} C${w*0.65} ${h*0.99} ${w*0.82} ${h*0.9} ${w*0.87} ${h*0.74} C${w*0.93} ${h*0.58} ${w*0.9} ${h*0.32} ${cx} ${h*0.06}Z;
+            M${cx} ${h*0.02} C${w*0.12} ${h*0.35} ${w*0.05} ${h*0.55} ${w*0.1} ${h*0.72} C${w*0.15} ${h*0.88} ${w*0.32} ${h*0.98} ${cx} ${h} C${w*0.68} ${h*0.98} ${w*0.85} ${h*0.88} ${w*0.9} ${h*0.72} C${w*0.95} ${h*0.55} ${w*0.88} ${h*0.35} ${cx} ${h*0.02}Z
         "/>
     </path>`;
-    // Inner glow flame
-    paths += `<path d="M${w/2} ${h*0.25} Q${w*0.3} ${h*0.55} ${w*0.28} ${h*0.72} Q${w*0.25} ${h*0.9} ${w/2} ${h} Q${w*0.75} ${h*0.9} ${w*0.72} ${h*0.72} Q${w*0.7} ${h*0.55} ${w/2} ${h*0.25}Z" fill="url(#${id}-g2)" opacity="0.9">
-        <animate attributeName="d" dur="0.4s" repeatCount="indefinite" values="
-            M${w/2} ${h*0.25} Q${w*0.3} ${h*0.55} ${w*0.28} ${h*0.72} Q${w*0.25} ${h*0.9} ${w/2} ${h} Q${w*0.75} ${h*0.9} ${w*0.72} ${h*0.72} Q${w*0.7} ${h*0.55} ${w/2} ${h*0.25}Z;
-            M${w/2} ${h*0.3} Q${w*0.32} ${h*0.52} ${w*0.3} ${h*0.7} Q${w*0.27} ${h*0.92} ${w/2} ${h} Q${w*0.73} ${h*0.92} ${w*0.7} ${h*0.7} Q${w*0.68} ${h*0.52} ${w/2} ${h*0.3}Z;
-            M${w/2} ${h*0.25} Q${w*0.3} ${h*0.55} ${w*0.28} ${h*0.72} Q${w*0.25} ${h*0.9} ${w/2} ${h} Q${w*0.75} ${h*0.9} ${w*0.72} ${h*0.72} Q${w*0.7} ${h*0.55} ${w/2} ${h*0.25}Z
+
+    // Middle flame — brighter, faster
+    svg += `<path d="M${cx} ${h*0.12}
+        C${w*0.22} ${h*0.4} ${w*0.15} ${h*0.6} ${w*0.2} ${h*0.75}
+        C${w*0.25} ${h*0.9} ${w*0.38} ${h*0.97} ${cx} ${h}
+        C${w*0.62} ${h*0.97} ${w*0.75} ${h*0.9} ${w*0.8} ${h*0.75}
+        C${w*0.85} ${h*0.6} ${w*0.78} ${h*0.4} ${cx} ${h*0.12}Z"
+        fill="url(#${id}-g2)" opacity="0.9">
+        <animate attributeName="d" dur="${dur2}s" repeatCount="indefinite" calcMode="spline"
+            keySplines="0.4 0 0.6 1; 0.4 0 0.6 1" values="
+            M${cx} ${h*0.12} C${w*0.22} ${h*0.4} ${w*0.15} ${h*0.6} ${w*0.2} ${h*0.75} C${w*0.25} ${h*0.9} ${w*0.38} ${h*0.97} ${cx} ${h} C${w*0.62} ${h*0.97} ${w*0.75} ${h*0.9} ${w*0.8} ${h*0.75} C${w*0.85} ${h*0.6} ${w*0.78} ${h*0.4} ${cx} ${h*0.12}Z;
+            M${cx} ${h*0.16} C${w*0.2} ${h*0.38} ${w*0.17} ${h*0.62} ${w*0.22} ${h*0.77} C${w*0.27} ${h*0.92} ${w*0.4} ${h*0.98} ${cx} ${h} C${w*0.6} ${h*0.98} ${w*0.73} ${h*0.92} ${w*0.78} ${h*0.77} C${w*0.83} ${h*0.62} ${w*0.8} ${h*0.38} ${cx} ${h*0.16}Z;
+            M${cx} ${h*0.12} C${w*0.22} ${h*0.4} ${w*0.15} ${h*0.6} ${w*0.2} ${h*0.75} C${w*0.25} ${h*0.9} ${w*0.38} ${h*0.97} ${cx} ${h} C${w*0.62} ${h*0.97} ${w*0.75} ${h*0.9} ${w*0.8} ${h*0.75} C${w*0.85} ${h*0.6} ${w*0.78} ${h*0.4} ${cx} ${h*0.12}Z
         "/>
     </path>`;
-    // Hot core
-    if (tier >= 2) {
-        paths += `<ellipse cx="${w/2}" cy="${h*0.82}" rx="${w*0.15}" ry="${h*0.1}" fill="${c1}" opacity="0.7">
-            <animate attributeName="ry" dur="0.35s" repeatCount="indefinite" values="${h*0.1};${h*0.12};${h*0.1}"/>
+
+    // Inner flame — hot core, very fast
+    svg += `<path d="M${cx} ${h*0.25}
+        C${w*0.3} ${h*0.5} ${w*0.25} ${h*0.68} ${w*0.3} ${h*0.8}
+        C${w*0.35} ${h*0.92} ${w*0.42} ${h*0.98} ${cx} ${h}
+        C${w*0.58} ${h*0.98} ${w*0.65} ${h*0.92} ${w*0.7} ${h*0.8}
+        C${w*0.75} ${h*0.68} ${w*0.7} ${h*0.5} ${cx} ${h*0.25}Z"
+        fill="url(#${id}-g3)" opacity="0.95">
+        <animate attributeName="d" dur="${dur3}s" repeatCount="indefinite" calcMode="spline"
+            keySplines="0.4 0 0.6 1; 0.4 0 0.6 1" values="
+            M${cx} ${h*0.25} C${w*0.3} ${h*0.5} ${w*0.25} ${h*0.68} ${w*0.3} ${h*0.8} C${w*0.35} ${h*0.92} ${w*0.42} ${h*0.98} ${cx} ${h} C${w*0.58} ${h*0.98} ${w*0.65} ${h*0.92} ${w*0.7} ${h*0.8} C${w*0.75} ${h*0.68} ${w*0.7} ${h*0.5} ${cx} ${h*0.25}Z;
+            M${cx} ${h*0.28} C${w*0.32} ${h*0.48} ${w*0.27} ${h*0.7} ${w*0.32} ${h*0.82} C${w*0.37} ${h*0.93} ${w*0.44} ${h*0.99} ${cx} ${h} C${w*0.56} ${h*0.99} ${w*0.63} ${h*0.93} ${w*0.68} ${h*0.82} C${w*0.73} ${h*0.7} ${w*0.68} ${h*0.48} ${cx} ${h*0.28}Z;
+            M${cx} ${h*0.25} C${w*0.3} ${h*0.5} ${w*0.25} ${h*0.68} ${w*0.3} ${h*0.8} C${w*0.35} ${h*0.92} ${w*0.42} ${h*0.98} ${cx} ${h} C${w*0.58} ${h*0.98} ${w*0.65} ${h*0.92} ${w*0.7} ${h*0.8} C${w*0.75} ${h*0.68} ${w*0.7} ${h*0.5} ${cx} ${h*0.25}Z
+        "/>
+    </path>`;
+
+    // White-hot core ellipse
+    if (tier >= 1) {
+        svg += `<ellipse cx="${cx}" cy="${h*0.88}" rx="${w*(0.08+tier*0.02)}" ry="${h*0.06}" fill="${c.core}" opacity="${0.4+tier*0.1}">
+            <animate attributeName="rx" dur="0.3s" repeatCount="indefinite" values="${w*(0.08+tier*0.02)};${w*(0.1+tier*0.02)};${w*(0.08+tier*0.02)}"/>
+            <animate attributeName="opacity" dur="0.25s" repeatCount="indefinite" values="${0.4+tier*0.1};${0.6+tier*0.08};${0.4+tier*0.1}"/>
         </ellipse>`;
     }
-    // Sparks for higher tiers
-    if (tier >= 3) {
-        for (let i = 0; i < tier - 1; i++) {
-            const sx = w*0.2 + Math.random()*w*0.6;
-            const delay = (Math.random()*0.8).toFixed(2);
-            paths += `<circle cx="${sx}" cy="${h*0.3}" r="1.5" fill="${c1}" opacity="0.8">
-                <animate attributeName="cy" dur="0.8s" begin="${delay}s" repeatCount="indefinite" values="${h*0.5};${h*0.05};${h*0.5}"/>
-                <animate attributeName="opacity" dur="0.8s" begin="${delay}s" repeatCount="indefinite" values="0.8;0;0.8"/>
+
+    // Rising embers — physics-based float upward with drift
+    if (tier >= 2) {
+        const numEmbers = Math.min(tier * 2, 12);
+        for (let i = 0; i < numEmbers; i++) {
+            const ex = cx + (Math.random()-0.5)*w*0.6;
+            const startY = h*0.4 + Math.random()*h*0.3;
+            const endY = h*(-0.05 - Math.random()*0.15);
+            const drift = (Math.random()-0.5)*w*0.3;
+            const dur = (0.6 + Math.random()*0.8).toFixed(2);
+            const delay = (Math.random()*1.2).toFixed(2);
+            const r = 0.8 + Math.random()*1.2;
+            svg += `<circle cx="${ex}" cy="${startY}" r="${r}" fill="${c.inner}" opacity="0">
+                <animate attributeName="cy" dur="${dur}s" begin="${delay}s" repeatCount="indefinite"
+                    values="${startY};${(startY+endY)/2};${endY}" calcMode="spline" keySplines="0.2 0 0.8 1; 0.2 0 0.8 1"/>
+                <animate attributeName="cx" dur="${dur}s" begin="${delay}s" repeatCount="indefinite"
+                    values="${ex};${ex+drift*0.5};${ex+drift}"/>
+                <animate attributeName="opacity" dur="${dur}s" begin="${delay}s" repeatCount="indefinite"
+                    values="0;0.9;0" calcMode="spline" keySplines="0.1 0 0.5 1; 0.5 0 0.9 1"/>
+                <animate attributeName="r" dur="${dur}s" begin="${delay}s" repeatCount="indefinite"
+                    values="${r};${r*0.6};${r*0.2}"/>
             </circle>`;
         }
     }
-    return `<svg viewBox="0 0 ${w} ${h}" width="${w*1.5}" height="${h*1.5}" style="filter:drop-shadow(0 0 ${4+tier*3}px ${c2})">
+
+    // Smoke wisps at high tiers
+    if (tier >= 4) {
+        for (let i = 0; i < 3; i++) {
+            const sx = cx + (Math.random()-0.5)*w*0.3;
+            const sdur = (1.5 + Math.random()*1).toFixed(2);
+            const sdelay = (Math.random()*1.5).toFixed(2);
+            svg += `<ellipse cx="${sx}" cy="${h*0.15}" rx="${w*0.06}" ry="${h*0.04}" fill="#666" opacity="0">
+                <animate attributeName="cy" dur="${sdur}s" begin="${sdelay}s" repeatCount="indefinite" values="${h*0.2};${h*-0.15}"/>
+                <animate attributeName="rx" dur="${sdur}s" begin="${sdelay}s" repeatCount="indefinite" values="${w*0.04};${w*0.12}"/>
+                <animate attributeName="opacity" dur="${sdur}s" begin="${sdelay}s" repeatCount="indefinite" values="0;0.15;0"/>
+            </ellipse>`;
+        }
+    }
+
+    const glowSize = 6 + tier * 5;
+    return `<svg viewBox="0 0 ${w} ${h}" width="${w*1.6}" height="${h*1.6}"
+        style="filter:drop-shadow(0 0 ${glowSize}px ${c.mid}) drop-shadow(0 ${glowSize/2}px ${glowSize*2}px ${c.outer})">
         <defs>
-            <linearGradient id="${id}-g1" x1="0.5" y1="0" x2="0.5" y2="1">
-                <stop offset="0%" stop-color="${c1}"/>
-                <stop offset="50%" stop-color="${c2}"/>
-                <stop offset="100%" stop-color="${c3}"/>
-            </linearGradient>
-            <linearGradient id="${id}-g2" x1="0.5" y1="0" x2="0.5" y2="1">
-                <stop offset="0%" stop-color="${c1}"/>
-                <stop offset="100%" stop-color="${c2}"/>
-            </linearGradient>
+            <filter id="${id}-turb" x="-20%" y="-20%" width="140%" height="140%">
+                <feTurbulence type="turbulence" baseFrequency="0.02 0.06" numOctaves="3" seed="${Math.floor(Math.random()*100)}">
+                    <animate attributeName="baseFrequency" dur="2s" repeatCount="indefinite"
+                        values="0.02 0.06;0.03 0.08;0.02 0.06"/>
+                </feTurbulence>
+                <feDisplacementMap in="SourceGraphic" scale="${3+tier*1.5}" xChannelSelector="R" yChannelSelector="G"/>
+            </filter>
+            <radialGradient id="${id}-g1" cx="50%" cy="90%" r="70%" fx="50%" fy="85%">
+                <stop offset="0%" stop-color="${c.inner}"/>
+                <stop offset="40%" stop-color="${c.mid}"/>
+                <stop offset="100%" stop-color="${c.outer}" stop-opacity="0.6"/>
+            </radialGradient>
+            <radialGradient id="${id}-g2" cx="50%" cy="85%" r="55%" fx="50%" fy="80%">
+                <stop offset="0%" stop-color="${c.core}"/>
+                <stop offset="35%" stop-color="${c.inner}"/>
+                <stop offset="100%" stop-color="${c.mid}" stop-opacity="0.7"/>
+            </radialGradient>
+            <radialGradient id="${id}-g3" cx="50%" cy="80%" r="40%" fx="50%" fy="75%">
+                <stop offset="0%" stop-color="${c.core}"/>
+                <stop offset="50%" stop-color="${c.inner}" stop-opacity="0.9"/>
+                <stop offset="100%" stop-color="${c.mid}" stop-opacity="0.5"/>
+            </radialGradient>
         </defs>
-        ${paths}
+        ${svg}
     </svg>`;
 }
 
