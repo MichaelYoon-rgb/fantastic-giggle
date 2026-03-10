@@ -134,6 +134,26 @@ def game_identify(request):
     return render(request, 'trainer/game_identify.html', context)
 
 
+def recall_view(request):
+    """Recall page: Identify, Find It, Line, and 3x3 modes."""
+    context = {
+        'fretboard': json.dumps(build_fretboard_data()),
+        'all_notes': json.dumps(ALL_NOTES),
+        'enharmonic': json.dumps(ENHARMONIC),
+        'natural_notes': json.dumps(NATURAL_NOTES),
+        'sharp_notes': json.dumps(SHARP_NOTES),
+        'flat_notes': json.dumps(FLAT_NOTES),
+    }
+
+    if request.user.is_authenticated:
+        stats = list(NoteStats.objects.filter(user=request.user).values('note', 'total_attempts', 'correct_attempts', 'streak'))
+        context['user_stats'] = json.dumps(stats)
+    else:
+        context['user_stats'] = json.dumps([])
+
+    return render(request, 'trainer/recall.html', context)
+
+
 def game_find(request):
     """Find-the-note game: user is told to find a note in a region, clicks correct position."""
     context = {
@@ -154,10 +174,12 @@ def game_find(request):
     return render(request, 'trainer/game_find.html', context)
 
 
-def tuner_view(request):
-    """Fretboard mastery pathway with spaced repetition calendar."""
+def school_view(request):
+    """School — fretboard mastery pathway with 6 exercises and interactive fretboard."""
     context = {
         'fretboard': json.dumps(build_fretboard_data()),
+        'all_notes': json.dumps(ALL_NOTES),
+        'enharmonic': json.dumps(ENHARMONIC),
     }
 
     if request.user.is_authenticated:
@@ -191,7 +213,7 @@ def tuner_view(request):
         context['month_name'] = today.strftime('%B %Y')
         context['first_weekday'] = first_day.weekday()  # 0=Mon
 
-    return render(request, 'trainer/tuner.html', context)
+    return render(request, 'trainer/school.html', context)
 
 
 def fullscreen_view(request):

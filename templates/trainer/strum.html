@@ -63,6 +63,16 @@
         <div class="strum-accuracy" id="strumAccuracy">Listening...</div>
     </div>
 
+    <!-- Sound Wave Visualization -->
+    <div class="waveform-container" id="waveformContainer" style="display:none;">
+        <canvas id="waveformCanvas" width="600" height="120"></canvas>
+    </div>
+
+    <!-- Beat-Peak Match Message -->
+    <div class="beat-match-msg" id="beatMatchMsg" style="display:none;">
+        🎯 Perfect timing!
+    </div>
+
     <!-- Score -->
     <div class="strum-score" id="strumScore" style="display:none;">
         <div class="score-item">
@@ -193,6 +203,9 @@ function tick() {
     // Play click on down beats only (or both — let's do both for guidance)
     playClick(isDown);
 
+    // Record beat time for peak matching
+    recordBeatTime();
+
     // Check if mic detected a strum in the timing window of PREVIOUS sub-beat
     if (currentSubBeat > 0 || hits + misses > 0) {
         const prevBeat = (currentSubBeat - 1 + totalSubBeats) % totalSubBeats;
@@ -272,6 +285,7 @@ document.getElementById('micBtn').addEventListener('click', async () => {
         document.getElementById('micBtn').textContent = '🎤 Mic On';
         document.getElementById('micBtn').classList.add('mic-active');
         document.getElementById('micFeedback').style.display = '';
+        document.getElementById('waveformContainer').style.display = '';
         startMicLoop();
     } catch (err) {
         alert('Microphone access denied. Please allow mic access and try again.');
@@ -287,6 +301,7 @@ function disableMic() {
     document.getElementById('micBtn').textContent = '🎤 Enable Mic';
     document.getElementById('micBtn').classList.remove('mic-active');
     document.getElementById('micFeedback').style.display = 'none';
+    document.getElementById('waveformContainer').style.display = 'none';
 }
 
 // Strum detection via RMS energy spike
@@ -303,6 +318,9 @@ function startMicLoop() {
     // Update level meter
     const level = Math.min(rms * 8, 1); // normalize
     document.getElementById('micLevelFill').style.width = `${level * 100}%`;
+
+    // Draw waveform
+    drawWaveform();
 
     // Maintain running average
     rmsHistory.push(rms);
@@ -321,9 +339,71 @@ function startMicLoop() {
             document.getElementById('strumAccuracy').classList.remove('strum-flash');
             document.getElementById('strumAccuracy').textContent = 'Listening...';
         }, 200);
+
+        // Beat-peak matching: check if a strum peak is near a metronome beat
+        checkBeatPeakMatch(now);
     }
 
     requestAnimationFrame(startMicLoop);
+}
+
+// ─── Waveform Visualization ───
+function drawWaveform() {
+    const canvas = document.getElementById('waveformCanvas');
+    if (!canvas || !analyser) return;
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+
+    analyser.getFloatTimeDomainData(micDataArray);
+
+    ctx.fillStyle = 'rgba(42, 32, 53, 0.3)';
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#a8e6cf';
+    ctx.beginPath();
+
+    const sliceWidth = width / micDataArray.length;
+    let x = 0;
+    for (let i = 0; i < micDataArray.length; i++) {
+        const v = micDataArray[i];
+        const y = (v + 1) / 2 * height;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+        x += sliceWidth;
+    }
+    ctx.lineTo(width, height / 2);
+    ctx.stroke();
+}
+
+// ─── Beat-Peak Matching ───
+let lastBeatTime = 0;
+let beatTimes = []; // timestamps of recent metronome beats
+
+function recordBeatTime() {
+    beatTimes.push(performance.now());
+    if (beatTimes.length > 20) beatTimes.shift();
+}
+
+function checkBeatPeakMatch(strumTime) {
+    if (!isPlaying || beatTimes.length === 0) return;
+    // Find the nearest beat time
+    let minDiff = Infinity;
+    for (const bt of beatTimes) {
+        const diff = Math.abs(strumTime - bt);
+        if (diff < minDiff) minDiff = diff;
+    }
+    // If peak is within ~80ms of a beat, show match message
+    const tolerance = 80;
+    if (minDiff <= tolerance) {
+        const msg = document.getElementById('beatMatchMsg');
+        msg.style.display = '';
+        msg.classList.remove('flash');
+        void msg.offsetWidth;
+        msg.classList.add('flash');
+        setTimeout(() => { msg.style.display = 'none'; msg.classList.remove('flash'); }, 1200);
+    }
 }
 
 function updateScore() {

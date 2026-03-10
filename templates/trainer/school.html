@@ -1,0 +1,1532 @@
+{% extends "trainer/base.html" %}
+
+{% block title %}School — Every Guitar Note{% endblock %}
+{% block nav_school %}active{% endblock %}
+
+{% block content %}
+<div class="game-header">
+    <div>
+        <h1 class="game-title">🎓 School</h1>
+        <p class="game-subtitle">A structured daily practice system to master every note on the fretboard. Complete each step before advancing to the next.</p>
+    </div>
+</div>
+
+<!-- ══════ LIVE FRETBOARD ══════ -->
+<div class="card tuner-fretboard-card" id="tunerFretboardCard">
+    <div class="card-header" style="cursor:pointer;" id="fretboardCardToggle">
+        <div class="card-title">🎸 Live Fretboard</div>
+        <div style="display:flex; align-items:center; gap:0.5rem;">
+            <span class="tuner-fb-hint" id="fbHint">Start mic &amp; select a note to follow along</span>
+            <button class="flip-toggle" id="flipToggle" title="Flip fretboard orientation" onclick="event.stopPropagation();">
+                <span class="flip-icon">↕</span> Flip
+            </button>
+            <span class="btn btn-ghost btn-sm" id="fbCollapseBtn">▼</span>
+        </div>
+    </div>
+    <div id="fretboardCardBody">
+        <div class="tuner-fretboard-wrapper">
+            <div class="fretboard" id="tunerFretboard">
+                <div class="fret-numbers">
+                    <div class="fret-number"></div>
+                    <div class="fret-number" style="font-size:0.6rem;">O</div>
+                    <div class="fret-number">1</div>
+                    <div class="fret-number">2</div>
+                    <div class="fret-number">3</div>
+                    <div class="fret-number">4</div>
+                    <div class="fret-number">5</div>
+                    <div class="fret-number">6</div>
+                    <div class="fret-number">7</div>
+                    <div class="fret-number">8</div>
+                    <div class="fret-number">9</div>
+                    <div class="fret-number">10</div>
+                    <div class="fret-number">11</div>
+                    <div class="fret-number">12</div>
+                </div>
+                <div class="strings-container" id="tunerStringsContainer"></div>
+                <div class="fret-markers">
+                    <div class="fret-marker"></div>
+                    <div class="fret-marker"></div>
+                    <div class="fret-marker"></div>
+                    <div class="fret-marker"></div>
+                    <div class="fret-marker"><div class="fret-marker-dot"></div></div>
+                    <div class="fret-marker"></div>
+                    <div class="fret-marker"><div class="fret-marker-dot"></div></div>
+                    <div class="fret-marker"></div>
+                    <div class="fret-marker"><div class="fret-marker-dot"></div></div>
+                    <div class="fret-marker"></div>
+                    <div class="fret-marker"><div class="fret-marker-dot"></div></div>
+                    <div class="fret-marker"></div>
+                    <div class="fret-marker"></div>
+                    <div class="fret-marker">
+                        <div class="fret-marker-dot"></div>
+                        <div class="fret-marker-dot"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Detected note indicator -->
+        <div class="tuner-fb-status" id="tunerFbStatus">
+            <span class="fb-detected-label">Detected:</span>
+            <span class="fb-detected-note" id="fbDetectedNote">—</span>
+            <span class="fb-detected-pos" id="fbDetectedPos"></span>
+        </div>
+    </div>
+</div>
+
+<!-- ══════ MONTHLY CALENDAR ══════ -->
+{% if user.is_authenticated %}
+<div class="card practice-calendar-card">
+    <div class="card-header">
+        <div class="card-title">📅 {{ month_name }}</div>
+        <div class="calendar-legend">
+            <span class="legend-item"><span class="legend-dot empty"></span> No practice</span>
+            <span class="legend-item"><span class="legend-dot partial"></span> Some exercises</span>
+            <span class="legend-item"><span class="legend-dot full"></span> Full session</span>
+        </div>
+    </div>
+    <div class="calendar-weekdays">
+        <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+    </div>
+    <div class="calendar-grid" id="calendarGrid"></div>
+</div>
+{% endif %}
+
+<!-- ══════ PATHWAY ══════ -->
+<div class="pathway-container">
+    <div class="pathway-line"></div>
+
+    <!-- STEP 1 -->
+    <div class="pathway-step {% if user.is_authenticated %}{% if progress.current_step == 1 %}active{% elif progress.current_step > 1 %}completed{% else %}locked{% endif %}{% else %}active{% endif %}" data-step="1">
+        <div class="step-marker">
+            <div class="step-number">1</div>
+        </div>
+        <div class="step-content">
+            <div class="step-header">
+                <h3 class="step-title">Single Note String Walk</h3>
+                <span class="step-badge" id="step1Badge">{% if user.is_authenticated and progress.current_step > 1 %}✓ Complete{% else %}Frets 1–12{% endif %}</span>
+            </div>
+            <p class="step-desc">Pick one natural note. Play it on every string from low E → high e, then back down. No open strings — frets 1–12 only. Get 3 perfect runs, then move to the next note. Complete all 7 natural notes twice.</p>
+
+            <div class="step-body" id="step1Body" {% if user.is_authenticated and progress.current_step != 1 %}style="display:none"{% endif %}>
+                <!-- Note selector -->
+                <div class="exercise-note-selector" id="step1Notes">
+                    <span class="exercise-label">Pick a note:</span>
+                </div>
+                <div class="exercise-status" id="step1Status">Select a note to begin</div>
+
+                <!-- Visual: string indicators -->
+                <div class="string-walk-visual" id="step1Walk">
+                    <div class="walk-string" data-s="6">E</div>
+                    <div class="walk-arrow">→</div>
+                    <div class="walk-string" data-s="5">A</div>
+                    <div class="walk-arrow">→</div>
+                    <div class="walk-string" data-s="4">D</div>
+                    <div class="walk-arrow">→</div>
+                    <div class="walk-string" data-s="3">G</div>
+                    <div class="walk-arrow">→</div>
+                    <div class="walk-string" data-s="2">B</div>
+                    <div class="walk-arrow">→</div>
+                    <div class="walk-string" data-s="1">e</div>
+                    <div class="walk-arrow">→</div>
+                    <div class="walk-string return" data-s="2">B</div>
+                    <div class="walk-arrow">→</div>
+                    <div class="walk-string return" data-s="3">G</div>
+                    <div class="walk-arrow">→</div>
+                    <div class="walk-string return" data-s="4">D</div>
+                    <div class="walk-arrow">→</div>
+                    <div class="walk-string return" data-s="5">A</div>
+                    <div class="walk-arrow">→</div>
+                    <div class="walk-string return" data-s="6">E</div>
+                </div>
+
+                <div class="exercise-actions">
+                    <button class="btn btn-primary" id="step1PerfectBtn" disabled>✓ Perfect Run</button>
+                    <button class="btn btn-ghost" id="step1MissBtn" disabled>✗ Made a Mistake</button>
+                </div>
+
+                <!-- Progress grid -->
+                <div class="note-progress-grid" id="step1Progress"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- STEP 2 -->
+    <div class="pathway-step {% if user.is_authenticated %}{% if progress.current_step == 2 %}active{% elif progress.current_step > 2 %}completed{% elif progress.current_step < 2 %}locked{% endif %}{% else %}locked{% endif %}" data-step="2">
+        <div class="step-marker">
+            <div class="step-number">2</div>
+        </div>
+        <div class="step-content">
+            <div class="step-header">
+                <h3 class="step-title">Metronome — Natural Notes</h3>
+                <span class="step-badge" id="step2Badge">{% if user.is_authenticated and progress.current_step > 2 %}✓ Complete{% else %}40 BPM{% endif %}</span>
+            </div>
+            <p class="step-desc">Set the metronome to 40 BPM. Play 1 note per beat as in Step 1. Complete all 7 natural notes without mistakes.</p>
+
+            <div class="step-body" id="step2Body" {% if not user.is_authenticated or progress.current_step != 2 %}style="display:none"{% endif %}>
+                <div class="metronome-controls">
+                    <button class="btn btn-sm btn-primary" id="metro2Toggle">▶ Start Metronome (40 BPM)</button>
+                </div>
+
+                <div class="exercise-note-selector" id="step2Notes">
+                    <span class="exercise-label">Current note:</span>
+                </div>
+                <div class="exercise-status" id="step2Status">Start the metronome, then play each note</div>
+
+                <div class="exercise-actions">
+                    <button class="btn btn-primary" id="step2DoneBtn" disabled>✓ Note Complete</button>
+                </div>
+                <div class="note-progress-grid" id="step2Progress"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- STEP 3 -->
+    <div class="pathway-step {% if user.is_authenticated %}{% if progress.current_step == 3 %}active{% elif progress.current_step > 3 %}completed{% elif progress.current_step < 3 %}locked{% endif %}{% else %}locked{% endif %}" data-step="3">
+        <div class="step-marker">
+            <div class="step-number">3</div>
+        </div>
+        <div class="step-content">
+            <div class="step-header">
+                <h3 class="step-title">Sharps & Flats</h3>
+                <span class="step-badge" id="step3Badge">{% if user.is_authenticated and progress.current_step > 3 %}✓ Complete{% else %}40 BPM{% endif %}</span>
+            </div>
+            <p class="step-desc">With the metronome at 40 BPM, do the same string walk for all sharps/flats: C#, D#, F#, G#, A#.</p>
+
+            <div class="step-body" id="step3Body" {% if not user.is_authenticated or progress.current_step != 3 %}style="display:none"{% endif %}>
+                <div class="metronome-controls">
+                    <button class="btn btn-sm btn-primary" id="metro3Toggle">▶ Start Metronome (40 BPM)</button>
+                </div>
+
+                <div class="exercise-note-selector" id="step3Notes">
+                    <span class="exercise-label">Current note:</span>
+                </div>
+                <div class="exercise-status" id="step3Status">Play each sharp/flat note on every string</div>
+
+                <div class="exercise-actions">
+                    <button class="btn btn-primary" id="step3DoneBtn" disabled>✓ Note Complete</button>
+                </div>
+                <div class="note-progress-grid" id="step3Progress"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- STEP 4 -->
+    <div class="pathway-step {% if user.is_authenticated %}{% if progress.current_step == 4 %}active{% elif progress.current_step > 4 %}completed{% elif progress.current_step < 4 %}locked{% endif %}{% else %}locked{% endif %}" data-step="4">
+        <div class="step-marker">
+            <div class="step-number">4</div>
+        </div>
+        <div class="step-content">
+            <div class="step-header">
+                <h3 class="step-title">Two-Note Pairs</h3>
+                <span class="step-badge" id="step4Badge">{% if user.is_authenticated and progress.current_step > 4 %}✓ Complete{% else %}Up & Down{% endif %}</span>
+            </div>
+            <p class="step-desc">Pick 2 different notes. Play the first going up (low E → high e) and the second going down (high e → low E) without stopping. When it feels easy, mark it complete.</p>
+
+            <div class="step-body" id="step4Body" {% if not user.is_authenticated or progress.current_step != 4 %}style="display:none"{% endif %}>
+                <div class="metronome-controls">
+                    <button class="btn btn-sm btn-primary" id="metro4Toggle">▶ Start Metronome (40 BPM)</button>
+                </div>
+
+                <div class="pair-selector">
+                    <div>
+                        <span class="exercise-label">Note 1 (up):</span>
+                        <div class="exercise-note-selector" id="step4Note1"></div>
+                    </div>
+                    <div>
+                        <span class="exercise-label">Note 2 (down):</span>
+                        <div class="exercise-note-selector" id="step4Note2"></div>
+                    </div>
+                </div>
+                <div class="exercise-status" id="step4Status">Pick two notes and practice the pair</div>
+
+                <div class="exercise-actions">
+                    <button class="btn btn-primary" id="step4DoneBtn">✓ It Feels Easy — Complete Step 4</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- STEP 5 -->
+    <div class="pathway-step {% if user.is_authenticated %}{% if progress.current_step == 5 %}active{% elif progress.current_step > 5 %}completed{% elif progress.current_step < 5 %}locked{% endif %}{% else %}locked{% endif %}" data-step="5">
+        <div class="step-marker">
+            <div class="step-number">5</div>
+        </div>
+        <div class="step-content">
+            <div class="step-header">
+                <h3 class="step-title">Random Note Sequence</h3>
+                <span class="step-badge" id="step5Badge">{% if user.is_authenticated and progress.current_step > 5 %}✓ Complete{% else %}7 Notes{% endif %}</span>
+            </div>
+            <p class="step-desc">All 7 natural notes in a random order. Play each note with the metronome, alternating up and down strings without stopping. When you can do it flawlessly, mark it complete.</p>
+
+            <div class="step-body" id="step5Body" {% if not user.is_authenticated or progress.current_step != 5 %}style="display:none"{% endif %}>
+                <div class="metronome-controls">
+                    <button class="btn btn-sm btn-primary" id="metro5Toggle">▶ Start Metronome (40 BPM)</button>
+                </div>
+
+                <div class="random-sequence" id="step5Sequence"></div>
+                <button class="btn btn-sm btn-ghost" id="step5Shuffle">🔀 Shuffle New Order</button>
+                <div class="exercise-status" id="step5Status">Play each note in order, alternating directions</div>
+
+                <div class="exercise-actions">
+                    <button class="btn btn-primary" id="step5DoneBtn">✓ Flawless Run — Complete Step 5</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- STEP 6 -->
+    <div class="pathway-step {% if user.is_authenticated %}{% if progress.current_step == 6 %}active{% elif progress.current_step > 6 %}completed{% elif progress.current_step < 6 %}locked{% endif %}{% else %}locked{% endif %}" data-step="6">
+        <div class="step-marker">
+            <div class="step-number">6</div>
+        </div>
+        <div class="step-content">
+            <div class="step-header">
+                <h3 class="step-title">Speed It Up!</h3>
+                <span class="step-badge" id="step6Badge">{% if user.is_authenticated and progress.step6_completed %}✓ 80 BPM{% else %}Goal: 80 BPM{% endif %}</span>
+            </div>
+            <p class="step-desc">Repeat steps 2–5 gradually increasing the tempo. The goal is to reach 80 BPM cleanly. You're building speed and confidence!</p>
+
+            <div class="step-body" id="step6Body" {% if not user.is_authenticated or progress.current_step != 6 %}style="display:none"{% endif %}>
+                <div class="metronome-controls">
+                    <div class="bpm-control">
+                        <button class="btn btn-sm btn-ghost" id="bpmDown">−</button>
+                        <span class="bpm-display" id="bpmDisplay">{% if user.is_authenticated %}{{ progress.step6_current_bpm }}{% else %}40{% endif %}</span>
+                        <span class="bpm-label">BPM</span>
+                        <button class="btn btn-sm btn-ghost" id="bpmUp">+</button>
+                    </div>
+                    <button class="btn btn-sm btn-primary" id="metro6Toggle">▶ Start</button>
+                </div>
+
+                <div class="exercise-status" id="step6Status">Work through steps 2–5 at increasing tempos</div>
+                <div class="bpm-progress-bar">
+                    <div class="bpm-fill" id="bpmFill" style="width: {% if user.is_authenticated %}{{ progress.step6_current_bpm|floatformat:0 }}{% else %}0{% endif %}%"></div>
+                    <span class="bpm-text">40 → 80 BPM</span>
+                </div>
+
+                <div class="exercise-actions">
+                    <button class="btn btn-primary" id="step6SaveBpm">💾 Save BPM Progress</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════ MAJOR SCALES ══════ -->
+<div class="card scales-card" style="margin-top: 1.5rem;">
+    <div class="card-header" id="scalesToggleHeader" style="cursor:pointer;">
+        <div class="card-title">🎵 Major Scales</div>
+        <span class="btn btn-ghost btn-sm" id="scalesCollapseBtn">▼</span>
+    </div>
+    <div id="scalesBody">
+        <p class="step-desc" style="margin:0 0 0.75rem; padding:0 0.25rem;">Play through all 7 major scales in order. The fretboard highlights the scale positions as you go. Use the mic to follow along!</p>
+
+        <!-- Scale selector -->
+        <div class="scales-selector" id="scalesSelector">
+            <span class="exercise-label">Scale:</span>
+        </div>
+
+        <!-- Current scale display -->
+        <div class="scale-display" id="scaleDisplay" style="display:none;">
+            <div class="scale-header-row">
+                <span class="scale-name" id="scaleName"></span>
+                <span class="scale-progress-badge" id="scaleProgressBadge"></span>
+            </div>
+            <div class="scale-notes-row" id="scaleNotesRow"></div>
+            <div class="scale-status" id="scaleStatus">Play each note in order</div>
+            <div class="exercise-actions" style="margin-top:0.5rem;">
+                <button class="btn btn-primary btn-sm" id="scaleListenBtn">🔊 Hear Scale</button>
+                <button class="btn btn-ghost btn-sm" id="scaleResetBtn">↺ Reset</button>
+            </div>
+        </div>
+
+        <!-- All scales progress -->
+        <div class="scales-progress-grid" id="scalesProgressGrid"></div>
+    </div>
+</div>
+
+<!-- ══════ TUNER (always available) ══════ -->
+<div class="card" style="margin-top: 1.5rem;">
+    <div class="card-header">
+        <div class="card-title">🎤 Guitar Tuner</div>
+    </div>
+    <div class="tuner-container">
+        <div class="tuner-display" id="tunerDisplay">
+            <div class="tuner-note-display" id="tunerNote">—</div>
+            <div class="tuner-freq" id="tunerFreq">Play a note...</div>
+            <div class="tuner-cents-bar">
+                <div class="tuner-cents-indicator" id="centsIndicator"></div>
+            </div>
+            <div class="tuner-cents-label" id="centsLabel">0 cents</div>
+            <div class="tuner-strings" id="tunerStrings">
+                <button class="tuner-string-btn" data-note="E" data-freq="82.41">E</button>
+                <button class="tuner-string-btn" data-note="A" data-freq="110.00">A</button>
+                <button class="tuner-string-btn" data-note="D" data-freq="146.83">D</button>
+                <button class="tuner-string-btn" data-note="G" data-freq="196.00">G</button>
+                <button class="tuner-string-btn" data-note="B" data-freq="246.94">B</button>
+                <button class="tuner-string-btn" data-note="e" data-freq="329.63">e</button>
+            </div>
+        </div>
+        <div style="text-align:center; margin-top:1rem;">
+            <button class="btn btn-lg btn-primary" id="micStartBtn">🎤 Start Listening</button>
+        </div>
+    </div>
+</div>
+
+<!-- Feedback Toast -->
+<div class="feedback-toast" id="feedbackToast"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* ═══════════════════════════════════════════
+   FRETBOARD MASTERY PATHWAY
+   ═══════════════════════════════════════════ */
+const FRETBOARD = {{ fretboard|safe }};
+const NATURALS = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+const SHARPS = ['C#', 'D#', 'F#', 'G#', 'A#'];
+const STRING_ORDER = ['E', 'A', 'D', 'G', 'B', 'e'];
+const STRING_NAMES_MAP = {
+    'E': { label: 'Low E (6th)', freq: 82.41 },
+    'A': { label: 'A (5th)', freq: 110.00 },
+    'D': { label: 'D (4th)', freq: 146.83 },
+    'G': { label: 'G (3rd)', freq: 196.00 },
+    'B': { label: 'B (2nd)', freq: 246.94 },
+    'e': { label: 'High E (1st)', freq: 329.63 },
+};
+
+let isAuthenticated = {{ user.is_authenticated|yesno:"true,false" }};
+{% if user.is_authenticated and progress %}
+let stepProgress = {
+    currentStep: {{ progress.current_step }},
+    step1Completions: {{ progress.step1_note_completions|safe }},
+    step1Streak: {{ progress.step1_current_streak }},
+    step1Note: '{{ progress.step1_current_note }}',
+    step2Notes: {{ progress.step2_notes_done|safe }},
+    step3Notes: {{ progress.step3_notes_done|safe }},
+    step4Completed: {{ progress.step4_completed|yesno:"true,false" }},
+    step5Completed: {{ progress.step5_completed|yesno:"true,false" }},
+    step6Bpm: {{ progress.step6_current_bpm }},
+    step6Completed: {{ progress.step6_completed|yesno:"true,false" }},
+};
+{% else %}
+let stepProgress = {
+    currentStep: 1, step1Completions: {}, step1Streak: 0, step1Note: '',
+    step2Notes: [], step3Notes: [], step4Completed: false,
+    step5Completed: false, step6Bpm: 40, step6Completed: false,
+};
+{% endif %}
+
+/* ─── API HELPERS ─── */
+async function updateProgress(data) {
+    if (!isAuthenticated) return;
+    try {
+        const resp = await fetch('/api/step-progress/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
+            body: JSON.stringify(data),
+        });
+        const result = await resp.json();
+        Object.assign(stepProgress, {
+            currentStep: result.current_step,
+            step1Completions: result.step1_completions,
+            step1Streak: result.step1_streak,
+            step1Note: result.step1_note,
+            step2Notes: result.step2_notes,
+            step3Notes: result.step3_notes,
+            step4Completed: result.step4_completed,
+            step5Completed: result.step5_completed,
+            step6Bpm: result.step6_bpm,
+            step6Completed: result.step6_completed,
+        });
+        refreshPathway();
+        return result;
+    } catch (e) { console.error('Progress update failed', e); }
+}
+
+/* ─── CALENDAR ─── */
+{% if user.is_authenticated %}
+(function buildCalendar() {
+    const calData = {{ calendar|safe }};
+    const firstWeekday = {{ first_weekday }};
+    const grid = document.getElementById('calendarGrid');
+    if (!grid) return;
+
+    // Empty cells for offset
+    for (let i = 0; i < firstWeekday; i++) {
+        const empty = document.createElement('div');
+        empty.className = 'calendar-day empty';
+        grid.appendChild(empty);
+    }
+
+    calData.forEach(d => {
+        const cell = document.createElement('div');
+        cell.className = 'calendar-day' + (d.is_today ? ' today' : '') + (d.is_future ? ' future' : '');
+
+        const circle = document.createElement('div');
+        circle.className = 'day-circle';
+        const fill = Math.min(1, d.count / 3);
+        if (fill >= 1) {
+            circle.classList.add('full');
+        } else if (fill > 0) {
+            circle.classList.add('partial');
+            circle.style.background = `conic-gradient(var(--pastel-mint) ${fill * 360}deg, var(--bg-tertiary) ${fill * 360}deg)`;
+        }
+
+        const num = document.createElement('span');
+        num.className = 'day-num';
+        num.textContent = d.day;
+
+        cell.appendChild(circle);
+        cell.appendChild(num);
+        grid.appendChild(cell);
+    });
+})();
+{% endif %}
+
+/* ─── METRONOME ─── */
+let metronomeInterval = null;
+let metronomeAudioCtx = null;
+
+function startMetronome(bpm) {
+    stopMetronome();
+    if (!metronomeAudioCtx) metronomeAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const interval = 60000 / bpm;
+    tick(); // immediate first tick
+    metronomeInterval = setInterval(tick, interval);
+}
+
+function tick() {
+    if (!metronomeAudioCtx) return;
+    const ctx = metronomeAudioCtx;
+    const now = ctx.currentTime;
+    // Short click sound
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = 1000;
+    gain.gain.setValueAtTime(0.4, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.05);
+}
+
+function stopMetronome() {
+    if (metronomeInterval) { clearInterval(metronomeInterval); metronomeInterval = null; }
+}
+
+function toggleMetronome(btn, bpm) {
+    if (metronomeInterval) {
+        stopMetronome();
+        btn.textContent = btn.textContent.replace('⏸', '▶').replace('Stop', 'Start');
+    } else {
+        startMetronome(bpm);
+        btn.textContent = btn.textContent.replace('▶', '⏸').replace('Start', 'Stop');
+    }
+}
+
+/* ─── STEP 1: Single Note String Walk ─── */
+let step1SelectedNote = stepProgress.step1Note || '';
+
+function buildStep1() {
+    const container = document.getElementById('step1Notes');
+    if (!container) return;
+    NATURALS.forEach(n => {
+        const btn = document.createElement('button');
+        btn.className = 'note-select-btn' + (stepProgress.step1Completions[n] >= 2 ? ' done' : '') + (n === step1SelectedNote ? ' active' : '');
+        btn.textContent = n;
+        btn.style.background = getNoteColor(n);
+        btn.addEventListener('click', () => {
+            step1SelectedNote = n;
+            document.querySelectorAll('#step1Notes .note-select-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('step1PerfectBtn').disabled = false;
+            document.getElementById('step1MissBtn').disabled = false;
+            updateStep1Status();
+            // Highlight on fretboard + start walk tracking
+            startWalk(n);
+        });
+        container.appendChild(btn);
+    });
+    buildStep1ProgressGrid();
+    updateStep1Status();
+}
+
+function updateStep1Status() {
+    const el = document.getElementById('step1Status');
+    if (!step1SelectedNote) { el.textContent = 'Select a note to begin'; return; }
+    const completions = stepProgress.step1Completions[step1SelectedNote] || 0;
+    const streak = step1SelectedNote === stepProgress.step1Note ? stepProgress.step1Streak : 0;
+    el.innerHTML = `Playing <b>${step1SelectedNote}</b> — Perfect runs: <b>${streak}/3</b> | Completions: <b>${completions}/2</b>`;
+}
+
+function buildStep1ProgressGrid() {
+    const grid = document.getElementById('step1Progress');
+    if (!grid) return;
+    grid.innerHTML = '<div class="progress-grid-label">Progress:</div>';
+    NATURALS.forEach(n => {
+        const count = stepProgress.step1Completions[n] || 0;
+        const item = document.createElement('div');
+        item.className = 'progress-note-item' + (count >= 2 ? ' done' : count >= 1 ? ' partial' : '');
+        item.innerHTML = `<span class="pn-note" style="color:${getNoteColor(n)}">${n}</span><span class="pn-count">${count}/2</span>`;
+        grid.appendChild(item);
+    });
+}
+
+document.getElementById('step1PerfectBtn')?.addEventListener('click', async () => {
+    if (!step1SelectedNote) return;
+    await updateProgress({ action: 'complete_note_run', note: step1SelectedNote });
+    await updateProgress({ action: 'log_exercise', exercise: 'step1' });
+    buildStep1ProgressGrid();
+    updateStep1Status();
+    showFeedback('Perfect run recorded! 🎉', 'correct');
+    // Refresh note buttons
+    document.querySelectorAll('#step1Notes .note-select-btn').forEach(btn => {
+        const n = btn.textContent;
+        if ((stepProgress.step1Completions[n] || 0) >= 2) btn.classList.add('done');
+    });
+});
+
+document.getElementById('step1MissBtn')?.addEventListener('click', async () => {
+    await updateProgress({ action: 'reset_note_streak' });
+    updateStep1Status();
+    showFeedback('Streak reset — try again!', 'incorrect');
+});
+
+/* ─── STEP 2: Metronome Natural Notes ─── */
+let step2SelectedNote = '';
+
+function buildStep2() {
+    const container = document.getElementById('step2Notes');
+    if (!container) return;
+    NATURALS.forEach(n => {
+        const btn = document.createElement('button');
+        btn.className = 'note-select-btn' + (stepProgress.step2Notes.includes(n) ? ' done' : '');
+        btn.textContent = n;
+        btn.style.background = getNoteColor(n);
+        btn.addEventListener('click', () => {
+            step2SelectedNote = n;
+            document.querySelectorAll('#step2Notes .note-select-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('step2DoneBtn').disabled = false;
+            document.getElementById('step2Status').innerHTML = `Playing <b>${n}</b> at 40 BPM`;
+            startWalk(n);
+        });
+        container.appendChild(btn);
+    });
+    buildStep2ProgressGrid();
+}
+
+function buildStep2ProgressGrid() {
+    const grid = document.getElementById('step2Progress');
+    if (!grid) return;
+    grid.innerHTML = '<div class="progress-grid-label">Completed:</div>';
+    NATURALS.forEach(n => {
+        const done = stepProgress.step2Notes.includes(n);
+        const item = document.createElement('div');
+        item.className = 'progress-note-item' + (done ? ' done' : '');
+        item.innerHTML = `<span class="pn-note" style="color:${getNoteColor(n)}">${n}</span><span class="pn-count">${done ? '✓' : '—'}</span>`;
+        grid.appendChild(item);
+    });
+}
+
+document.getElementById('metro2Toggle')?.addEventListener('click', function() { toggleMetronome(this, 40); });
+
+document.getElementById('step2DoneBtn')?.addEventListener('click', async () => {
+    if (!step2SelectedNote) return;
+    await updateProgress({ action: 'complete_step2_note', note: step2SelectedNote });
+    await updateProgress({ action: 'log_exercise', exercise: 'step2' });
+    buildStep2ProgressGrid();
+    showFeedback(`${step2SelectedNote} mastered at 40 BPM! 🎵`, 'correct');
+    document.querySelectorAll('#step2Notes .note-select-btn').forEach(btn => {
+        if (stepProgress.step2Notes.includes(btn.textContent)) btn.classList.add('done');
+    });
+});
+
+/* ─── STEP 3: Sharps & Flats ─── */
+let step3SelectedNote = '';
+
+function buildStep3() {
+    const container = document.getElementById('step3Notes');
+    if (!container) return;
+    SHARPS.forEach(n => {
+        const btn = document.createElement('button');
+        btn.className = 'note-select-btn' + (stepProgress.step3Notes.includes(n) ? ' done' : '');
+        btn.textContent = n;
+        btn.style.background = getNoteColor(n);
+        btn.addEventListener('click', () => {
+            step3SelectedNote = n;
+            document.querySelectorAll('#step3Notes .note-select-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('step3DoneBtn').disabled = false;
+            document.getElementById('step3Status').innerHTML = `Playing <b>${n}</b> at 40 BPM`;
+            startWalk(n);
+        });
+        container.appendChild(btn);
+    });
+    buildStep3ProgressGrid();
+}
+
+function buildStep3ProgressGrid() {
+    const grid = document.getElementById('step3Progress');
+    if (!grid) return;
+    grid.innerHTML = '<div class="progress-grid-label">Completed:</div>';
+    SHARPS.forEach(n => {
+        const done = stepProgress.step3Notes.includes(n);
+        const item = document.createElement('div');
+        item.className = 'progress-note-item' + (done ? ' done' : '');
+        item.innerHTML = `<span class="pn-note" style="color:${getNoteColor(n)}">${n}</span><span class="pn-count">${done ? '✓' : '—'}</span>`;
+        grid.appendChild(item);
+    });
+}
+
+document.getElementById('metro3Toggle')?.addEventListener('click', function() { toggleMetronome(this, 40); });
+
+document.getElementById('step3DoneBtn')?.addEventListener('click', async () => {
+    if (!step3SelectedNote) return;
+    await updateProgress({ action: 'complete_step3_note', note: step3SelectedNote });
+    await updateProgress({ action: 'log_exercise', exercise: 'step3' });
+    buildStep3ProgressGrid();
+    showFeedback(`${step3SelectedNote} done! 🎶`, 'correct');
+    document.querySelectorAll('#step3Notes .note-select-btn').forEach(btn => {
+        if (stepProgress.step3Notes.includes(btn.textContent)) btn.classList.add('done');
+    });
+});
+
+/* ─── STEP 4: Two-Note Pairs ─── */
+let step4Note1 = '', step4Note2 = '';
+
+function buildStep4() {
+    ['step4Note1', 'step4Note2'].forEach((containerId, idx) => {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        NATURALS.forEach(n => {
+            const btn = document.createElement('button');
+            btn.className = 'note-select-btn';
+            btn.textContent = n;
+            btn.style.background = getNoteColor(n);
+            btn.addEventListener('click', () => {
+                document.querySelectorAll(`#${containerId} .note-select-btn`).forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                if (idx === 0) step4Note1 = n; else step4Note2 = n;
+                if (step4Note1 && step4Note2) {
+                    document.getElementById('step4Status').innerHTML = `<b>${step4Note1}</b> up ↑ then <b>${step4Note2}</b> down ↓ — play without stopping!`;
+                }
+                // Highlight both notes on fretboard
+                highlightMultipleNotes([step4Note1, step4Note2].filter(Boolean));
+            });
+            container.appendChild(btn);
+        });
+    });
+}
+
+document.getElementById('metro4Toggle')?.addEventListener('click', function() { toggleMetronome(this, 40); });
+
+document.getElementById('step4DoneBtn')?.addEventListener('click', async () => {
+    await updateProgress({ action: 'complete_step4' });
+    await updateProgress({ action: 'log_exercise', exercise: 'step4' });
+    showFeedback('Step 4 complete! Moving on 🚀', 'correct');
+});
+
+/* ─── STEP 5: Random Note Sequence ─── */
+let step5Order = [];
+
+function shuffleStep5() {
+    step5Order = [...NATURALS].sort(() => Math.random() - 0.5);
+    const container = document.getElementById('step5Sequence');
+    if (!container) return;
+    container.innerHTML = '';
+    step5Order.forEach((n, i) => {
+        if (i > 0) {
+            const arrow = document.createElement('span');
+            arrow.className = 'seq-arrow';
+            arrow.textContent = i % 2 === 0 ? '↑' : '↓';
+            container.appendChild(arrow);
+        }
+        const note = document.createElement('span');
+        note.className = 'seq-note';
+        note.textContent = n;
+        note.style.background = getNoteColor(n);
+        container.appendChild(note);
+    });
+    document.getElementById('step5Status').innerHTML = `Play: ${step5Order.join(' → ')} alternating up/down`;
+}
+
+document.getElementById('step5Shuffle')?.addEventListener('click', shuffleStep5);
+document.getElementById('metro5Toggle')?.addEventListener('click', function() { toggleMetronome(this, 40); });
+
+document.getElementById('step5DoneBtn')?.addEventListener('click', async () => {
+    await updateProgress({ action: 'complete_step5' });
+    await updateProgress({ action: 'log_exercise', exercise: 'step5' });
+    showFeedback('Step 5 mastered! 🏆', 'correct');
+});
+
+/* ─── STEP 6: Speed Up ─── */
+let step6Bpm = stepProgress.step6Bpm || 40;
+
+document.getElementById('bpmDown')?.addEventListener('click', () => {
+    step6Bpm = Math.max(40, step6Bpm - 5);
+    updateBpmDisplay();
+});
+document.getElementById('bpmUp')?.addEventListener('click', () => {
+    step6Bpm = Math.min(120, step6Bpm + 5);
+    updateBpmDisplay();
+});
+
+function updateBpmDisplay() {
+    const el = document.getElementById('bpmDisplay');
+    if (el) el.textContent = step6Bpm;
+    const fill = document.getElementById('bpmFill');
+    if (fill) fill.style.width = Math.min(100, ((step6Bpm - 40) / 40) * 100) + '%';
+}
+
+document.getElementById('metro6Toggle')?.addEventListener('click', function() { toggleMetronome(this, step6Bpm); });
+
+document.getElementById('step6SaveBpm')?.addEventListener('click', async () => {
+    await updateProgress({ action: 'update_step6_bpm', bpm: step6Bpm });
+    await updateProgress({ action: 'log_exercise', exercise: 'step6' });
+    showFeedback(`Progress saved at ${step6Bpm} BPM!`, 'correct');
+    updateBpmDisplay();
+});
+
+/* ─── REFRESH PATHWAY (after step advances) ─── */
+function refreshPathway() {
+    document.querySelectorAll('.pathway-step').forEach(el => {
+        const step = parseInt(el.dataset.step);
+        el.classList.remove('active', 'completed', 'locked');
+        if (step < stepProgress.currentStep) el.classList.add('completed');
+        else if (step === stepProgress.currentStep) el.classList.add('active');
+        else el.classList.add('locked');
+
+        // Show/hide body
+        const body = el.querySelector('.step-body');
+        if (body) body.style.display = step === stepProgress.currentStep ? '' : 'none';
+    });
+
+    // Allow expanding completed steps
+    document.querySelectorAll('.step-header').forEach(hdr => {
+        hdr.style.cursor = 'pointer';
+        hdr.onclick = () => {
+            const body = hdr.closest('.step-content').querySelector('.step-body');
+            if (body) body.style.display = body.style.display === 'none' ? '' : 'none';
+        };
+    });
+}
+
+/* ═══════════════════════════════════════════
+   LIVE FRETBOARD
+   ═══════════════════════════════════════════ */
+let fretboardInverted = true; // true = player POV (high e top, low E bottom)
+const INLAY_FRETS = [3, 5, 7, 9];
+const DOUBLE_INLAY_FRETS = [12];
+
+function buildTunerFretboard() {
+    const container = document.getElementById('tunerStringsContainer');
+    container.innerHTML = '';
+    const strings = fretboardInverted ? [1,2,3,4,5,6] : [6,5,4,3,2,1];
+    for (const s of strings) {
+        const row = document.createElement('div');
+        row.className = 'string-row';
+        row.dataset.string = s;
+        const label = document.createElement('div');
+        label.className = 'string-label';
+        label.textContent = {1:'e', 2:'B', 3:'G', 4:'D', 5:'A', 6:'E'}[s];
+        row.appendChild(label);
+        for (let f = 0; f <= 12; f++) {
+            const cell = document.createElement('div');
+            cell.className = `fret-cell ${f === 0 ? 'fret-0' : ''}`;
+            // Inlay dots
+            if (fretboardInverted) {
+                if (s === 3 && INLAY_FRETS.includes(f)) {
+                    const inlay = document.createElement('div');
+                    inlay.className = 'inlay-dot'; inlay.style.bottom = '-12px';
+                    cell.appendChild(inlay);
+                }
+                if (DOUBLE_INLAY_FRETS.includes(f) && (s === 2 || s === 4)) {
+                    const inlay = document.createElement('div');
+                    inlay.className = 'inlay-dot'; inlay.style.bottom = '-12px';
+                    cell.appendChild(inlay);
+                }
+            } else {
+                if (s === 4 && INLAY_FRETS.includes(f)) {
+                    const inlay = document.createElement('div');
+                    inlay.className = 'inlay-dot'; inlay.style.bottom = '-12px';
+                    cell.appendChild(inlay);
+                }
+                if (DOUBLE_INLAY_FRETS.includes(f) && (s === 5 || s === 3)) {
+                    const inlay = document.createElement('div');
+                    inlay.className = 'inlay-dot'; inlay.style.bottom = '-12px';
+                    cell.appendChild(inlay);
+                }
+            }
+            const dot = document.createElement('div');
+            dot.className = 'note-dot';
+            dot.id = `tnote-${s}-${f}`;
+            dot.dataset.string = s;
+            dot.dataset.fret = f;
+            dot.textContent = FRETBOARD[`${s}-${f}`];
+            cell.appendChild(dot);
+            row.appendChild(cell);
+        }
+        container.appendChild(row);
+    }
+}
+
+// Flip toggle
+document.getElementById('flipToggle')?.addEventListener('click', () => {
+    fretboardInverted = !fretboardInverted;
+    buildTunerFretboard();
+    if (activeExerciseNote) highlightTargetNote(activeExerciseNote);
+    if (walkState.active) highlightWalkProgress();
+});
+
+// Collapse/expand fretboard card
+document.getElementById('fretboardCardToggle')?.addEventListener('click', () => {
+    const body = document.getElementById('fretboardCardBody');
+    const btn = document.getElementById('fbCollapseBtn');
+    if (body.style.display === 'none') {
+        body.style.display = '';
+        btn.textContent = '▼';
+    } else {
+        body.style.display = 'none';
+        btn.textContent = '▶';
+    }
+});
+
+/* ─── FRETBOARD HIGHLIGHT HELPERS ─── */
+let activeExerciseNote = null; // Currently selected note across all exercises
+
+// Highlight all positions of a given note on fretboard
+function highlightTargetNote(note) {
+    activeExerciseNote = note;
+    // Clear all highlights first
+    clearFretboardHighlights();
+    if (!note) return;
+    const color = getNoteColor(note);
+    for (let s = 1; s <= 6; s++) {
+        for (let f = 0; f <= 12; f++) {
+            const cellNote = FRETBOARD[`${s}-${f}`];
+            if (cellNote === note) {
+                const d = document.getElementById(`tnote-${s}-${f}`);
+                if (d) {
+                    d.classList.add('color-coded', 'target-note');
+                    d.style.background = color;
+                    d.style.opacity = '0.5';
+                    d.textContent = cellNote;
+                }
+            }
+        }
+    }
+    updateFbHint(note);
+}
+
+function clearFretboardHighlights() {
+    document.querySelectorAll('#tunerStringsContainer .note-dot').forEach(d => {
+        d.classList.remove('highlighted', 'correct', 'color-coded', 'target-note', 'walk-done', 'detected-note', 'scale-next', 'scale-done');
+        d.style.background = '';
+        d.style.opacity = '';
+        d.style.boxShadow = '';
+        d.textContent = FRETBOARD[`${d.dataset.string}-${d.dataset.fret}`];
+    });
+}
+
+// Highlight multiple notes at once (used by step 4 pairs)
+function highlightMultipleNotes(notes) {
+    clearFretboardHighlights();
+    activeExerciseNote = notes[0] || null;
+    notes.forEach(note => {
+        if (!note) return;
+        const color = getNoteColor(note);
+        for (let s = 1; s <= 6; s++) {
+            for (let f = 0; f <= 12; f++) {
+                if (FRETBOARD[`${s}-${f}`] === note) {
+                    const d = document.getElementById(`tnote-${s}-${f}`);
+                    if (d) {
+                        d.classList.add('color-coded', 'target-note');
+                        d.style.background = color;
+                        d.style.opacity = '0.5';
+                        d.textContent = note;
+                    }
+                }
+            }
+        }
+    });
+    if (notes.length) {
+        const html = notes.map(n => `<b style="color:${getNoteColor(n)}">${n}</b>`).join(' &amp; ');
+        updateFbHint(`Showing: ${html}`);
+    }
+}
+
+function updateFbHint(noteOrHtml) {
+    const el = document.getElementById('fbHint');
+    if (!el) return;
+    if (noteOrHtml) {
+        // If it contains HTML tags, use as-is
+        if (noteOrHtml.includes('<')) {
+            el.innerHTML = noteOrHtml;
+        } else {
+            el.innerHTML = `Showing: <b style="color:${getNoteColor(noteOrHtml)}">${noteOrHtml}</b>`;
+        }
+    } else {
+        el.textContent = 'Start mic & select a note to follow along';
+    }
+}
+
+/* ─── STRING WALK TRACKING ─── */
+// Walk sequence: 6→5→4→3→2→1→2→3→4→5→6
+const WALK_SEQUENCE = [6, 5, 4, 3, 2, 1, 2, 3, 4, 5, 6];
+let walkState = {
+    active: false,
+    note: null,
+    stepIndex: 0,
+    completed: [],
+};
+
+function startWalk(note) {
+    walkState = { active: true, note: note, stepIndex: 0, completed: [] };
+    highlightWalkProgress();
+}
+
+function resetWalk() {
+    walkState = { active: false, note: null, stepIndex: 0, completed: [] };
+}
+
+function highlightWalkProgress() {
+    if (!walkState.active || !walkState.note) return;
+    const note = walkState.note;
+    const color = getNoteColor(note);
+
+    // Clear then show all target positions dimmed
+    clearFretboardHighlights();
+    activeExerciseNote = note;
+
+    for (let s = 1; s <= 6; s++) {
+        for (let f = 0; f <= 12; f++) {
+            if (FRETBOARD[`${s}-${f}`] === note && f > 0 && f <= 12) {
+                const d = document.getElementById(`tnote-${s}-${f}`);
+                if (d) {
+                    d.classList.add('color-coded', 'target-note');
+                    d.style.background = color;
+                    d.style.opacity = '0.25';
+                    d.textContent = FRETBOARD[`${s}-${f}`];
+                }
+            }
+        }
+    }
+
+    // Mark completed walk steps as done (green)
+    walkState.completed.forEach(({string, fret}) => {
+        const d = document.getElementById(`tnote-${string}-${fret}`);
+        if (d) {
+            d.classList.add('correct', 'walk-done');
+            d.style.opacity = '1';
+            d.style.background = '';
+        }
+    });
+
+    // Highlight current target string brightly
+    if (walkState.stepIndex < WALK_SEQUENCE.length) {
+        const targetString = WALK_SEQUENCE[walkState.stepIndex];
+        // Find which fret has the note on this string
+        for (let f = 1; f <= 12; f++) {
+            if (FRETBOARD[`${targetString}-${f}`] === note) {
+                const d = document.getElementById(`tnote-${targetString}-${f}`);
+                if (d) {
+                    d.classList.add('highlighted');
+                    d.style.opacity = '1';
+                    d.style.background = '';
+                    d.textContent = note;
+                }
+                break;
+            }
+        }
+        // Also pulse the walk visual indicator
+        highlightWalkVisualStep(walkState.stepIndex);
+    }
+
+    updateFbHint(note);
+}
+
+function highlightWalkVisualStep(idx) {
+    // Highlight the walk-string visual pills in Steps 1-3
+    document.querySelectorAll('.walk-string, .walk-arrow').forEach(el => {
+        el.classList.remove('walk-current', 'walk-passed');
+    });
+    const walkStrings = document.querySelectorAll('#step1Walk .walk-string, #step1Walk .walk-arrow');
+    walkStrings.forEach((el, i) => {
+        // Each walk-string and walk-arrow interleave: 0=string, 1=arrow, 2=string, ...
+        // String indices: 0,2,4,6,8,10,12,14,16,18,20 = walk steps 0..10
+        // Arrow indices: 1,3,5,7,9,11,13,15,17,19
+        const stringIdx = Math.floor(i / 2);
+        if (i % 2 === 0) { // string element
+            if (stringIdx < idx) el.classList.add('walk-passed');
+            else if (stringIdx === idx) el.classList.add('walk-current');
+        } else { // arrow
+            if (stringIdx < idx) el.classList.add('walk-passed');
+        }
+    });
+}
+
+// Check if a detected note matches the current walk target
+function checkWalkDetection(detectedNote, detectedString, detectedFret) {
+    if (!walkState.active || walkState.stepIndex >= WALK_SEQUENCE.length) return false;
+    const targetString = WALK_SEQUENCE[walkState.stepIndex];
+    if (detectedString !== targetString) return false;
+    if (detectedNote !== walkState.note) return false;
+    if (detectedFret < 1 || detectedFret > 12) return false; // No open strings
+
+    // Match! Mark as done and advance
+    walkState.completed.push({ string: detectedString, fret: detectedFret });
+    walkState.stepIndex++;
+    vibrateString(detectedString);
+    highlightWalkProgress();
+
+    if (walkState.stepIndex >= WALK_SEQUENCE.length) {
+        // Walk complete!
+        showFeedback('🎉 Perfect walk! All strings hit!', 'correct');
+        return true;
+    }
+    return false;
+}
+
+function vibrateString(stringNum) {
+    const row = document.querySelector(`#tunerStringsContainer .string-row[data-string="${stringNum}"]`);
+    if (row) {
+        row.classList.remove('vibrating');
+        void row.offsetWidth;
+        row.classList.add('vibrating');
+        setTimeout(() => row.classList.remove('vibrating'), 700);
+    }
+}
+
+/* ═══════════════════════════════════════════
+   TUNER + MIC DETECTION
+   ═══════════════════════════════════════════ */
+let pitchDetector = null;
+let micActive = false;
+const ALL_NOTES_CHROMATIC = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
+function freqToNote(freq) {
+    if (freq <= 0) return { note: '—', octave: 0, cents: 0 };
+    const semitones = 12 * Math.log2(freq / 440.0);
+    const rounded = Math.round(semitones);
+    const cents = Math.round((semitones - rounded) * 100);
+    const noteIndex = ((rounded % 12) + 12 + 9) % 12;
+    const octave = Math.floor((rounded + 9) / 12) + 4;
+    return { note: ALL_NOTES_CHROMATIC[noteIndex], octave, cents };
+}
+
+function isClose(detectedFreq, targetFreq, toleranceCents = 50) {
+    if (detectedFreq <= 0 || targetFreq <= 0) return false;
+    return Math.abs(1200 * Math.log2(detectedFreq / targetFreq)) <= toleranceCents;
+}
+
+function getCents(detectedFreq, targetFreq) {
+    if (detectedFreq <= 0 || targetFreq <= 0) return 0;
+    return Math.round(1200 * Math.log2(detectedFreq / targetFreq));
+}
+
+document.getElementById('micStartBtn')?.addEventListener('click', async function() {
+    if (micActive) {
+        if (pitchDetector) { pitchDetector.stop(); pitchDetector = null; }
+        micActive = false;
+        this.textContent = '🎤 Start Listening';
+        this.classList.remove('btn-danger'); this.classList.add('btn-primary');
+        document.getElementById('tunerNote').textContent = '—';
+        document.getElementById('tunerFreq').textContent = 'Play a note...';
+        document.getElementById('centsLabel').textContent = '0 cents';
+        document.getElementById('fbDetectedNote').textContent = '—';
+        document.getElementById('fbDetectedNote').style.color = '';
+        document.getElementById('fbDetectedPos').textContent = '';
+        // Clear detected highlights
+        document.querySelectorAll('#tunerStringsContainer .note-dot.detected-note').forEach(d => {
+            d.classList.remove('detected-note');
+            if (!d.classList.contains('highlighted') && !d.classList.contains('correct') && !d.classList.contains('color-coded')) {
+                d.style.opacity = '';
+                d.style.background = '';
+            }
+        });
+        return;
+    }
+    pitchDetector = new PitchDetector();
+    const started = await pitchDetector.start();
+    if (!started) { showFeedback('Mic access denied', 'incorrect'); return; }
+    micActive = true;
+    this.textContent = '🛑 Stop Listening';
+    this.classList.remove('btn-primary'); this.classList.add('btn-danger');
+    pitchDetector.onNoteDetected = (info) => { if (micActive) handleMicDetection(info); };
+});
+
+let lastDetectedDot = null;
+
+function handleMicDetection(info) {
+    // Update tuner display
+    updateTunerDisplay(info);
+
+    // Update fretboard with detected position
+    const pos = pitchDetector.guessPosition(info.frequency);
+    if (pos && pos.string && pos.fret !== null) {
+        // Update status bar
+        const strName = {1:'e', 2:'B', 3:'G', 4:'D', 5:'A', 6:'E'}[pos.string];
+        document.getElementById('fbDetectedNote').textContent = info.note;
+        document.getElementById('fbDetectedNote').style.color = getNoteColor(info.note);
+        document.getElementById('fbDetectedPos').textContent = `String ${strName}, Fret ${pos.fret}`;
+
+        // Clear previous detected highlight
+        if (lastDetectedDot) {
+            lastDetectedDot.classList.remove('detected-note');
+            if (!lastDetectedDot.classList.contains('highlighted') && !lastDetectedDot.classList.contains('correct') && !lastDetectedDot.classList.contains('color-coded')) {
+                lastDetectedDot.style.opacity = '';
+                lastDetectedDot.style.background = '';
+                lastDetectedDot.style.boxShadow = '';
+            }
+        }
+
+        // Highlight detected position on fretboard
+        const dot = document.getElementById(`tnote-${pos.string}-${pos.fret}`);
+        if (dot) {
+            dot.classList.add('detected-note');
+            dot.style.opacity = '1';
+            lastDetectedDot = dot;
+            vibrateString(pos.string);
+        }
+
+        // Check if this matches the walk exercise
+        if (walkState.active) {
+            checkWalkDetection(info.note, pos.string, pos.fret);
+        }
+        // Check if this matches the scale exercise
+        if (scaleState.active) {
+            checkScaleDetection(info.note, pos.string, pos.fret);
+        }
+    }
+}
+
+function updateTunerDisplay(info) {
+    document.getElementById('tunerNote').textContent = info.note;
+    document.getElementById('tunerNote').style.color = getNoteColor(info.note);
+    document.getElementById('tunerFreq').textContent = `${info.frequency.toFixed(1)} Hz`;
+    let nearestTarget = null, nearestDist = Infinity;
+    for (const [, data] of Object.entries(STRING_NAMES_MAP)) {
+        const dist = Math.abs(1200 * Math.log2(info.frequency / data.freq));
+        if (dist < nearestDist) { nearestDist = dist; nearestTarget = data; }
+    }
+    if (nearestTarget && nearestDist < 200) {
+        const cents = getCents(info.frequency, nearestTarget.freq);
+        document.getElementById('centsLabel').textContent = `${cents > 0 ? '+' : ''}${cents} cents`;
+        const pct = Math.max(0, Math.min(100, 50 + cents));
+        const ind = document.getElementById('centsIndicator');
+        ind.style.left = pct + '%';
+        ind.style.background = Math.abs(cents) < 8 ? 'var(--success)' : Math.abs(cents) < 25 ? 'var(--warning)' : 'var(--error)';
+        ind.style.width = Math.abs(cents) < 8 ? '6px' : '4px';
+    }
+    document.querySelectorAll('.tuner-string-btn').forEach(btn => {
+        btn.classList.remove('current');
+        if (isClose(info.frequency, parseFloat(btn.dataset.freq), 100)) btn.classList.add('current');
+    });
+}
+
+document.querySelectorAll('.tuner-string-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const note = btn.dataset.note;
+        const idx = STRING_ORDER.indexOf(note);
+        playNoteSound(note === 'e' ? 'E' : note, idx === 5 ? 1 : 6 - idx, 0);
+    });
+});
+
+function showFeedback(message, type) {
+    const toast = document.getElementById('feedbackToast');
+    toast.textContent = message;
+    toast.className = `feedback-toast ${type} show`;
+    setTimeout(() => toast.classList.remove('show'), 1500);
+}
+
+/* ═══════════════════════════════════════════
+   MAJOR SCALES
+   ═══════════════════════════════════════════ */
+const MAJOR_SCALES = {
+    'C':  ['C', 'D', 'E', 'F', 'G', 'A', 'B', 'C'],
+    'D':  ['D', 'E', 'F#', 'G', 'A', 'B', 'C#', 'D'],
+    'E':  ['E', 'F#', 'G#', 'A', 'B', 'C#', 'D#', 'E'],
+    'F':  ['F', 'G', 'A', 'A#', 'C', 'D', 'E', 'F'],
+    'G':  ['G', 'A', 'B', 'C', 'D', 'E', 'F#', 'G'],
+    'A':  ['A', 'B', 'C#', 'D', 'E', 'F#', 'G#', 'A'],
+    'B':  ['B', 'C#', 'D#', 'E', 'F#', 'G#', 'A#', 'B'],
+};
+const SCALE_ORDER = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+
+let scaleState = {
+    active: false,
+    key: null,
+    notes: [],
+    currentIndex: 0,
+    completed: new Set(), // keys completed this session
+};
+
+// Build a recommended fretboard path for a scale (one position approach)
+// Returns array of {string, fret, note} for playing the scale ascending on the fretboard
+function buildScalePath(key) {
+    const notes = MAJOR_SCALES[key];
+    const path = [];
+    // We'll find positions starting from the lowest available on string 6,
+    // then walk up naturally through the strings
+    // Open string MIDI: 6=40(E2), 5=45(A2), 4=50(D3), 3=55(G3), 2=59(B3), 1=64(E4)
+    const openMidi = {6: 40, 5: 45, 4: 50, 3: 55, 2: 59, 1: 64};
+    const noteToSemitone = {'C':0,'C#':1,'D':2,'D#':3,'E':4,'F':5,'F#':6,'G':7,'G#':8,'A':9,'A#':10,'B':11};
+
+    // Find the root on string 6 (or 5) to anchor the position
+    const rootSemi = noteToSemitone[notes[0]];
+    let startString = 6;
+    let startFret = (rootSemi - (openMidi[6] % 12) + 12) % 12;
+    if (startFret === 0) startFret = 12; // avoid open string
+    // For some keys, starting on string 5 gives a better position
+    if (startFret > 7) {
+        const altFret = (rootSemi - (openMidi[5] % 12) + 12) % 12;
+        if (altFret > 0 && altFret <= 7) {
+            startString = 5;
+            startFret = altFret;
+        }
+    }
+
+    // Now assign each scale note to the best (string, fret) going up
+    let currentString = startString;
+    let lastMidi = openMidi[currentString] + startFret - 1; // just below first note
+
+    for (const note of notes) {
+        let bestS = null, bestF = null, bestMidi = null;
+        // Try current string first, then next strings up
+        for (let s = currentString; s >= 1; s--) {
+            for (let f = 0; f <= 12; f++) {
+                const cellNote = FRETBOARD[`${s}-${f}`];
+                if (cellNote === note) {
+                    const midi = openMidi[s] + f;
+                    if (midi > lastMidi) {
+                        if (bestMidi === null || midi < bestMidi) {
+                            bestS = s; bestF = f; bestMidi = midi;
+                        }
+                    }
+                }
+            }
+        }
+        if (bestS !== null) {
+            path.push({string: bestS, fret: bestF, note: note});
+            lastMidi = bestMidi;
+            currentString = bestS;
+        }
+    }
+    return path;
+}
+
+function buildScalesUI() {
+    const container = document.getElementById('scalesSelector');
+    if (!container) return;
+    SCALE_ORDER.forEach(key => {
+        const btn = document.createElement('button');
+        btn.className = 'note-select-btn';
+        btn.textContent = key;
+        btn.style.background = getNoteColor(key);
+        btn.dataset.key = key;
+        btn.addEventListener('click', () => selectScale(key));
+        container.appendChild(btn);
+    });
+    buildScalesProgressGrid();
+
+    // Collapse toggle
+    document.getElementById('scalesToggleHeader')?.addEventListener('click', () => {
+        const body = document.getElementById('scalesBody');
+        const btn = document.getElementById('scalesCollapseBtn');
+        if (body.style.display === 'none') {
+            body.style.display = '';
+            btn.textContent = '▼';
+        } else {
+            body.style.display = 'none';
+            btn.textContent = '▶';
+        }
+    });
+
+    // Listen button — play the scale audio
+    document.getElementById('scaleListenBtn')?.addEventListener('click', () => {
+        if (!scaleState.active) return;
+        playScaleAudio(scaleState.key);
+    });
+
+    // Reset button
+    document.getElementById('scaleResetBtn')?.addEventListener('click', () => {
+        if (!scaleState.active) return;
+        scaleState.currentIndex = 0;
+        highlightScaleOnFretboard();
+        updateScaleNotesRow();
+        document.getElementById('scaleStatus').textContent = 'Play each note in order';
+    });
+}
+
+function selectScale(key) {
+    // Update button states
+    document.querySelectorAll('#scalesSelector .note-select-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.key === key);
+    });
+
+    scaleState = {
+        active: true,
+        key: key,
+        notes: MAJOR_SCALES[key],
+        path: buildScalePath(key),
+        currentIndex: 0,
+        completed: scaleState.completed,
+    };
+
+    // Show scale display
+    document.getElementById('scaleDisplay').style.display = '';
+    document.getElementById('scaleName').textContent = `${key} Major`;
+    document.getElementById('scaleName').style.color = getNoteColor(key);
+    updateScaleNotesRow();
+    updateScaleProgressBadge();
+    document.getElementById('scaleStatus').textContent = 'Play each note in order — mic detects your playing!';
+
+    // Highlight on fretboard
+    highlightScaleOnFretboard();
+}
+
+function updateScaleNotesRow() {
+    const row = document.getElementById('scaleNotesRow');
+    if (!row) return;
+    row.innerHTML = '';
+    scaleState.notes.forEach((note, i) => {
+        if (i > 0) {
+            const arrow = document.createElement('span');
+            arrow.className = 'scale-arrow';
+            arrow.textContent = '→';
+            if (i < scaleState.currentIndex) arrow.classList.add('done');
+            row.appendChild(arrow);
+        }
+        const pill = document.createElement('span');
+        pill.className = 'scale-note-pill';
+        pill.textContent = note;
+        pill.style.setProperty('--note-color', getNoteColor(note));
+        if (i < scaleState.currentIndex) {
+            pill.classList.add('done');
+        } else if (i === scaleState.currentIndex) {
+            pill.classList.add('current');
+        }
+        row.appendChild(pill);
+    });
+}
+
+function highlightScaleOnFretboard() {
+    clearFretboardHighlights();
+    if (!scaleState.active || !scaleState.path) return;
+    activeExerciseNote = scaleState.key;
+
+    scaleState.path.forEach((pos, i) => {
+        const d = document.getElementById(`tnote-${pos.string}-${pos.fret}`);
+        if (!d) return;
+        const color = getNoteColor(pos.note);
+
+        if (i < scaleState.currentIndex) {
+            // Already played — green check
+            d.classList.add('correct', 'scale-done');
+            d.style.opacity = '1';
+            d.textContent = pos.note;
+        } else if (i === scaleState.currentIndex) {
+            // Current target — bright highlight
+            d.classList.add('highlighted', 'scale-next');
+            d.style.opacity = '1';
+            d.textContent = pos.note;
+        } else {
+            // Upcoming — dimmed color
+            d.classList.add('color-coded', 'target-note');
+            d.style.background = color;
+            d.style.opacity = '0.3';
+            d.textContent = pos.note;
+        }
+    });
+
+    const currentNote = scaleState.notes[scaleState.currentIndex];
+    if (currentNote) {
+        updateFbHint(`${scaleState.key} Major — play <b style="color:${getNoteColor(currentNote)}">${currentNote}</b>`);
+    } else {
+        updateFbHint(`${scaleState.key} Major — done! 🎉`);
+    }
+}
+
+function checkScaleDetection(detectedNote, detectedString, detectedFret) {
+    if (!scaleState.active || scaleState.currentIndex >= scaleState.notes.length) return false;
+    const target = scaleState.path[scaleState.currentIndex];
+    if (!target) return false;
+
+    // Check if the detected note matches the expected scale note
+    // Allow any position of the correct note (not just the prescribed path)
+    if (detectedNote !== target.note) return false;
+
+    // Match! Advance
+    scaleState.currentIndex++;
+    vibrateString(detectedString);
+    highlightScaleOnFretboard();
+    updateScaleNotesRow();
+
+    if (scaleState.currentIndex >= scaleState.notes.length) {
+        // Scale complete!
+        scaleState.completed.add(scaleState.key);
+        showFeedback(`🎉 ${scaleState.key} Major complete!`, 'correct');
+        updateScaleProgressBadge();
+        buildScalesProgressGrid();
+        document.getElementById('scaleStatus').innerHTML = `<b>${scaleState.key} Major</b> complete! Pick the next scale.`;
+
+        // Auto-advance to next incomplete scale after a moment
+        setTimeout(() => {
+            const nextKey = SCALE_ORDER.find(k => !scaleState.completed.has(k));
+            if (nextKey) {
+                selectScale(nextKey);
+            } else {
+                showFeedback('🏆 All 7 major scales complete!', 'correct');
+                document.getElementById('scaleStatus').innerHTML = '🏆 <b>All major scales mastered this session!</b>';
+            }
+        }, 1500);
+        return true;
+    }
+    return false;
+}
+
+function updateScaleProgressBadge() {
+    const badge = document.getElementById('scaleProgressBadge');
+    if (!badge) return;
+    const done = scaleState.completed.size;
+    badge.textContent = `${done}/7 scales`;
+    badge.className = 'scale-progress-badge' + (done >= 7 ? ' all-done' : '');
+}
+
+function buildScalesProgressGrid() {
+    const grid = document.getElementById('scalesProgressGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    SCALE_ORDER.forEach(key => {
+        const item = document.createElement('div');
+        item.className = 'progress-note-item' + (scaleState.completed.has(key) ? ' done' : '');
+        item.innerHTML = `<span class="pn-note" style="color:${getNoteColor(key)}">${key}</span><span class="pn-count">${scaleState.completed.has(key) ? '✓' : '—'}</span>`;
+        grid.appendChild(item);
+    });
+}
+
+function playScaleAudio(key) {
+    const path = buildScalePath(key);
+    if (!path.length) return;
+    path.forEach((pos, i) => {
+        setTimeout(() => {
+            playNoteSound(pos.note, pos.string, pos.fret, 0.8);
+            vibrateString(pos.string);
+        }, i * 400);
+    });
+}
+
+/* ─── INIT ─── */
+buildTunerFretboard();
+buildStep1();
+buildStep2();
+buildStep3();
+buildStep4();
+shuffleStep5();
+buildScalesUI();
+refreshPathway();
+</script>
+{% endblock %}

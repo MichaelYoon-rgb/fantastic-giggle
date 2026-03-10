@@ -1,0 +1,1139 @@
+{% extends "trainer/base.html" %}
+
+{% block title %}Recall — Every Guitar Note{% endblock %}
+{% block nav_recall %}active{% endblock %}
+{% block body_class %}fretboard-page{% endblock %}
+
+{% block content %}
+<div class="game-overlay-top">
+    <!-- Mode toggle -->
+    <div class="inline-filter" style="margin-bottom:0;">
+        <div class="inline-filter-row">
+            <div class="filter-group-pills" id="modeToggle">
+                <button class="filter-pill mode-pill active" data-mode="name">🎯 Name It</button>
+                <button class="filter-pill mode-pill" data-mode="find">📍 Find It</button>
+                <button class="filter-pill mode-pill" data-mode="line">📏 Line</button>
+                <button class="filter-pill mode-pill" data-mode="block">🔲 3×3</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter (inline, left side) -->
+    <div class="inline-filter">
+        <div class="inline-filter-row">
+            <div class="filter-group-pills" id="filterGroupPills">
+                <button class="filter-pill active" data-filter="all">All</button>
+                <button class="filter-pill" data-filter="naturals">Natural</button>
+                <button class="filter-pill" data-filter="sharps">Sharps</button>
+                <button class="filter-pill" data-filter="flats">Flats</button>
+                <button class="filter-pill" data-filter="custom">Custom</button>
+            </div>
+            <button class="flip-toggle" id="showAllToggle" title="Show/hide all notes on fretboard">
+                <span class="flip-icon">🎹</span> Notes
+            </button>
+            <button class="flip-toggle" id="flipToggle" title="Flip fretboard orientation">
+                <span class="flip-icon">↕</span> Flip
+            </button>
+            <button class="flip-toggle" id="metronomeToggle" title="Timed reveal with metronome">
+                <span class="flip-icon">🕐</span> Timer
+            </button>
+        </div>
+        <div class="filter-custom-notes" id="filterNotes" style="display:none;"></div>
+    </div>
+    <!-- Metronome controls -->
+    <div class="metronome-controls" id="metronomeControls" style="display:none;">
+        <div class="metronome-row">
+            <label class="metro-label">BPM</label>
+            <button class="metro-adj" id="bpmDown">−</button>
+            <span class="metro-value" id="bpmDisplay">60</span>
+            <button class="metro-adj" id="bpmUp">+</button>
+        </div>
+        <div class="metronome-row">
+            <label class="metro-label">Beats</label>
+            <button class="metro-adj" id="beatsDown">−</button>
+            <span class="metro-value" id="beatsDisplay">4</span>
+            <button class="metro-adj" id="beatsUp">+</button>
+        </div>
+        <div class="metronome-beat-dots" id="metroBeatDots"></div>
+    </div>
+    <div class="game-score">
+        <div class="score-item">
+            <div class="score-value correct-color" id="scoreCorrect">0</div>
+            <div class="score-label">Correct</div>
+        </div>
+        <div class="score-item">
+            <div class="score-value wrong-color" id="scoreWrong">0</div>
+            <div class="score-label">Wrong</div>
+        </div>
+        <div class="score-item">
+            <div class="score-value streak-color" id="scoreStreak">0</div>
+            <div class="score-label">Streak</div>
+        </div>
+    </div>
+</div>
+
+<!-- Find It / Line / Block prompt -->
+<div class="find-prompt" id="findPrompt" style="display:none;">
+    <div class="find-prompt-label" id="findPromptLabel">Play this note:</div>
+    <div class="find-prompt-note" id="findPromptNote">A</div>
+    <div class="find-prompt-string" id="findPromptString">on the <span id="findPromptStringName">G</span> string</div>
+    <div id="findProgress" style="margin-top:0.4rem; font-family:var(--font-fun); font-size:0.85rem; color:var(--text-muted); display:none;">
+        Found: <span id="foundCount">0</span> / <span id="totalCount">0</span>
+    </div>
+</div>
+
+<!-- Fretboard -->
+<div class="fretboard-wrapper">
+    <div class="fretboard" id="gameFretboard">
+        <div class="fret-numbers">
+            <div class="fret-number"></div>
+            <div class="fret-number" style="font-size:0.6rem;">O</div>
+            <div class="fret-number">1</div>
+            <div class="fret-number">2</div>
+            <div class="fret-number">3</div>
+            <div class="fret-number">4</div>
+            <div class="fret-number">5</div>
+            <div class="fret-number">6</div>
+            <div class="fret-number">7</div>
+            <div class="fret-number">8</div>
+            <div class="fret-number">9</div>
+            <div class="fret-number">10</div>
+            <div class="fret-number">11</div>
+            <div class="fret-number">12</div>
+        </div>
+        <div class="strings-container" id="gameStrings"></div>
+        <div class="block-overlay" id="blockOverlay"></div>
+        <div class="fret-markers">
+            <div class="fret-marker"></div>
+            <div class="fret-marker"></div>
+            <div class="fret-marker"></div>
+            <div class="fret-marker"></div>
+            <div class="fret-marker"><div class="fret-marker-dot"></div></div>
+            <div class="fret-marker"></div>
+            <div class="fret-marker"><div class="fret-marker-dot"></div></div>
+            <div class="fret-marker"></div>
+            <div class="fret-marker"><div class="fret-marker-dot"></div></div>
+            <div class="fret-marker"></div>
+            <div class="fret-marker"><div class="fret-marker-dot"></div></div>
+            <div class="fret-marker"></div>
+            <div class="fret-marker"></div>
+            <div class="fret-marker">
+                <div class="fret-marker-dot"></div>
+                <div class="fret-marker-dot"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Practice Prompt -->
+<div class="practice-prompt" id="practicePrompt" style="display:none;">
+    🎸 Play these notes on your guitar — up the frets, then back down!
+</div>
+
+<!-- Answer Buttons (Name It mode only) -->
+<div class="game-overlay-bottom">
+    <div class="note-buttons" id="noteButtons"></div>
+    <div style="display:flex; justify-content:center; gap:0.5rem; margin-top:0.3rem; flex-wrap:wrap;">
+        <button class="btn btn-ghost" id="revealBtn" style="font-family:var(--font-fun); font-size:0.85rem;">👁 Reveal Answer</button>
+        <button class="btn btn-primary" id="nextBtn" style="font-family:var(--font-fun); font-size:0.85rem; display:none;">⏭ Next Note</button>
+        <button class="btn btn-ghost" id="skipBtn" style="font-family:var(--font-fun); font-size:0.85rem; display:none;">⏭ Skip</button>
+    </div>
+</div>
+
+<!-- Feedback Toast -->
+<div class="feedback-toast" id="feedbackToast"></div>
+
+<!-- Streak Banner -->
+<div class="streak-banner" id="streakBanner"></div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const FRETBOARD = {{ fretboard|safe }};
+const ALL_NOTES = {{ all_notes|safe }};
+const ENHARMONIC = {{ enharmonic|safe }};
+const NATURAL_NOTES = {{ natural_notes|safe }};
+const SHARP_NOTES = {{ sharp_notes|safe }};
+const FLAT_NOTES = {{ flat_notes|safe }};
+const STRING_NAMES = {1: 'e', 2: 'B', 3: 'G', 4: 'D', 5: 'A', 6: 'E'};
+
+const DISPLAY_NOTES = [
+    'C', 'C#/Db', 'D', 'D#/Eb', 'E', 'F', 'F#/Gb', 'G', 'G#/Ab', 'A', 'A#/Bb', 'B'
+];
+
+let currentNote = null;
+let currentString = null;
+let currentFret = null;
+let scoreCorrect = 0;
+let scoreWrong = 0;
+let streak = 0;
+let bestStreak = 0;
+let wrongStreak = 0;
+let waiting = false;
+let revealed = false;
+let currentFilter = 'all';
+let customNotes = [];
+let fretboardInverted = true;
+let showAllNotes = false;
+let gameMode = 'name'; // 'name' | 'find' | 'line' | 'block'
+
+// Line/Block mode state
+let currentChallenge = null;
+let foundPositions = [];
+let remainingPositions = [];
+
+// Metronome state
+let metronomeOn = false;
+let metronomeBpm = 60;
+let metronomeBeats = 4;
+let metronomeTimer = null;
+let metronomeBeatCount = 0;
+let metronomeAudioCtx = null;
+
+const INLAY_FRETS = [3, 5, 7, 9];
+const DOUBLE_INLAY_FRETS = [12];
+
+// ═══════════════════════════════════════
+// FRETBOARD
+// ═══════════════════════════════════════
+function buildFretboard() {
+    const container = document.getElementById('gameStrings');
+    container.innerHTML = '';
+    const strings = fretboardInverted ? [1,2,3,4,5,6] : [6,5,4,3,2,1];
+    for (const s of strings) {
+        const row = document.createElement('div');
+        row.className = 'string-row';
+        row.dataset.string = s;
+        const label = document.createElement('div');
+        label.className = 'string-label';
+        label.textContent = STRING_NAMES[s];
+        row.appendChild(label);
+
+        for (let f = 0; f <= 12; f++) {
+            const cell = document.createElement('div');
+            cell.className = `fret-cell ${f === 0 ? 'fret-0' : ''}`;
+
+            if (fretboardInverted) {
+                if (s === 3 && INLAY_FRETS.includes(f)) {
+                    const inlay = document.createElement('div');
+                    inlay.className = 'inlay-dot'; inlay.style.bottom = '-12px';
+                    cell.appendChild(inlay);
+                }
+                if (DOUBLE_INLAY_FRETS.includes(f) && (s === 2 || s === 4)) {
+                    const inlay = document.createElement('div');
+                    inlay.className = 'inlay-dot'; inlay.style.bottom = '-12px';
+                    cell.appendChild(inlay);
+                }
+            } else {
+                if (s === 4 && INLAY_FRETS.includes(f)) {
+                    const inlay = document.createElement('div');
+                    inlay.className = 'inlay-dot'; inlay.style.bottom = '-12px';
+                    cell.appendChild(inlay);
+                }
+                if (DOUBLE_INLAY_FRETS.includes(f) && (s === 5 || s === 3)) {
+                    const inlay = document.createElement('div');
+                    inlay.className = 'inlay-dot'; inlay.style.bottom = '-12px';
+                    cell.appendChild(inlay);
+                }
+            }
+
+            const dot = document.createElement('div');
+            dot.className = 'note-dot';
+            dot.id = `note-${s}-${f}`;
+            dot.dataset.string = s;
+            dot.dataset.fret = f;
+            dot.textContent = FRETBOARD[`${s}-${f}`];
+            cell.appendChild(dot);
+
+            // Clickable for find/line/block modes
+            if (f >= 1) {
+                cell.classList.add('fret-clickable');
+                cell.dataset.string = s;
+                cell.dataset.fret = f;
+                cell.addEventListener('click', () => handleFretClick(s, f));
+            }
+
+            row.appendChild(cell);
+        }
+        container.appendChild(row);
+    }
+}
+
+// ═══════════════════════════════════════
+// NOTE BUTTONS (Name It)
+// ═══════════════════════════════════════
+function buildNoteButtons() {
+    const container = document.getElementById('noteButtons');
+    container.innerHTML = '';
+    DISPLAY_NOTES.forEach(note => {
+        const btn = document.createElement('button');
+        btn.className = 'note-btn';
+        btn.textContent = note;
+        btn.dataset.note = note;
+        const baseNote = note.split('/')[0];
+        const color = getNoteColor(baseNote);
+        btn.style.background = color;
+        btn.style.borderColor = color;
+        btn.style.color = '#2a2035';
+        btn.addEventListener('click', () => handleNameAnswer(note));
+        container.appendChild(btn);
+    });
+}
+
+// ═══════════════════════════════════════
+// FILTER NOTES
+// ═══════════════════════════════════════
+function buildFilterNotes() {
+    const container = document.getElementById('filterNotes');
+    container.innerHTML = '';
+    ALL_NOTES.forEach(note => {
+        const btn = document.createElement('button');
+        btn.className = 'filter-note-btn';
+        btn.textContent = note;
+        btn.dataset.note = note;
+        btn.addEventListener('click', () => {
+            btn.classList.toggle('active');
+            updateCustomFilter();
+        });
+        if (ENHARMONIC[note]) {
+            const btn2 = document.createElement('button');
+            btn2.className = 'filter-note-btn';
+            btn2.textContent = ENHARMONIC[note];
+            btn2.dataset.note = ENHARMONIC[note];
+            btn2.addEventListener('click', () => {
+                btn2.classList.toggle('active');
+                updateCustomFilter();
+            });
+        }
+        container.appendChild(btn);
+    });
+}
+
+function updateCustomFilter() {
+    customNotes = [];
+    document.querySelectorAll('#filterNotes .filter-note-btn.active').forEach(btn => {
+        customNotes.push(btn.dataset.note);
+    });
+    if (customNotes.length === 0) currentFilter = 'all';
+    else currentFilter = JSON.stringify(customNotes);
+    startRound();
+}
+
+// ═══════════════════════════════════════
+// FILTER HANDLERS
+// ═══════════════════════════════════════
+document.querySelectorAll('#filterGroupPills .filter-pill').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('#filterGroupPills .filter-pill').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const filter = btn.dataset.filter;
+        if (filter === 'custom') {
+            document.getElementById('filterNotes').style.display = 'flex';
+            currentFilter = customNotes.length > 0 ? JSON.stringify(customNotes) : 'all';
+        } else {
+            document.getElementById('filterNotes').style.display = 'none';
+            currentFilter = filter;
+        }
+        startRound();
+    });
+});
+
+// ═══════════════════════════════════════
+// MODE TOGGLE
+// ═══════════════════════════════════════
+document.querySelectorAll('.mode-pill').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.mode-pill').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        gameMode = btn.dataset.mode;
+        resetScores();
+        applyModeUI();
+        startRound();
+    });
+});
+
+function applyModeUI() {
+    const noteButtons = document.getElementById('noteButtons');
+    const findPrompt = document.getElementById('findPrompt');
+    const revealBtn = document.getElementById('revealBtn');
+    const skipBtn = document.getElementById('skipBtn');
+    const blockOverlay = document.getElementById('blockOverlay');
+
+    // Reset
+    noteButtons.style.display = 'none';
+    findPrompt.style.display = 'none';
+    revealBtn.style.display = 'none';
+    skipBtn.style.display = 'none';
+    document.getElementById('nextBtn').style.display = 'none';
+    document.getElementById('findProgress').style.display = 'none';
+    document.getElementById('gameFretboard').classList.remove('find-mode');
+    if (blockOverlay) blockOverlay.classList.remove('visible');
+
+    if (gameMode === 'name') {
+        noteButtons.style.display = '';
+        revealBtn.style.display = '';
+    } else if (gameMode === 'find') {
+        findPrompt.style.display = '';
+        document.getElementById('findPromptLabel').textContent = 'Play this note:';
+        document.getElementById('findPromptString').style.display = '';
+        document.getElementById('gameFretboard').classList.add('find-mode');
+    } else if (gameMode === 'line') {
+        findPrompt.style.display = '';
+        document.getElementById('findPromptLabel').textContent = 'Find ALL on this string:';
+        document.getElementById('findPromptString').style.display = '';
+        document.getElementById('findProgress').style.display = 'block';
+        skipBtn.style.display = '';
+        revealBtn.style.display = '';
+    } else if (gameMode === 'block') {
+        findPrompt.style.display = '';
+        document.getElementById('findPromptLabel').textContent = 'Find in the highlighted area:';
+        document.getElementById('findPromptString').style.display = 'none';
+        skipBtn.style.display = '';
+        revealBtn.style.display = '';
+    }
+}
+
+function resetScores() {
+    scoreCorrect = 0;
+    scoreWrong = 0;
+    streak = 0;
+    bestStreak = 0;
+    wrongStreak = 0;
+    updateScore();
+}
+
+// ═══════════════════════════════════════
+// START ROUND (fetch next challenge)
+// ═══════════════════════════════════════
+async function startRound() {
+    if (gameMode === 'name' || gameMode === 'find') {
+        await getNextNote();
+    } else if (gameMode === 'line') {
+        await getLineChallenge();
+    } else if (gameMode === 'block') {
+        await getBlockChallenge();
+    }
+}
+
+// ─── NAME IT / FIND IT ───
+async function getNextNote() {
+    try {
+        let url = `/api/weighted-note/?filter=${encodeURIComponent(currentFilter)}`;
+        if (currentString && currentFret) url += `&ps=${currentString}&pf=${currentFret}`;
+        const resp = await fetch(url);
+        const data = await resp.json();
+        currentNote = data.note;
+        currentString = data.string;
+        currentFret = data.fret;
+
+        hidePracticePrompt();
+        clearFretboard();
+
+        if (gameMode === 'name') {
+            const dot = document.getElementById(`note-${currentString}-${currentFret}`);
+            if (dot) { dot.classList.add('highlighted'); dot.textContent = '?'; dot.style.opacity = '1'; }
+        } else {
+            // Find It
+            document.getElementById('findPromptNote').textContent = currentNote;
+            document.getElementById('findPromptNote').style.color = getNoteColor(currentNote);
+            document.getElementById('findPromptStringName').textContent = STRING_NAMES[currentString];
+            const row = document.querySelector(`.string-row[data-string="${currentString}"]`);
+            if (row) row.classList.add('target-string');
+        }
+
+        playNoteSound(currentNote, currentString, currentFret, 1.2);
+        resetButtons();
+        document.getElementById('revealBtn').style.display = gameMode === 'name' ? '' : 'none';
+        document.getElementById('nextBtn').style.display = 'none';
+        vibrateString(currentString);
+        waiting = false;
+        revealed = false;
+        if (metronomeOn) startMetronome();
+    } catch (err) { console.error('Error fetching note:', err); }
+}
+
+// ─── LINE MODE ───
+async function getLineChallenge() {
+    try {
+        const resp = await fetch(`/api/find-challenge/?filter=${encodeURIComponent(currentFilter)}&mode=full`);
+        const data = await resp.json();
+
+        // Pick a random string, find all positions of this note on that string
+        const note = data.note;
+        const enharmonic = data.enharmonic;
+        const randomString = Math.floor(Math.random() * 6) + 1;
+        const positions = [];
+        for (let f = 1; f <= 12; f++) {
+            const n = FRETBOARD[`${randomString}-${f}`];
+            if (n === note || n === enharmonic) {
+                positions.push({string: randomString, fret: f});
+            }
+        }
+        // If no positions on this string, try another
+        if (positions.length === 0) { await getLineChallenge(); return; }
+
+        currentChallenge = { note, enharmonic, valid_positions: positions };
+        currentNote = note;
+        foundPositions = [];
+        remainingPositions = [...positions];
+        revealed = false;
+        waiting = false;
+
+        clearFretboard();
+        document.getElementById('findPromptNote').textContent = note + (enharmonic ? ` / ${enharmonic}` : '');
+        document.getElementById('findPromptNote').style.color = getNoteColor(note);
+        document.getElementById('findPromptStringName').textContent = STRING_NAMES[randomString];
+        document.getElementById('findProgress').style.display = 'block';
+        document.getElementById('foundCount').textContent = '0';
+        document.getElementById('totalCount').textContent = positions.length;
+        document.getElementById('revealBtn').style.display = '';
+        document.getElementById('nextBtn').style.display = 'none';
+
+        // Highlight the target string
+        const row = document.querySelector(`.string-row[data-string="${randomString}"]`);
+        if (row) row.classList.add('target-string');
+    } catch (err) { console.error('Error fetching line challenge:', err); }
+}
+
+// ─── BLOCK MODE ───
+async function getBlockChallenge() {
+    try {
+        const resp = await fetch(`/api/find-challenge/?filter=${encodeURIComponent(currentFilter)}&mode=block`);
+        const data = await resp.json();
+        currentChallenge = data;
+        currentNote = data.note;
+        foundPositions = [];
+        remainingPositions = [...data.valid_positions];
+        revealed = false;
+        waiting = false;
+
+        clearFretboard();
+        document.getElementById('findPromptNote').textContent = data.note + (data.enharmonic ? ` / ${data.enharmonic}` : '');
+        document.getElementById('findPromptNote').style.color = getNoteColor(data.note);
+        document.getElementById('revealBtn').style.display = '';
+        document.getElementById('nextBtn').style.display = 'none';
+
+        // Dim notes outside block
+        if (data.block) {
+            const b = data.block;
+            for (let s = 1; s <= 6; s++) {
+                for (let f = 0; f <= 12; f++) {
+                    const dot = document.getElementById(`note-${s}-${f}`);
+                    if (dot) {
+                        const inBlock = s >= b.string_start && s <= b.string_end && f >= b.fret_start && f <= b.fret_end;
+                        if (inBlock) {
+                            dot.style.opacity = '0.3';
+                            dot.style.background = 'rgba(255,255,255,0.05)';
+                        }
+                    }
+                }
+            }
+            // Region text
+            document.getElementById('findPromptLabel').textContent =
+                `Find in frets ${b.fret_start}–${b.fret_end}, strings ${STRING_NAMES[b.string_end]}–${STRING_NAMES[b.string_start]}:`;
+        }
+        updateBlockHighlight();
+    } catch (err) { console.error('Error fetching block challenge:', err); }
+}
+
+// ═══════════════════════════════════════
+// HANDLE CLICKS
+// ═══════════════════════════════════════
+
+// Fret click — used by find/line/block modes
+function handleFretClick(s, f) {
+    if (gameMode === 'name') return;
+    if (gameMode === 'find') {
+        if (waiting) return;
+        if (s !== currentString) return;
+        handleFindAnswer(s, f);
+    } else if (gameMode === 'line') {
+        if (revealed) return;
+        handleLineClick(s, f);
+    } else if (gameMode === 'block') {
+        if (waiting && !revealed) return;
+        if (revealed) return;
+        handleBlockClick(s, f);
+    }
+}
+
+// ─── FIND IT answer ───
+async function handleFindAnswer(tappedString, tappedFret) {
+    if (waiting) return;
+    if (tappedString !== currentString) return;
+    const isCorrect = (tappedFret === currentFret);
+    const tappedDot = document.getElementById(`note-${tappedString}-${tappedFret}`);
+
+    if (isCorrect) {
+        scoreCorrect++; streak++; wrongStreak = 0; stopMetronome();
+        if (streak > bestStreak) bestStreak = streak;
+        updateScore();
+        if (tappedDot) {
+            tappedDot.classList.add('find-correct');
+            tappedDot.textContent = currentNote;
+            tappedDot.style.background = getNoteColor(currentNote);
+            tappedDot.style.opacity = '1';
+        }
+        revealAllSameNotes(currentNote);
+        playNoteSound(currentNote, currentString, currentFret);
+        vibrateString(currentString);
+        showStreakFeedback(streak);
+        recordAttempt(currentNote, currentString, currentFret, true, 'identify_find');
+        waiting = true;
+        document.getElementById('nextBtn').style.display = '';
+        if (metronomeOn) setTimeout(() => { if (waiting) startRound(); }, 1200);
+    } else {
+        wrongStreak++; scoreWrong++;
+        if (tappedDot) { tappedDot.classList.add('find-wrong'); setTimeout(() => tappedDot.classList.remove('find-wrong'), 600); }
+        if (wrongStreak >= 2 && streak > 0) {
+            if (bestStreak >= 2) recordStreak(bestStreak);
+            showFeedback('💔 Streak lost!', 'wrong'); streak = 0; wrongStreak = 0;
+        } else if (wrongStreak === 1 && streak >= 2) {
+            showFeedback('⚠️ One more wrong kills the streak!', 'wrong');
+        } else {
+            const msgs = ['Nope!', 'Try again!', 'Not quite!', 'Keep looking!', 'Wrong fret!'];
+            showFeedback(msgs[Math.floor(Math.random()*msgs.length)], 'wrong');
+        }
+        updateScore();
+        recordAttempt(currentNote, currentString, tappedFret, false, 'identify_find');
+    }
+}
+
+// ─── LINE click ───
+function handleLineClick(s, f) {
+    if (!currentChallenge) return;
+    // Only accept clicks on the target string
+    const targetString = currentChallenge.valid_positions[0]?.string;
+    if (s !== targetString) return;
+
+    const isValid = remainingPositions.some(p => p.string === s && p.fret === f);
+    const dot = document.getElementById(`note-${s}-${f}`);
+    const clickedNote = FRETBOARD[`${s}-${f}`];
+
+    if (isValid) {
+        foundPositions.push({string: s, fret: f});
+        remainingPositions = remainingPositions.filter(p => !(p.string === s && p.fret === f));
+        if (dot) {
+            dot.classList.add('correct', 'color-coded');
+            dot.textContent = clickedNote;
+            dot.style.background = getNoteColor(clickedNote);
+            dot.style.color = '#2a2035';
+        }
+        playNoteSound(currentNote, s, f);
+        vibrateString(s);
+        document.getElementById('foundCount').textContent = foundPositions.length;
+        if (remainingPositions.length === 0) {
+            scoreCorrect++; streak++; updateScore();
+            showFeedback(`🎉 Found all ${foundPositions.length} positions!`, 'correct');
+            recordAttempt(currentNote, s, f, true, 'find_line');
+            setTimeout(() => startRound(), 2000);
+        } else {
+            showFeedback(`✓ Found one! ${remainingPositions.length} left`, 'correct');
+        }
+    } else if (!foundPositions.some(p => p.string === s && p.fret === f)) {
+        scoreWrong++; streak = 0; updateScore();
+        if (dot) { dot.classList.add('incorrect'); dot.textContent = clickedNote; }
+        showFeedback(`Nope! That's ${clickedNote}`, 'incorrect');
+        recordAttempt(currentNote, s, f, false, 'find_line');
+        setTimeout(() => { if (dot) { dot.classList.remove('incorrect'); dot.textContent = FRETBOARD[`${s}-${f}`]; } }, 1000);
+    }
+}
+
+// ─── BLOCK click ───
+function handleBlockClick(s, f) {
+    if (!currentChallenge) return;
+    const isCorrect = currentChallenge.valid_positions.some(p => p.string === s && p.fret === f);
+    const dot = document.getElementById(`note-${s}-${f}`);
+    const clickedNote = FRETBOARD[`${s}-${f}`];
+
+    if (isCorrect) {
+        waiting = true;
+        scoreCorrect++; streak++; updateScore();
+        if (dot) {
+            dot.classList.add('correct', 'color-coded');
+            dot.textContent = clickedNote;
+            dot.style.background = getNoteColor(clickedNote);
+            dot.style.color = '#2a2035';
+        }
+        showFeedback('Correct! 🎉', 'correct');
+        playNoteSound(currentNote, s, f);
+        vibrateString(s);
+        // Show other valid positions
+        currentChallenge.valid_positions.forEach(p => {
+            const d = document.getElementById(`note-${p.string}-${p.fret}`);
+            if (d && !d.classList.contains('correct')) {
+                d.classList.add('show', 'color-coded');
+                d.style.opacity = '1';
+                d.style.background = getNoteColor(currentNote) + '50';
+            }
+        });
+        recordAttempt(currentNote, s, f, true, 'find_block');
+        setTimeout(() => startRound(), 1200);
+    } else {
+        scoreWrong++; streak = 0; updateScore();
+        if (dot) { dot.classList.add('incorrect'); dot.textContent = clickedNote; }
+        showFeedback(`That's ${clickedNote} — try again!`, 'incorrect');
+        recordAttempt(currentNote, s, f, false, 'find_block');
+        setTimeout(() => { if (dot) { dot.classList.remove('incorrect'); dot.textContent = FRETBOARD[`${s}-${f}`]; } }, 800);
+    }
+}
+
+// ─── NAME IT answer ───
+async function handleNameAnswer(selectedNote) {
+    if (waiting) return;
+    const selectedNotes = selectedNote.split('/');
+    const isCorrect = selectedNotes.includes(currentNote) ||
+                      selectedNotes.some(n => ENHARMONIC[n] === currentNote) ||
+                      selectedNotes.some(n => n === currentNote);
+    const dot = document.getElementById(`note-${currentString}-${currentFret}`);
+
+    if (isCorrect) {
+        waiting = true; stopMetronome();
+        scoreCorrect++; streak++; wrongStreak = 0;
+        if (streak > bestStreak) bestStreak = streak;
+        if (dot) { dot.classList.remove('highlighted'); dot.classList.add('correct'); }
+        revealAllSameNotes(currentNote);
+        document.querySelectorAll('.note-btn').forEach(b => {
+            if (b.dataset.note === selectedNote) b.classList.add('correct');
+        });
+        showStreakFeedback(streak);
+        playNoteSound(currentNote, currentString, currentFret);
+        vibrateString(currentString);
+        updateScore();
+        document.getElementById('revealBtn').style.display = 'none';
+        document.getElementById('nextBtn').style.display = '';
+        recordAttempt(currentNote, currentString, currentFret, true, 'identify');
+        if (metronomeOn) setTimeout(() => { if (waiting) startRound(); }, 1200);
+    } else {
+        scoreWrong++; wrongStreak++;
+        if (wrongStreak >= 2 && streak > 0) {
+            if (streak >= 2) recordStreak(streak);
+            streak = 0;
+            showFeedback('💔 Streak lost!', 'incorrect');
+        } else if (wrongStreak === 1 && streak >= 2) {
+            showFeedback('⚠️ One more wrong kills the streak!', 'incorrect');
+        }
+        document.querySelectorAll('.note-btn').forEach(b => {
+            if (b.dataset.note === selectedNote) {
+                b.classList.add('incorrect'); b.style.opacity = '0.45'; b.style.pointerEvents = 'none';
+            }
+        });
+        if (wrongStreak >= 2 || (wrongStreak === 1 && streak < 2)) {
+            if (streak === 0 && wrongStreak < 2) {
+                const msgs = ['Nope! 😅', 'Not quite, chief 🫠', 'Swing and a miss! ⚾', 'The fretboard said no 🙅',
+                    'Close... but no 🎸', 'Try again, rockstar! 🤘', 'That ain\'t it 💀', 'Bruh. 😐',
+                    'Almost... jk not really 😂', 'Your guitar is judging you 👀'];
+                showFeedback(msgs[Math.floor(Math.random() * msgs.length)], 'incorrect');
+            }
+        }
+        updateScore();
+        recordAttempt(currentNote, currentString, currentFret, false, 'identify');
+    }
+}
+
+// ═══════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════
+function clearFretboard() {
+    document.querySelectorAll('.note-dot').forEach(d => {
+        d.classList.remove('highlighted', 'correct', 'incorrect', 'find-correct', 'find-wrong', 'show', 'color-coded');
+        if (!showAllNotes) {
+            d.style.background = '';
+            d.style.opacity = '';
+        } else {
+            const note = FRETBOARD[`${d.dataset.string}-${d.dataset.fret}`];
+            d.classList.add('show', 'color-coded');
+            d.style.background = getNoteColor(note);
+            d.style.opacity = '0.55';
+        }
+        d.style.color = '';
+        d.textContent = FRETBOARD[`${d.dataset.string}-${d.dataset.fret}`];
+    });
+    document.querySelectorAll('.string-row').forEach(r => r.classList.remove('target-string'));
+    const overlay = document.getElementById('blockOverlay');
+    if (overlay) overlay.classList.remove('visible');
+}
+
+function resetButtons() {
+    document.querySelectorAll('.note-btn').forEach(b => {
+        b.classList.remove('correct', 'incorrect');
+        b.disabled = false; b.style.opacity = ''; b.style.pointerEvents = '';
+    });
+}
+
+function vibrateString(stringNum) {
+    const row = document.querySelector(`.string-row[data-string="${stringNum}"]`);
+    if (row) {
+        row.classList.remove('vibrating');
+        void row.offsetWidth;
+        row.classList.add('vibrating');
+        setTimeout(() => row.classList.remove('vibrating'), 700);
+    }
+}
+
+function revealAllSameNotes(note) {
+    const color = getNoteColor(note);
+    const enharmonic = ENHARMONIC[note];
+    for (let s = 1; s <= 6; s++) {
+        for (let f = 1; f <= 12; f++) {
+            const cellNote = FRETBOARD[`${s}-${f}`];
+            if (cellNote === note || cellNote === enharmonic) {
+                const d = document.getElementById(`note-${s}-${f}`);
+                if (d) {
+                    d.textContent = cellNote;
+                    d.classList.add('color-coded');
+                    d.style.background = color;
+                    d.style.opacity = '1';
+                }
+                vibrateString(s);
+            }
+        }
+    }
+    showPracticePrompt();
+}
+
+function showPracticePrompt() {
+    const prompt = document.getElementById('practicePrompt');
+    prompt.style.display = '';
+    prompt.classList.remove('show');
+    void prompt.offsetWidth;
+    prompt.classList.add('show');
+}
+function hidePracticePrompt() {
+    const prompt = document.getElementById('practicePrompt');
+    prompt.classList.remove('show');
+    prompt.style.display = 'none';
+}
+
+function updateScore() {
+    document.getElementById('scoreCorrect').textContent = scoreCorrect;
+    document.getElementById('scoreWrong').textContent = scoreWrong;
+    document.getElementById('scoreStreak').textContent = streak;
+}
+
+function showFeedback(message, type) {
+    const toast = document.getElementById('feedbackToast');
+    toast.textContent = message;
+    toast.className = `feedback-toast ${type} show`;
+    setTimeout(() => toast.classList.remove('show'), 1800);
+}
+
+// Block overlay
+function updateBlockHighlight() {
+    const overlay = document.getElementById('blockOverlay');
+    overlay.classList.remove('visible');
+    if (!currentChallenge || !currentChallenge.block || gameMode !== 'block') return;
+    const b = currentChallenge.block;
+    const topLeft = document.getElementById(`note-${b.string_end}-${b.fret_start}`);
+    const bottomRight = document.getElementById(`note-${b.string_start}-${b.fret_end}`);
+    if (!topLeft || !bottomRight) return;
+    const fretboard = document.getElementById('gameFretboard');
+    const fbRect = fretboard.getBoundingClientRect();
+    const tlCell = topLeft.closest('.fret-cell');
+    const brCell = bottomRight.closest('.fret-cell');
+    const tlRect = tlCell.getBoundingClientRect();
+    const brRect = brCell.getBoundingClientRect();
+    const pad = 6;
+    overlay.style.left = (tlRect.left - fbRect.left - pad) + 'px';
+    overlay.style.top = (tlRect.top - fbRect.top - pad) + 'px';
+    overlay.style.width = (brRect.right - tlRect.left + pad * 2) + 'px';
+    overlay.style.height = (brRect.bottom - tlRect.top + pad * 2) + 'px';
+    overlay.classList.add('visible');
+}
+
+// API helpers
+async function recordAttempt(note, string, fret, correct, mode) {
+    try {
+        await fetch('/api/record-attempt/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
+            body: JSON.stringify({ note, string, fret, correct, game_mode: mode }),
+        });
+    } catch (err) { console.log('Not logged in or error saving'); }
+}
+
+async function recordStreak(val) {
+    try {
+        await fetch('/api/record-streak/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
+            body: JSON.stringify({ streak: val, game_mode: 'identify' }),
+        });
+    } catch (err) { console.log('Not logged in or error saving streak'); }
+}
+
+// ═══════════════════════════════════════
+// METRONOME
+// ═══════════════════════════════════════
+function getMetronomeAudioCtx() {
+    if (!metronomeAudioCtx) metronomeAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    return metronomeAudioCtx;
+}
+function playMetronomeClick(accent) {
+    const ctx = getMetronomeAudioCtx();
+    const osc = ctx.createOscillator(); const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.value = accent ? 1000 : 800; osc.type = 'square';
+    gain.gain.setValueAtTime(accent ? 0.15 : 0.08, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.06);
+    osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.06);
+}
+function buildBeatDots() {
+    const container = document.getElementById('metroBeatDots');
+    container.innerHTML = '';
+    for (let i = 0; i < metronomeBeats; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'metro-dot';
+        container.appendChild(dot);
+    }
+}
+function startMetronome() {
+    stopMetronome(); metronomeBeatCount = 0; buildBeatDots();
+    const interval = 60000 / metronomeBpm;
+    tickMetronome();
+    metronomeTimer = setInterval(() => tickMetronome(), interval);
+}
+function tickMetronome() {
+    if (waiting || !metronomeOn) { stopMetronome(); return; }
+    const dots = document.querySelectorAll('.metro-dot');
+    dots.forEach((d, i) => {
+        d.classList.toggle('active', i === metronomeBeatCount);
+        d.classList.toggle('past', i < metronomeBeatCount);
+    });
+    playMetronomeClick(metronomeBeatCount === 0);
+    metronomeBeatCount++;
+    if (metronomeBeatCount >= metronomeBeats) {
+        stopMetronome(); dots.forEach(d => d.classList.add('past')); autoReveal();
+    }
+}
+function stopMetronome() { if (metronomeTimer) { clearInterval(metronomeTimer); metronomeTimer = null; } }
+
+function autoReveal() {
+    if (waiting || revealed) return;
+    revealed = true; waiting = true;
+    if (gameMode === 'name') {
+        const dot = document.getElementById(`note-${currentString}-${currentFret}`);
+        if (dot) dot.classList.remove('highlighted');
+        revealAllSameNotes(currentNote);
+        document.querySelectorAll('.note-btn').forEach(b => {
+            const notes = b.dataset.note.split('/');
+            if (notes.includes(currentNote) || notes.some(n => ENHARMONIC[n] === currentNote)) b.classList.add('correct');
+        });
+    } else if (gameMode === 'find') {
+        const correctDot = document.getElementById(`note-${currentString}-${currentFret}`);
+        if (correctDot) {
+            correctDot.classList.add('find-correct');
+            correctDot.textContent = currentNote;
+            correctDot.style.background = getNoteColor(currentNote);
+            correctDot.style.opacity = '1';
+        }
+    }
+    playNoteSound(currentNote, currentString, currentFret);
+    vibrateString(currentString);
+    showFeedback(`⏱ Time! It was ${currentNote}`, 'info');
+    document.getElementById('revealBtn').style.display = 'none';
+    document.getElementById('nextBtn').style.display = '';
+    setTimeout(() => { if (metronomeOn && waiting) startRound(); }, 1200);
+}
+
+// Metronome toggle
+document.getElementById('metronomeToggle').addEventListener('click', function() {
+    metronomeOn = !metronomeOn;
+    this.classList.toggle('flipped', metronomeOn);
+    document.getElementById('metronomeControls').style.display = metronomeOn ? 'flex' : 'none';
+    if (metronomeOn) {
+        buildBeatDots();
+        if (!waiting && currentNote) startMetronome();
+    } else { stopMetronome(); }
+});
+document.getElementById('bpmUp').addEventListener('click', () => { metronomeBpm = Math.min(240, metronomeBpm + 10); document.getElementById('bpmDisplay').textContent = metronomeBpm; });
+document.getElementById('bpmDown').addEventListener('click', () => { metronomeBpm = Math.max(20, metronomeBpm - 10); document.getElementById('bpmDisplay').textContent = metronomeBpm; });
+document.getElementById('beatsUp').addEventListener('click', () => { metronomeBeats = Math.min(16, metronomeBeats + 1); document.getElementById('beatsDisplay').textContent = metronomeBeats; buildBeatDots(); });
+document.getElementById('beatsDown').addEventListener('click', () => { metronomeBeats = Math.max(1, metronomeBeats - 1); document.getElementById('beatsDisplay').textContent = metronomeBeats; buildBeatDots(); });
+
+// ═══════════════════════════════════════
+// REVEAL / NEXT / SKIP BUTTONS
+// ═══════════════════════════════════════
+document.getElementById('revealBtn').addEventListener('click', function() {
+    if (revealed) return;
+    revealed = true; waiting = true;
+    if (gameMode === 'name') {
+        const dot = document.getElementById(`note-${currentString}-${currentFret}`);
+        if (dot) dot.classList.remove('highlighted');
+        revealAllSameNotes(currentNote);
+        document.querySelectorAll('.note-btn').forEach(b => {
+            const notes = b.dataset.note.split('/');
+            if (notes.includes(currentNote) || notes.some(n => ENHARMONIC[n] === currentNote)) b.classList.add('correct');
+        });
+        playNoteSound(currentNote, currentString, currentFret);
+        vibrateString(currentString);
+        showFeedback(`It was ${currentNote}`, 'info');
+        this.style.display = 'none';
+        document.getElementById('nextBtn').style.display = '';
+    } else if (gameMode === 'line' || gameMode === 'block') {
+        // Reveal all valid positions
+        if (currentChallenge) {
+            const noteColor = getNoteColor(currentChallenge.note);
+            currentChallenge.valid_positions.forEach(p => {
+                const d = document.getElementById(`note-${p.string}-${p.fret}`);
+                if (d) {
+                    d.classList.add('show', 'color-coded');
+                    d.style.opacity = '1';
+                    d.style.background = noteColor;
+                    d.style.color = '#2a2035';
+                    d.textContent = currentChallenge.note;
+                }
+                vibrateString(p.string);
+            });
+        }
+        showFeedback('All positions revealed!', 'correct');
+        this.style.display = 'none';
+        setTimeout(() => startRound(), 2500);
+    }
+});
+
+document.getElementById('nextBtn').addEventListener('click', () => startRound());
+document.getElementById('skipBtn').addEventListener('click', () => startRound());
+
+// ═══════════════════════════════════════
+// STREAK FEEDBACK + FIRE SVG
+// ═══════════════════════════════════════
+function buildFireSVG(tier) {
+    const h = 50 + tier * 14; const w = 36 + tier * 8;
+    const colors = [
+        { outer: '#ff9800', mid: '#ff5722', inner: '#ffeb3b', core: '#fff8e1' },
+        { outer: '#ff5722', mid: '#ff9800', inner: '#ffeb3b', core: '#fff8e1' },
+        { outer: '#f44336', mid: '#ff5722', inner: '#ff9800', core: '#ffeb3b' },
+        { outer: '#d50000', mid: '#ff5722', inner: '#ffeb3b', core: '#fff176' },
+        { outer: '#b71c1c', mid: '#f44336', inner: '#ff9800', core: '#fff176' },
+        { outer: '#880e4f', mid: '#ff1744', inner: '#ffeb3b', core: '#ffffff' },
+    ];
+    const c = colors[Math.min(tier, 5)];
+    const id = `fire-${Date.now()}-${Math.random().toString(36).slice(2,6)}`;
+    const dur1 = (0.35 + Math.random()*0.15).toFixed(2);
+    const cx = w/2;
+    let svg = `<path d="M${cx} ${h*0.02} C${w*0.12} ${h*0.35} ${w*0.05} ${h*0.55} ${w*0.1} ${h*0.72} C${w*0.15} ${h*0.88} ${w*0.32} ${h*0.98} ${cx} ${h} C${w*0.68} ${h*0.98} ${w*0.85} ${h*0.88} ${w*0.9} ${h*0.72} C${w*0.95} ${h*0.55} ${w*0.88} ${h*0.35} ${cx} ${h*0.02}Z" fill="url(#${id}-g1)" opacity="0.85">
+        <animate attributeName="d" dur="${dur1}s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1; 0.4 0 0.6 1" values="M${cx} ${h*0.02} C${w*0.12} ${h*0.35} ${w*0.05} ${h*0.55} ${w*0.1} ${h*0.72} C${w*0.15} ${h*0.88} ${w*0.32} ${h*0.98} ${cx} ${h} C${w*0.68} ${h*0.98} ${w*0.85} ${h*0.88} ${w*0.9} ${h*0.72} C${w*0.95} ${h*0.55} ${w*0.88} ${h*0.35} ${cx} ${h*0.02}Z; M${cx} ${h*0.06} C${w*0.1} ${h*0.32} ${w*0.07} ${h*0.58} ${w*0.13} ${h*0.74} C${w*0.18} ${h*0.9} ${w*0.35} ${h*0.99} ${cx} ${h} C${w*0.65} ${h*0.99} ${w*0.82} ${h*0.9} ${w*0.87} ${h*0.74} C${w*0.93} ${h*0.58} ${w*0.9} ${h*0.32} ${cx} ${h*0.06}Z; M${cx} ${h*0.02} C${w*0.12} ${h*0.35} ${w*0.05} ${h*0.55} ${w*0.1} ${h*0.72} C${w*0.15} ${h*0.88} ${w*0.32} ${h*0.98} ${cx} ${h} C${w*0.68} ${h*0.98} ${w*0.85} ${h*0.88} ${w*0.9} ${h*0.72} C${w*0.95} ${h*0.55} ${w*0.88} ${h*0.35} ${cx} ${h*0.02}Z"/>
+    </path>`;
+    if (tier >= 1) {
+        svg += `<ellipse cx="${cx}" cy="${h*0.88}" rx="${w*(0.08+tier*0.02)}" ry="${h*0.06}" fill="${c.core}" opacity="${0.4+tier*0.1}">
+            <animate attributeName="rx" dur="0.3s" repeatCount="indefinite" values="${w*(0.08+tier*0.02)};${w*(0.1+tier*0.02)};${w*(0.08+tier*0.02)}"/>
+        </ellipse>`;
+    }
+    const glowSize = 6 + tier * 5;
+    return `<svg viewBox="0 0 ${w} ${h}" width="${w*1.6}" height="${h*1.6}" style="filter:drop-shadow(0 0 ${glowSize}px ${c.mid})">
+        <defs>
+            <radialGradient id="${id}-g1" cx="50%" cy="90%" r="70%"><stop offset="0%" stop-color="${c.inner}"/><stop offset="40%" stop-color="${c.mid}"/><stop offset="100%" stop-color="${c.outer}" stop-opacity="0.6"/></radialGradient>
+        </defs>${svg}</svg>`;
+}
+
+const STREAK_TIERS = [
+    { min: 1,  tier: 0, text: 'Nice!',             color: '#a8e6cf' },
+    { min: 2,  tier: 1, text: 'Streak!',            color: '#f7e5a0' },
+    { min: 3,  tier: 2, text: 'On Fire!',           color: '#ffb347' },
+    { min: 5,  tier: 3, text: 'Blazing!',           color: '#ff8a65' },
+    { min: 8,  tier: 4, text: 'Unstoppable!',       color: '#ff5722' },
+    { min: 12, tier: 5, text: 'INFERNO!',           color: '#ff1744' },
+    { min: 20, tier: 5, text: 'GODLIKE!',           color: '#d500f9' },
+    { min: 30, tier: 5, text: 'FRETBOARD MASTER!',  color: '#ff1744' },
+];
+
+function showStreakFeedback(currentStreak) {
+    let msg = STREAK_TIERS[0];
+    for (const m of STREAK_TIERS) { if (currentStreak >= m.min) msg = m; }
+    const toastEmojis = ['✓', '🔥', '🔥', '🔥🔥', '⚡🔥', '💥🔥💥'];
+    showFeedback(`${toastEmojis[Math.min(msg.tier, 5)]} Correct!`, 'correct');
+    if (currentStreak >= 2) {
+        const banner = document.getElementById('streakBanner');
+        banner.innerHTML = `<div class="streak-fire">${buildFireSVG(msg.tier)}</div><div class="streak-count">${currentStreak}</div><div class="streak-label">${msg.text}</div>`;
+        banner.style.setProperty('--streak-color', msg.color);
+        banner.classList.remove('show'); void banner.offsetWidth; banner.classList.add('show');
+        if (currentStreak >= 5) { document.body.classList.add('screen-shake'); setTimeout(() => document.body.classList.remove('screen-shake'), 400); }
+        setTimeout(() => banner.classList.remove('show'), 2200);
+    }
+}
+
+// ═══════════════════════════════════════
+// KEYBOARD SHORTCUTS
+// ═══════════════════════════════════════
+document.addEventListener('keydown', (e) => {
+    if (waiting && (e.key === ' ' || e.key === 'Enter')) { e.preventDefault(); startRound(); return; }
+    if (waiting) return;
+    if (gameMode === 'name') {
+        const keyMap = { 'c': 'C', 'd': 'D', 'e': 'E', 'f': 'F', 'g': 'G', 'a': 'A', 'b': 'B' };
+        const key = e.key.toLowerCase();
+        if (keyMap[key]) {
+            const buttons = document.querySelectorAll('.note-btn');
+            for (const btn of buttons) { if (btn.dataset.note.startsWith(keyMap[key])) { handleNameAnswer(btn.dataset.note); break; } }
+        }
+    }
+    if (gameMode === 'find') {
+        const num = parseInt(e.key);
+        if (num >= 1 && num <= 9) handleFindAnswer(currentString, num);
+    }
+});
+
+// ═══════════════════════════════════════
+// SHOW ALL NOTES TOGGLE
+// ═══════════════════════════════════════
+document.getElementById('showAllToggle').addEventListener('click', function() {
+    showAllNotes = !showAllNotes;
+    this.classList.toggle('flipped', showAllNotes);
+    document.querySelectorAll('#gameStrings .note-dot').forEach(d => {
+        if (showAllNotes) {
+            const note = FRETBOARD[`${d.dataset.string}-${d.dataset.fret}`];
+            d.classList.add('show', 'color-coded');
+            d.style.background = getNoteColor(note);
+            d.style.opacity = '0.55';
+            d.textContent = note;
+        } else {
+            if (!d.classList.contains('highlighted') && !d.classList.contains('correct')) {
+                d.classList.remove('show', 'color-coded');
+                d.style.background = ''; d.style.opacity = '';
+                d.textContent = FRETBOARD[`${d.dataset.string}-${d.dataset.fret}`];
+            }
+        }
+    });
+    if (currentNote && !waiting) {
+        if (gameMode === 'name') {
+            const dot = document.getElementById(`note-${currentString}-${currentFret}`);
+            if (dot) { dot.classList.add('highlighted'); dot.textContent = '?'; dot.style.opacity = '1'; }
+        } else if (gameMode === 'find') {
+            const row = document.querySelector(`.string-row[data-string="${currentString}"]`);
+            if (row) row.classList.add('target-string');
+        }
+    }
+});
+
+// Flip toggle
+document.getElementById('flipToggle').addEventListener('click', function() {
+    fretboardInverted = !fretboardInverted;
+    this.classList.toggle('flipped', !fretboardInverted);
+    buildFretboard();
+    if (currentNote && !waiting) {
+        if (gameMode === 'name') {
+            const dot = document.getElementById(`note-${currentString}-${currentFret}`);
+            if (dot) { dot.classList.add('highlighted'); dot.textContent = '?'; }
+        } else if (gameMode === 'find') {
+            const row = document.querySelector(`.string-row[data-string="${currentString}"]`);
+            if (row) row.classList.add('target-string');
+        }
+    }
+    if (gameMode === 'block' && currentChallenge) updateBlockHighlight();
+});
+
+window.addEventListener('resize', () => {
+    if (gameMode === 'block' && currentChallenge) updateBlockHighlight();
+});
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+buildFretboard();
+buildNoteButtons();
+buildFilterNotes();
+applyModeUI();
+startRound();
+</script>
+{% endblock %}

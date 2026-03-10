@@ -6,14 +6,11 @@ urlpatterns = [
     path('signup/', views.signup, name='signup'),
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
-    path('game/identify/', views.game_identify, name='game_identify'),
-    path('game/find/', views.game_find, name='game_find'),
-    path('stats/', views.stats_view, name='stats'),
-    path('leaderboard/', views.leaderboard_view, name='leaderboard'),
-    path('tuner/', views.tuner_view, name='tuner'),
-    path('fullscreen/', views.fullscreen_view, name='fullscreen'),
+    path('recall/', views.recall_view, name='recall'),
     path('strum/', views.strum_view, name='strum'),
-    path('explore/', views.note_explorer_view, name='note_explorer'),
+    path('school/', views.school_view, name='school'),
+    path('fretboard/', views.fullscreen_view, name='fullscreen'),
+    path('stats/', views.stats_view, name='stats'),
 
     # API
     path('api/record-attempt/', views.api_record_attempt, name='api_record_attempt'),

@@ -25,35 +25,26 @@
         <div class="path-step-number">2</div>
         <div class="path-step-content">
             <h3>Walk Each String</h3>
-            <p>Head to the <strong>Tuner</strong> page and use the guided pathway. It walks you through each string one note at a time — E, then A, then D, G, B, e — so you build real muscle memory.</p>
-            <a href="{% url 'tuner' %}" class="btn btn-outline">🎤 Tuner &amp; String Walk</a>
+            <p>Head to <strong>School</strong> and use the guided pathway. It walks you through each string one note at a time with a metronome and interactive fretboard.</p>
+            <a href="{% url 'school' %}" class="btn btn-outline">🎓 School &amp; Exercises</a>
         </div>
     </div>
 
     <div class="path-step">
         <div class="path-step-number">3</div>
         <div class="path-step-content">
-            <h3>Test Yourself — Identify Notes</h3>
-            <p>Once you've walked the strings, jump into <strong>Identify</strong>. A random position lights up on the fretboard and you pick the note. It adapts to your weak spots — notes you miss come up more often.</p>
-            <a href="{% url 'game_identify' %}" class="btn btn-primary btn-lg">🎯 Start Identifying</a>
+            <h3>Test Yourself — Recall</h3>
+            <p>Jump into <strong>Recall</strong> to test your memory. Identify notes, find them on specific strings, along lines, and in 3×3 blocks. It adapts to your weak spots.</p>
+            <a href="{% url 'recall' %}" class="btn btn-primary btn-lg">🧠 Start Recall</a>
         </div>
     </div>
 
     <div class="path-step">
         <div class="path-step-number">4</div>
         <div class="path-step-content">
-            <h3>Find Notes on the Fretboard</h3>
-            <p>Flip it around — given a note name, can you tap the right spot? This builds the reverse connection in your brain.</p>
-            <a href="{% url 'game_find' %}" class="btn btn-outline">🔍 Find Notes</a>
-        </div>
-    </div>
-
-    <div class="path-step">
-        <div class="path-step-number">5</div>
-        <div class="path-step-content">
-            <h3>Compete on the Leaderboard</h3>
-            <p>See how your streak stacks up against other guitarists. Keep your streak alive by nailing notes in a row!</p>
-            <a href="{% url 'leaderboard' %}" class="btn btn-outline">🏆 Leaderboard</a>
+            <h3>Strum Along</h3>
+            <p>Practice your strumming with a metronome and live microphone feedback. Match your strums to the beat and see the sound wave in real time.</p>
+            <a href="{% url 'strum' %}" class="btn btn-outline">🎸 Strum Trainer</a>
         </div>
     </div>
 </div>
