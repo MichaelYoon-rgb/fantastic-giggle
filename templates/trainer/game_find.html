@@ -341,6 +341,18 @@ document.getElementById('micToggle').addEventListener('click', async function() 
     }
 });
 
+// ─── VIBRATE STRING ───
+function vibrateString(stringNum) {
+    const rows = document.querySelectorAll('.string-row');
+    const idx = 6 - stringNum;
+    if (rows[idx]) {
+        rows[idx].classList.remove('vibrating');
+        void rows[idx].offsetWidth;
+        rows[idx].classList.add('vibrating');
+        setTimeout(() => rows[idx].classList.remove('vibrating'), 700);
+    }
+}
+
 // ─── REVEAL BUTTON ───
 document.getElementById('revealBtn').addEventListener('click', function() {
     if (!currentChallenge) return;
@@ -356,6 +368,7 @@ document.getElementById('revealBtn').addEventListener('click', function() {
             d.style.color = '#2a2035';
             d.textContent = currentChallenge.note;
         }
+        vibrateString(p.string);
     });
 
     this.style.display = 'none';
@@ -471,6 +484,7 @@ async function handleClick(string, fret) {
             }
 
             playNoteSound(targetNote, string, fret);
+            vibrateString(string);
             document.getElementById('foundCount').textContent = foundPositions.length;
 
             if (remainingPositions.length === 0) {
@@ -507,13 +521,13 @@ async function handleClick(string, fret) {
         }
 
     } else {
-        // Block mode — single correct answer in the 3×3 area
-        waiting = true;
+        // Block mode — keep trying until correct
         const isCorrect = currentChallenge.valid_positions.some(
             p => p.string === string && p.fret === fret
         );
 
         if (isCorrect) {
+            waiting = true;
             scoreCorrect++;
             streak++;
             if (dot) {
@@ -524,6 +538,7 @@ async function handleClick(string, fret) {
             }
             showFeedback('Correct! 🎉', 'correct');
             playNoteSound(targetNote, string, fret);
+            vibrateString(string);
 
             // Show all valid positions too
             currentChallenge.valid_positions.forEach(p => {
@@ -535,27 +550,38 @@ async function handleClick(string, fret) {
                     d.style.color = '#2a2035';
                 }
             });
+
+            updateScore();
+            recordAttempt(targetNote, string, fret, true);
+
+            setTimeout(() => {
+                document.querySelectorAll('.note-dot').forEach(d => {
+                    d.style.opacity = '';
+                    d.style.background = '';
+                    d.style.color = '';
+                });
+                getNextChallenge();
+            }, 1200);
         } else {
+            // Wrong — mark it and let user keep trying
             scoreWrong++;
             streak = 0;
             if (dot) {
                 dot.classList.add('incorrect');
                 dot.textContent = clickedNote;
             }
-            showFeedback(`Nope! That's ${clickedNote}`, 'incorrect');
+            showFeedback(`That's ${clickedNote} — try again!`, 'incorrect');
+            updateScore();
+            recordAttempt(targetNote, string, fret, false);
+
+            // Clear the incorrect marker after a moment
+            setTimeout(() => {
+                if (dot) {
+                    dot.classList.remove('incorrect');
+                    dot.textContent = FRETBOARD[`${string}-${fret}`];
+                }
+            }, 800);
         }
-
-        updateScore();
-        recordAttempt(targetNote, string, fret, isCorrect);
-
-        setTimeout(() => {
-            document.querySelectorAll('.note-dot').forEach(d => {
-                d.style.opacity = '';
-                d.style.background = '';
-                d.style.color = '';
-            });
-            getNextChallenge();
-        }, isCorrect ? 1200 : 1800);
     }
 }
 

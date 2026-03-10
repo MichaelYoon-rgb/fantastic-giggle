@@ -35,8 +35,8 @@
     --fretboard-wood: #ede0cc;
     --fretboard-wood-light: #f5eede;
     --fret-wire: #bbb;
-    --string-color: #a89888;
-    --nut-color: #d4c8b4;
+    --string-color: #7a6a5a;
+    --nut-color: #b8a890;
     --dot-color: rgba(0, 0, 0, 0.22);
     --highlight-note: var(--accent);
     --highlight-glow: var(--accent-glow);
@@ -469,10 +469,10 @@ a:hover { color: var(--accent-hover); }
 
 .fretboard {
     position: relative;
-    min-width: 960px;
+    min-width: 1020px;
     background: linear-gradient(180deg, var(--fretboard-wood) 0%, var(--fretboard-wood-light) 100%);
     border-radius: var(--radius-lg);
-    padding: 1.75rem 1rem 1.25rem;
+    padding: 2rem 1.25rem 1.5rem;
     box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255,255,255,0.5);
     border: 1px solid rgba(0,0,0,0.06);
 }
@@ -490,7 +490,7 @@ a:hover { color: var(--accent-hover); }
 
 .fret-numbers {
     display: grid;
-    grid-template-columns: 55px repeat(13, 1fr);
+    grid-template-columns: 55px 32px repeat(12, 1fr);
     margin-bottom: 0.4rem;
     padding: 0 0.5rem;
 }
@@ -511,30 +511,51 @@ a:hover { color: var(--accent-hover); }
 
 .string-row {
     display: grid;
-    grid-template-columns: 55px repeat(13, 1fr);
+    grid-template-columns: 55px 32px repeat(12, 1fr);
     align-items: center;
-    height: 36px;
+    height: 44px;
     position: relative;
 }
 
 .string-row::after {
     content: '';
     position: absolute;
-    left: 55px;
+    left: 87px;
     right: 0.5rem;
     top: 50%;
     height: var(--string-thickness, 1px);
-    background: linear-gradient(90deg, var(--string-color), rgba(168, 152, 136, 0.4));
-    opacity: 0.65;
+    background: linear-gradient(90deg, var(--string-color) 0%, var(--string-color) 85%, rgba(122, 106, 90, 0.35) 100%);
+    opacity: 0.85;
     pointer-events: none;
+    border-radius: 1px;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.06);
 }
 
-.string-row:nth-child(1)::after { --string-thickness: 3.5px; }
-.string-row:nth-child(2)::after { --string-thickness: 2.8px; }
-.string-row:nth-child(3)::after { --string-thickness: 2.2px; }
-.string-row:nth-child(4)::after { --string-thickness: 1.6px; }
-.string-row:nth-child(5)::after { --string-thickness: 1.2px; }
-.string-row:nth-child(6)::after { --string-thickness: 0.8px; }
+.string-row:nth-child(1)::after { --string-thickness: 4px; background: linear-gradient(90deg, #6a5a4a, #8a7a6a 85%, rgba(106,90,74,0.3)); }
+.string-row:nth-child(2)::after { --string-thickness: 3.2px; background: linear-gradient(90deg, #706050, #907a6a 85%, rgba(112,96,80,0.3)); }
+.string-row:nth-child(3)::after { --string-thickness: 2.4px; }
+.string-row:nth-child(4)::after { --string-thickness: 1.8px; }
+.string-row:nth-child(5)::after { --string-thickness: 1.2px; background: linear-gradient(90deg, #a09080, #b0a090 85%, rgba(160,144,128,0.3)); }
+.string-row:nth-child(6)::after { --string-thickness: 0.9px; background: linear-gradient(90deg, #b0a090, #c0b0a0 85%, rgba(176,160,144,0.3)); }
+
+/* String vibration animation */
+@keyframes string-vibrate {
+    0%, 100% { transform: translateY(0); }
+    10% { transform: translateY(-1.2px); }
+    20% { transform: translateY(1px); }
+    30% { transform: translateY(-0.8px); }
+    40% { transform: translateY(0.6px); }
+    50% { transform: translateY(-0.4px); }
+    60% { transform: translateY(0.3px); }
+    70% { transform: translateY(-0.2px); }
+    80% { transform: translateY(0.1px); }
+    90% { transform: translateY(-0.05px); }
+}
+
+.string-row.vibrating::after {
+    animation: string-vibrate 0.6s ease-out;
+    box-shadow: 0 0 6px rgba(176, 140, 220, 0.4), 0 1px 1px rgba(0,0,0,0.06);
+}
 
 .string-label {
     font-family: var(--font-fun);
@@ -561,18 +582,19 @@ a:hover { color: var(--accent-hover); }
     right: 0;
     top: 0;
     bottom: 0;
-    width: 2px;
-    background: linear-gradient(180deg, #ccc 0%, #aaa 50%, #ccc 100%);
-    opacity: 0.3;
+    width: 2.5px;
+    background: linear-gradient(180deg, #c0c0c0 0%, #909090 50%, #c0c0c0 100%);
+    opacity: 0.5;
+    border-radius: 1px;
 }
 
 .fret-cell.fret-0::after {
-    width: 5px;
-    background: var(--nut-color);
-    opacity: 0.9;
+    width: 6px;
+    background: linear-gradient(180deg, #c0b4a0, #a89880, #c0b4a0);
+    opacity: 1;
     right: 0;
-    border-radius: 1px;
-    box-shadow: 1px 0 3px rgba(0,0,0,0.08);
+    border-radius: 2px;
+    box-shadow: 2px 0 4px rgba(0,0,0,0.12);
 }
 
 .inlay-dot {
@@ -605,28 +627,31 @@ a:hover { color: var(--accent-hover); }
 }
 
 .note-dot {
-    width: 30px;
-    height: 30px;
+    width: 34px;
+    height: 34px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     font-family: var(--font-fun);
-    font-size: 0.7rem;
-    font-weight: 600;
+    font-size: 0.72rem;
+    font-weight: 700;
     transition: all 0.2s ease;
     position: relative;
     z-index: 3;
-    opacity: 0;
-    background: transparent;
-    color: transparent;
+    opacity: 0.55;
+    background: rgba(255, 252, 248, 0.6);
+    color: var(--text-secondary);
+    text-shadow: 0 1px 0 rgba(255,255,255,0.5);
+    backdrop-filter: blur(2px);
 }
 
 .fret-cell:hover .note-dot {
     opacity: 1;
-    background: rgba(0, 0, 0, 0.04);
-    color: var(--text-muted);
-    transform: scale(1.05);
+    background: rgba(255, 252, 248, 0.92);
+    color: var(--text-primary);
+    transform: scale(1.15);
+    box-shadow: 0 2px 10px rgba(60, 40, 80, 0.12);
 }
 
 .note-dot.highlighted {
@@ -676,7 +701,7 @@ a:hover { color: var(--accent-hover); }
 
 .fret-markers {
     display: grid;
-    grid-template-columns: 55px repeat(13, 1fr);
+    grid-template-columns: 55px 32px repeat(12, 1fr);
     padding: 0.4rem 0.5rem 0;
 }
 
@@ -882,13 +907,13 @@ a:hover { color: var(--accent-hover); }
     font-family: var(--font-fun);
 }
 
-/* Filter Panel */
+/* Filter Panel / Settings */
 .filter-panel {
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
-    padding: 1.15rem;
-    margin-bottom: 1.15rem;
+    padding: 0.85rem 1.15rem;
+    margin-bottom: 0.75rem;
     box-shadow: var(--shadow-sm);
     backdrop-filter: blur(6px);
     position: relative;
@@ -910,7 +935,20 @@ a:hover { color: var(--accent-hover); }
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 0.7rem;
+    margin-bottom: 0;
+    padding: 0.2rem 0;
+    cursor: pointer;
+    user-select: none;
+}
+
+.filter-header:hover .filter-title {
+    color: var(--accent);
+}
+
+.filter-panel .settings-body {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border-light);
 }
 
 .filter-title {

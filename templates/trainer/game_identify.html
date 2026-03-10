@@ -91,6 +91,11 @@
 <!-- Answer Buttons -->
 <div class="note-buttons" id="noteButtons"></div>
 
+<!-- Skip Button -->
+<div style="display:flex; justify-content:center; margin-top:0.5rem;">
+    <button class="btn btn-ghost" id="skipBtn" style="font-family:var(--font-fun); font-size:0.85rem;">⏭ Skip &amp; Reveal</button>
+</div>
+
 <!-- Feedback Toast -->
 <div class="feedback-toast" id="feedbackToast"></div>
 
@@ -303,7 +308,12 @@ async function getNextNote() {
         document.querySelectorAll('.note-btn').forEach(b => {
             b.classList.remove('correct', 'incorrect');
             b.disabled = false;
+            b.style.opacity = '';
+            b.style.pointerEvents = '';
         });
+
+        // Vibrate the string
+        vibrateString(currentString);
 
         waiting = false;
     } catch (err) {
@@ -311,10 +321,50 @@ async function getNextNote() {
     }
 }
 
-// Handle answer
-async function handleAnswer(selectedNote) {
+// Vibrate the string row when a note plays
+function vibrateString(stringNum) {
+    // String rows are rendered 6→1 (index 0=string6, index 5=string1)
+    const rows = document.querySelectorAll('.string-row');
+    const idx = 6 - stringNum;
+    if (rows[idx]) {
+        rows[idx].classList.remove('vibrating');
+        void rows[idx].offsetWidth; // force reflow
+        rows[idx].classList.add('vibrating');
+        setTimeout(() => rows[idx].classList.remove('vibrating'), 700);
+    }
+}
+
+// Skip button — reveal answer and move on
+document.getElementById('skipBtn').addEventListener('click', function() {
     if (waiting) return;
     waiting = true;
+
+    const dot = document.getElementById(`note-${currentString}-${currentFret}`);
+    if (dot) {
+        dot.textContent = currentNote;
+        dot.classList.remove('highlighted');
+        dot.classList.add('color-coded');
+        dot.style.background = getNoteColor(currentNote);
+        dot.style.opacity = '1';
+    }
+
+    // Highlight the correct button
+    document.querySelectorAll('.note-btn').forEach(b => {
+        const notes = b.dataset.note.split('/');
+        if (notes.includes(currentNote) || notes.some(n => ENHARMONIC[n] === currentNote)) {
+            b.classList.add('correct');
+        }
+    });
+
+    playNoteSound(currentNote, currentString, currentFret);
+    vibrateString(currentString);
+    showFeedback(`It was ${currentNote}`, 'incorrect');
+    setTimeout(() => getNextNote(), 1500);
+});
+
+// Handle answer — keep trying until correct
+async function handleAnswer(selectedNote) {
+    if (waiting) return;
 
     // Check if correct (handle enharmonics)
     const selectedNotes = selectedNote.split('/');
@@ -325,63 +375,81 @@ async function handleAnswer(selectedNote) {
     const dot = document.getElementById(`note-${currentString}-${currentFret}`);
 
     if (isCorrect) {
+        waiting = true;
         scoreCorrect++;
         streak++;
         if (dot) {
             dot.textContent = currentNote;
             dot.classList.remove('highlighted');
-            dot.classList.add('correct');
-            // Color-code the revealed note
-            dot.classList.add('color-coded');
+            dot.classList.add('correct', 'color-coded');
             dot.style.background = getNoteColor(currentNote);
         }
-        // Highlight button
         document.querySelectorAll('.note-btn').forEach(b => {
             if (b.dataset.note === selectedNote) b.classList.add('correct');
         });
         showFeedback('Correct! 🎉', 'correct');
-        // Play the note sound
         playNoteSound(currentNote, currentString, currentFret);
+        vibrateString(currentString);
+
+        updateScore();
+
+        // Record attempt
+        try {
+            await fetch('/api/record-attempt/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken,
+                },
+                body: JSON.stringify({
+                    note: currentNote,
+                    string: currentString,
+                    fret: currentFret,
+                    correct: true,
+                    game_mode: 'identify',
+                }),
+            });
+        } catch (err) {
+            console.log('Not logged in or error saving');
+        }
+
+        // Next note after short delay
+        setTimeout(() => getNextNote(), 900);
     } else {
+        // Wrong — mark button but let user keep trying
         scoreWrong++;
         streak = 0;
-        if (dot) {
-            dot.textContent = currentNote;
-            dot.classList.remove('highlighted');
-            dot.classList.add('incorrect');
-        }
         document.querySelectorAll('.note-btn').forEach(b => {
-            if (b.dataset.note === selectedNote) b.classList.add('incorrect');
+            if (b.dataset.note === selectedNote) {
+                b.classList.add('incorrect');
+                b.style.opacity = '0.45';
+                b.style.pointerEvents = 'none'; // disable this wrong button
+            }
         });
-        showFeedback(`Nope! It was ${currentNote}`, 'incorrect');
-        // Play the correct note sound so they learn it
-        playNoteSound(currentNote, currentString, currentFret);
+        showFeedback('Try again!', 'incorrect');
+
+        updateScore();
+
+        // Record wrong attempt
+        try {
+            await fetch('/api/record-attempt/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken,
+                },
+                body: JSON.stringify({
+                    note: currentNote,
+                    string: currentString,
+                    fret: currentFret,
+                    correct: false,
+                    game_mode: 'identify',
+                }),
+            });
+        } catch (err) {
+            console.log('Not logged in or error saving');
+        }
     }
-
-    updateScore();
-
-    // Record attempt
-    try {
-        await fetch('/api/record-attempt/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrftoken,
-            },
-            body: JSON.stringify({
-                note: currentNote,
-                string: currentString,
-                fret: currentFret,
-                correct: isCorrect,
-                game_mode: 'identify',
-            }),
-        });
-    } catch (err) {
-        console.log('Not logged in or error saving');
-    }
-
-    // Next note after delay
-    setTimeout(() => getNextNote(), isCorrect ? 800 : 1500);
 }
 
 function updateScore() {
