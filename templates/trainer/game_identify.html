@@ -6,6 +6,16 @@
 
 {% block content %}
 <div class="game-overlay-top">
+    <!-- Mode toggle -->
+    <div class="inline-filter" style="margin-bottom:0;">
+        <div class="inline-filter-row">
+            <div class="filter-group-pills" id="modeToggle">
+                <button class="filter-pill mode-pill active" data-mode="name">🎯 Name It</button>
+                <button class="filter-pill mode-pill" data-mode="find">📍 Find It</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Filter (inline, left side) -->
     <div class="inline-filter">
         <div class="inline-filter-row">
@@ -39,6 +49,13 @@
             <div class="score-label">Streak</div>
         </div>
     </div>
+</div>
+
+<!-- Find It mode prompt -->
+<div class="find-prompt" id="findPrompt" style="display:none;">
+    <div class="find-prompt-label">Play this note:</div>
+    <div class="find-prompt-note" id="findPromptNote">A</div>
+    <div class="find-prompt-string" id="findPromptString">on the <span id="findPromptStringName">G</span> string</div>
 </div>
 
 <!-- Fretboard -->
@@ -129,6 +146,7 @@ let currentFilter = 'all';
 let customNotes = [];
 let fretboardInverted = true; // true = player POV (high e top, low E bottom)
 let showAllNotes = false;
+let gameMode = 'name'; // 'name' = identify note, 'find' = find the fret
 
 // Frets that get inlay dots (between strings 3 and 4)
 const INLAY_FRETS = [3, 5, 7, 9];
@@ -192,6 +210,18 @@ function buildFretboard() {
             dot.dataset.fret = f;
             dot.textContent = FRETBOARD[`${s}-${f}`];
             cell.appendChild(dot);
+
+            // Click handler for Find It mode — clicking a fret cell
+            if (f >= 1) { // Only frets 1-12 are clickable
+                cell.classList.add('fret-clickable');
+                cell.dataset.string = s;
+                cell.dataset.fret = f;
+                cell.addEventListener('click', () => {
+                    if (gameMode !== 'find' || waiting) return;
+                    handleFretAnswer(s, f);
+                });
+            }
+
             row.appendChild(cell);
         }
         container.appendChild(row);
@@ -282,6 +312,40 @@ document.querySelectorAll('.filter-pill').forEach(btn => {
     });
 });
 
+// Mode toggle handler
+document.querySelectorAll('.mode-pill').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.mode-pill').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        gameMode = btn.dataset.mode;
+
+        const noteButtons = document.getElementById('noteButtons');
+        const findPrompt = document.getElementById('findPrompt');
+        const revealBtn = document.getElementById('revealBtn');
+
+        if (gameMode === 'find') {
+            noteButtons.style.display = 'none';
+            findPrompt.style.display = '';
+            revealBtn.style.display = 'none';
+            document.getElementById('gameFretboard').classList.add('find-mode');
+        } else {
+            noteButtons.style.display = '';
+            findPrompt.style.display = 'none';
+            revealBtn.style.display = '';
+            document.getElementById('gameFretboard').classList.remove('find-mode');
+        }
+
+        // Reset scores when switching modes
+        scoreCorrect = 0;
+        scoreWrong = 0;
+        streak = 0;
+        bestStreak = 0;
+        wrongStreak = 0;
+        updateScore();
+        getNextNote();
+    });
+});
+
 // Get next note
 async function getNextNote() {
     try {
@@ -295,7 +359,7 @@ async function getNextNote() {
 
         // Clear previous highlights
         document.querySelectorAll('.note-dot').forEach(d => {
-            d.classList.remove('highlighted', 'correct', 'incorrect');
+            d.classList.remove('highlighted', 'correct', 'incorrect', 'find-correct', 'find-wrong');
             if (!showAllNotes) {
                 d.classList.remove('show', 'color-coded');
                 d.style.background = '';
@@ -309,18 +373,32 @@ async function getNextNote() {
             d.textContent = FRETBOARD[`${d.dataset.string}-${d.dataset.fret}`];
         });
 
-        // Highlight the new note
-        const dot = document.getElementById(`note-${currentString}-${currentFret}`);
-        if (dot) {
-            dot.classList.add('highlighted');
-            dot.textContent = '?';
-            dot.style.opacity = '1';
+        // Clear string-row highlighting
+        document.querySelectorAll('.string-row').forEach(r => r.classList.remove('target-string'));
+
+        if (gameMode === 'name') {
+            // NAME IT mode: show "?" on the dot, user guesses the note name
+            const dot = document.getElementById(`note-${currentString}-${currentFret}`);
+            if (dot) {
+                dot.classList.add('highlighted');
+                dot.textContent = '?';
+                dot.style.opacity = '1';
+            }
+        } else {
+            // FIND IT mode: show the note name + string, user taps the fret
+            document.getElementById('findPromptNote').textContent = currentNote;
+            document.getElementById('findPromptNote').style.color = getNoteColor(currentNote);
+            document.getElementById('findPromptStringName').textContent = STRING_NAMES[currentString];
+
+            // Highlight the target string row
+            const row = document.querySelector(`.string-row[data-string="${currentString}"]`);
+            if (row) row.classList.add('target-string');
         }
 
         // Play the note sound so the user can hear it
         playNoteSound(currentNote, currentString, currentFret, 1.2);
 
-        // Reset button states
+        // Reset button states (for Name It mode)
         document.querySelectorAll('.note-btn').forEach(b => {
             b.classList.remove('correct', 'incorrect');
             b.disabled = false;
@@ -328,8 +406,8 @@ async function getNextNote() {
             b.style.pointerEvents = '';
         });
 
-        // Show reveal button, hide next button
-        document.getElementById('revealBtn').style.display = '';
+        // Show reveal button (Name It) or hide it (Find It), hide next button
+        document.getElementById('revealBtn').style.display = gameMode === 'name' ? '' : 'none';
         document.getElementById('nextBtn').style.display = 'none';
 
         // Vibrate the string
@@ -350,6 +428,105 @@ function vibrateString(stringNum) {
         void row.offsetWidth; // force reflow
         row.classList.add('vibrating');
         setTimeout(() => row.classList.remove('vibrating'), 700);
+    }
+}
+
+// Handle fret cell tap in Find It mode
+async function handleFretAnswer(tappedString, tappedFret) {
+    if (waiting) return;
+    // Only accept taps on the target string
+    if (tappedString !== currentString) return;
+
+    const isCorrect = (tappedFret === currentFret);
+
+    const tappedDot = document.getElementById(`note-${tappedString}-${tappedFret}`);
+
+    if (isCorrect) {
+        scoreCorrect++;
+        streak++;
+        wrongStreak = 0;
+        if (streak > bestStreak) bestStreak = streak;
+        updateScore();
+
+        // Highlight the correct fret
+        if (tappedDot) {
+            tappedDot.classList.add('find-correct');
+            tappedDot.textContent = currentNote;
+            tappedDot.style.background = getNoteColor(currentNote);
+            tappedDot.style.opacity = '1';
+        }
+
+        // Also show all same notes on fretboard
+        revealAllSameNotes(currentNote);
+
+        playNoteSound(currentNote, currentString, currentFret);
+        vibrateString(currentString);
+        showStreakFeedback(streak);
+
+        // Record attempt
+        try {
+            await fetch('/api/record-attempt/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken,
+                },
+                body: JSON.stringify({
+                    note: currentNote,
+                    string: currentString,
+                    fret: currentFret,
+                    correct: true,
+                    game_mode: 'identify_find',
+                }),
+            });
+        } catch (err) { console.log('Not logged in or error saving'); }
+
+        // Switch to waiting — show Next button
+        waiting = true;
+        document.getElementById('nextBtn').style.display = '';
+
+    } else {
+        // Wrong fret
+        wrongStreak++;
+        scoreWrong++;
+
+        if (tappedDot) {
+            tappedDot.classList.add('find-wrong');
+            setTimeout(() => tappedDot.classList.remove('find-wrong'), 600);
+        }
+
+        if (wrongStreak >= 2 && streak > 0) {
+            // 2 consecutive wrongs kills the streak
+            if (bestStreak >= 2) recordStreak(bestStreak);
+            showFeedback('💔 Streak lost!', 'wrong');
+            streak = 0;
+            wrongStreak = 0;
+        } else if (wrongStreak === 1 && streak >= 2) {
+            showFeedback('⚠️ One more wrong kills the streak!', 'wrong');
+        } else {
+            const wrongMsgs = ['Nope!', 'Try again!', 'Not quite!', 'Keep looking!', 'Wrong fret!'];
+            showFeedback(wrongMsgs[Math.floor(Math.random()*wrongMsgs.length)], 'wrong');
+        }
+
+        updateScore();
+
+        // Record wrong attempt
+        try {
+            await fetch('/api/record-attempt/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken,
+                },
+                body: JSON.stringify({
+                    note: currentNote,
+                    string: currentString,
+                    fret: tappedFret,
+                    correct: false,
+                    game_mode: 'identify_find',
+                }),
+            });
+        } catch (err) { console.log('Not logged in or error saving'); }
     }
 }
 
@@ -741,18 +918,27 @@ document.addEventListener('keydown', (e) => {
         return;
     }
     if (waiting) return;
-    const keyMap = {
-        'c': 'C', 'd': 'D', 'e': 'E', 'f': 'F', 'g': 'G', 'a': 'A', 'b': 'B',
-    };
-    const key = e.key.toLowerCase();
-    if (keyMap[key]) {
-        // Find the matching button
-        const buttons = document.querySelectorAll('.note-btn');
-        for (const btn of buttons) {
-            if (btn.dataset.note.startsWith(keyMap[key])) {
-                handleAnswer(btn.dataset.note);
-                break;
+    // Note key shortcuts only in Name It mode
+    if (gameMode === 'name') {
+        const keyMap = {
+            'c': 'C', 'd': 'D', 'e': 'E', 'f': 'F', 'g': 'G', 'a': 'A', 'b': 'B',
+        };
+        const key = e.key.toLowerCase();
+        if (keyMap[key]) {
+            const buttons = document.querySelectorAll('.note-btn');
+            for (const btn of buttons) {
+                if (btn.dataset.note.startsWith(keyMap[key])) {
+                    handleAnswer(btn.dataset.note);
+                    break;
+                }
             }
+        }
+    }
+    // Number key shortcuts in Find It mode (1-12 for frets)
+    if (gameMode === 'find') {
+        const num = parseInt(e.key);
+        if (num >= 1 && num <= 9) {
+            handleFretAnswer(currentString, num);
         }
     }
 });
@@ -799,11 +985,17 @@ document.getElementById('showAllToggle').addEventListener('click', function() {
     });
     // Re-highlight the current question dot
     if (currentNote && !waiting) {
-        const dot = document.getElementById(`note-${currentString}-${currentFret}`);
-        if (dot) {
-            dot.classList.add('highlighted');
-            dot.textContent = '?';
-            dot.style.opacity = '1';
+        if (gameMode === 'name') {
+            const dot = document.getElementById(`note-${currentString}-${currentFret}`);
+            if (dot) {
+                dot.classList.add('highlighted');
+                dot.textContent = '?';
+                dot.style.opacity = '1';
+            }
+        } else {
+            // Find mode — re-highlight target string
+            const row = document.querySelector(`.string-row[data-string="${currentString}"]`);
+            if (row) row.classList.add('target-string');
         }
     }
 });
@@ -815,10 +1007,16 @@ document.getElementById('flipToggle').addEventListener('click', function() {
     buildFretboard();
     // Re-highlight current note if there is one
     if (currentNote && !waiting) {
-        const dot = document.getElementById(`note-${currentString}-${currentFret}`);
-        if (dot) {
-            dot.classList.add('highlighted');
-            dot.textContent = '?';
+        if (gameMode === 'name') {
+            const dot = document.getElementById(`note-${currentString}-${currentFret}`);
+            if (dot) {
+                dot.classList.add('highlighted');
+                dot.textContent = '?';
+            }
+        } else {
+            // Find mode — re-highlight target string
+            const row = document.querySelector(`.string-row[data-string="${currentString}"]`);
+            if (row) row.classList.add('target-string');
         }
     }
 });
