@@ -373,14 +373,12 @@ function revealAllSameNotes(note) {
     }
 }
 
-// Reveal button — show answer but don't advance
+// Reveal button — show answer but don't advance (does NOT break streak)
 document.getElementById('revealBtn').addEventListener('click', function() {
     if (revealed) return;
     revealed = true;
     waiting = true;
-    // Save the broken streak to leaderboard before resetting
-    if (streak >= 2) recordStreak(streak);
-    streak = 0;
+    // Reveal doesn't break streak — only wrong answers do
     updateScore();
 
     const dot = document.getElementById(`note-${currentString}-${currentFret}`);
@@ -400,7 +398,7 @@ document.getElementById('revealBtn').addEventListener('click', function() {
 
     playNoteSound(currentNote, currentString, currentFret);
     vibrateString(currentString);
-    showFeedback(`It was ${currentNote}`, 'incorrect');
+    showFeedback(`It was ${currentNote}`, 'info');
 
     // Swap buttons: hide reveal, show next
     this.style.display = 'none';
@@ -532,34 +530,99 @@ function showFeedback(message, type) {
     }, 1800);
 }
 
-// Gamified streak messages
-const STREAK_MESSAGES = [
-    { min: 1, emoji: '🎯', text: 'Nice!', color: '#a8e6cf' },
-    { min: 2, emoji: '🔥', text: 'Streak', color: '#f7e5a0' },
-    { min: 3, emoji: '🔥🔥', text: 'On Fire!', color: '#ffb347' },
-    { min: 5, emoji: '⚡', text: 'Unstoppable!', color: '#ff8a65' },
-    { min: 8, emoji: '💎', text: 'Diamond!', color: '#b388ff' },
-    { min: 10, emoji: '🏆', text: 'LEGENDARY!', color: '#ffd54f' },
-    { min: 15, emoji: '👑', text: 'GOD MODE!', color: '#ff6f00' },
-    { min: 20, emoji: '🌟✨', text: 'TRANSCENDENT!', color: '#e040fb' },
-    { min: 30, emoji: '🎸💀🔥', text: 'FRETBOARD MASTER!', color: '#ff1744' },
+// Animated fire SVG builder — grows from ember to inferno
+function buildFireSVG(tier) {
+    // tier 0=spark, 1=ember, 2=small, 3=medium, 4=large, 5=inferno
+    const flames = Math.min(tier + 1, 6);
+    const h = 40 + tier * 12;
+    const w = 30 + tier * 6;
+    const colors = [
+        ['#ff9800', '#ff5722', '#f44336'],  // 0: warm orange
+        ['#ff9800', '#ff5722', '#e91e63'],  // 1: orange-pink
+        ['#ffeb3b', '#ff9800', '#f44336'],  // 2: yellow-orange
+        ['#ffeb3b', '#ff5722', '#d50000'],  // 3: yellow-red
+        ['#fff176', '#ff9800', '#b71c1c'],  // 4: bright yellow-deep red
+        ['#ffffff', '#ffeb3b', '#ff1744'],  // 5: white-hot
+    ];
+    const [c1, c2, c3] = colors[Math.min(tier, 5)];
+    const id = `fire-${Date.now()}`;
+    let paths = '';
+    // Core flame
+    paths += `<path d="M${w/2} ${h*0.05} Q${w*0.2} ${h*0.45} ${w*0.15} ${h*0.65} Q${w*0.1} ${h*0.85} ${w/2} ${h} Q${w*0.9} ${h*0.85} ${w*0.85} ${h*0.65} Q${w*0.8} ${h*0.45} ${w/2} ${h*0.05}Z" fill="url(#${id}-g1)">
+        <animate attributeName="d" dur="0.5s" repeatCount="indefinite" values="
+            M${w/2} ${h*0.05} Q${w*0.2} ${h*0.45} ${w*0.15} ${h*0.65} Q${w*0.1} ${h*0.85} ${w/2} ${h} Q${w*0.9} ${h*0.85} ${w*0.85} ${h*0.65} Q${w*0.8} ${h*0.45} ${w/2} ${h*0.05}Z;
+            M${w/2} ${h*0.08} Q${w*0.18} ${h*0.42} ${w*0.13} ${h*0.62} Q${w*0.12} ${h*0.88} ${w/2} ${h} Q${w*0.88} ${h*0.88} ${w*0.87} ${h*0.62} Q${w*0.82} ${h*0.42} ${w/2} ${h*0.08}Z;
+            M${w/2} ${h*0.05} Q${w*0.2} ${h*0.45} ${w*0.15} ${h*0.65} Q${w*0.1} ${h*0.85} ${w/2} ${h} Q${w*0.9} ${h*0.85} ${w*0.85} ${h*0.65} Q${w*0.8} ${h*0.45} ${w/2} ${h*0.05}Z
+        "/>
+    </path>`;
+    // Inner glow flame
+    paths += `<path d="M${w/2} ${h*0.25} Q${w*0.3} ${h*0.55} ${w*0.28} ${h*0.72} Q${w*0.25} ${h*0.9} ${w/2} ${h} Q${w*0.75} ${h*0.9} ${w*0.72} ${h*0.72} Q${w*0.7} ${h*0.55} ${w/2} ${h*0.25}Z" fill="url(#${id}-g2)" opacity="0.9">
+        <animate attributeName="d" dur="0.4s" repeatCount="indefinite" values="
+            M${w/2} ${h*0.25} Q${w*0.3} ${h*0.55} ${w*0.28} ${h*0.72} Q${w*0.25} ${h*0.9} ${w/2} ${h} Q${w*0.75} ${h*0.9} ${w*0.72} ${h*0.72} Q${w*0.7} ${h*0.55} ${w/2} ${h*0.25}Z;
+            M${w/2} ${h*0.3} Q${w*0.32} ${h*0.52} ${w*0.3} ${h*0.7} Q${w*0.27} ${h*0.92} ${w/2} ${h} Q${w*0.73} ${h*0.92} ${w*0.7} ${h*0.7} Q${w*0.68} ${h*0.52} ${w/2} ${h*0.3}Z;
+            M${w/2} ${h*0.25} Q${w*0.3} ${h*0.55} ${w*0.28} ${h*0.72} Q${w*0.25} ${h*0.9} ${w/2} ${h} Q${w*0.75} ${h*0.9} ${w*0.72} ${h*0.72} Q${w*0.7} ${h*0.55} ${w/2} ${h*0.25}Z
+        "/>
+    </path>`;
+    // Hot core
+    if (tier >= 2) {
+        paths += `<ellipse cx="${w/2}" cy="${h*0.82}" rx="${w*0.15}" ry="${h*0.1}" fill="${c1}" opacity="0.7">
+            <animate attributeName="ry" dur="0.35s" repeatCount="indefinite" values="${h*0.1};${h*0.12};${h*0.1}"/>
+        </ellipse>`;
+    }
+    // Sparks for higher tiers
+    if (tier >= 3) {
+        for (let i = 0; i < tier - 1; i++) {
+            const sx = w*0.2 + Math.random()*w*0.6;
+            const delay = (Math.random()*0.8).toFixed(2);
+            paths += `<circle cx="${sx}" cy="${h*0.3}" r="1.5" fill="${c1}" opacity="0.8">
+                <animate attributeName="cy" dur="0.8s" begin="${delay}s" repeatCount="indefinite" values="${h*0.5};${h*0.05};${h*0.5}"/>
+                <animate attributeName="opacity" dur="0.8s" begin="${delay}s" repeatCount="indefinite" values="0.8;0;0.8"/>
+            </circle>`;
+        }
+    }
+    return `<svg viewBox="0 0 ${w} ${h}" width="${w*1.5}" height="${h*1.5}" style="filter:drop-shadow(0 0 ${4+tier*3}px ${c2})">
+        <defs>
+            <linearGradient id="${id}-g1" x1="0.5" y1="0" x2="0.5" y2="1">
+                <stop offset="0%" stop-color="${c1}"/>
+                <stop offset="50%" stop-color="${c2}"/>
+                <stop offset="100%" stop-color="${c3}"/>
+            </linearGradient>
+            <linearGradient id="${id}-g2" x1="0.5" y1="0" x2="0.5" y2="1">
+                <stop offset="0%" stop-color="${c1}"/>
+                <stop offset="100%" stop-color="${c2}"/>
+            </linearGradient>
+        </defs>
+        ${paths}
+    </svg>`;
+}
+
+// Streak tier thresholds
+const STREAK_TIERS = [
+    { min: 1,  tier: 0, text: 'Nice!',             color: '#a8e6cf' },
+    { min: 2,  tier: 1, text: 'Streak!',            color: '#f7e5a0' },
+    { min: 3,  tier: 2, text: 'On Fire!',           color: '#ffb347' },
+    { min: 5,  tier: 3, text: 'Blazing!',           color: '#ff8a65' },
+    { min: 8,  tier: 4, text: 'Unstoppable!',       color: '#ff5722' },
+    { min: 12, tier: 5, text: 'INFERNO!',           color: '#ff1744' },
+    { min: 20, tier: 5, text: 'GODLIKE!',           color: '#d500f9' },
+    { min: 30, tier: 5, text: 'FRETBOARD MASTER!',  color: '#ff1744' },
 ];
 
 function showStreakFeedback(currentStreak) {
-    // Find the best matching message
-    let msg = STREAK_MESSAGES[0];
-    for (const m of STREAK_MESSAGES) {
+    let msg = STREAK_TIERS[0];
+    for (const m of STREAK_TIERS) {
         if (currentStreak >= m.min) msg = m;
     }
 
-    // Correct toast
-    showFeedback(`${msg.emoji} Correct!`, 'correct');
+    // Correct toast with fire
+    const toastEmojis = ['✓', '🔥', '🔥', '🔥🔥', '⚡🔥', '💥🔥💥'];
+    showFeedback(`${toastEmojis[Math.min(msg.tier, 5)]} Correct!`, 'correct');
 
-    // Streak banner (the big flashy one)
+    // Streak banner with animated SVG fire
     if (currentStreak >= 2) {
         const banner = document.getElementById('streakBanner');
         banner.innerHTML = `
-            <div class="streak-emoji">${msg.emoji}</div>
+            <div class="streak-fire">${buildFireSVG(msg.tier)}</div>
             <div class="streak-count">${currentStreak}</div>
             <div class="streak-label">${msg.text}</div>
         `;
@@ -568,7 +631,6 @@ function showStreakFeedback(currentStreak) {
         void banner.offsetWidth;
         banner.classList.add('show');
 
-        // Add screen shake for big streaks
         if (currentStreak >= 5) {
             document.body.classList.add('screen-shake');
             setTimeout(() => document.body.classList.remove('screen-shake'), 400);
