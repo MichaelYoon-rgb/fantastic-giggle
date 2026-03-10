@@ -609,21 +609,20 @@ a:hover { color: var(--accent-hover); }
     transform: translateX(-50%);
 }
 
-.fret-cell.in-block {
-    background: rgba(176, 140, 220, 0.12);
-    border-radius: 6px;
-    position: relative;
+.block-overlay {
+    position: absolute;
+    border-radius: 10px;
+    background: linear-gradient(135deg, rgba(196, 176, 232, 0.12), rgba(168, 230, 207, 0.06));
+    border: 2.5px solid rgba(176, 140, 220, 0.35);
+    box-shadow: 0 0 24px rgba(176, 140, 220, 0.12), inset 0 0 30px rgba(196, 176, 232, 0.06);
+    pointer-events: none;
+    z-index: 2;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    display: none;
 }
 
-.fret-cell.in-block::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: 6px;
-    background: linear-gradient(135deg, rgba(196, 176, 232, 0.15), rgba(168, 230, 207, 0.08));
-    border: 2px solid rgba(176, 140, 220, 0.25);
-    pointer-events: none;
-    z-index: 1;
+.block-overlay.visible {
+    display: block;
 }
 
 .note-dot {

@@ -101,6 +101,7 @@
             <div class="fret-number">12</div>
         </div>
         <div class="strings-container" id="gameStrings"></div>
+        <div class="block-overlay" id="blockOverlay"></div>
         <div class="fret-markers">
             <div class="fret-marker"></div>
             <div class="fret-marker"></div>
@@ -272,21 +273,33 @@ document.querySelectorAll('.region-btn').forEach(btn => {
     });
 });
 
-// ─── BLOCK HIGHLIGHT (fancy overlay) ───
+// ─── BLOCK HIGHLIGHT (single rectangle overlay) ───
 function updateBlockHighlight() {
-    document.querySelectorAll('.fret-cell.in-block').forEach(c => c.classList.remove('in-block'));
+    const overlay = document.getElementById('blockOverlay');
+    overlay.classList.remove('visible');
 
-    if (!currentChallenge || !currentChallenge.block) return;
+    if (!currentChallenge || !currentChallenge.block || gameMode !== 'block') return;
 
     const b = currentChallenge.block;
-    for (let s = b.string_start; s <= b.string_end; s++) {
-        for (let f = b.fret_start; f <= b.fret_end; f++) {
-            const dot = document.getElementById(`note-${s}-${f}`);
-            if (dot && dot.parentElement) {
-                dot.parentElement.classList.add('in-block');
-            }
-        }
-    }
+    // string_start is the lowest number (highest pitch), string_end is highest number (lowest pitch)
+    // In the DOM, rows go from string 6 (top) to string 1 (bottom)
+    const topLeft = document.getElementById(`note-${b.string_end}-${b.fret_start}`);
+    const bottomRight = document.getElementById(`note-${b.string_start}-${b.fret_end}`);
+    if (!topLeft || !bottomRight) return;
+
+    const fretboard = document.getElementById('gameFretboard');
+    const fbRect = fretboard.getBoundingClientRect();
+    const tlCell = topLeft.closest('.fret-cell');
+    const brCell = bottomRight.closest('.fret-cell');
+    const tlRect = tlCell.getBoundingClientRect();
+    const brRect = brCell.getBoundingClientRect();
+
+    const pad = 6;
+    overlay.style.left = (tlRect.left - fbRect.left - pad) + 'px';
+    overlay.style.top = (tlRect.top - fbRect.top - pad) + 'px';
+    overlay.style.width = (brRect.right - tlRect.left + pad * 2) + 'px';
+    overlay.style.height = (brRect.bottom - tlRect.top + pad * 2) + 'px';
+    overlay.classList.add('visible');
 }
 
 // ─── MICROPHONE INPUT ───
@@ -624,5 +637,10 @@ function showFeedback(message, type) {
 buildFretboard();
 buildFilterNotes();
 getNextChallenge();
+
+// Reposition block overlay on resize
+window.addEventListener('resize', () => {
+    if (currentChallenge && gameMode === 'block') updateBlockHighlight();
+});
 </script>
 {% endblock %}

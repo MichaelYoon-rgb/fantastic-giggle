@@ -169,6 +169,14 @@ def tuner_view(request):
     return render(request, 'trainer/tuner.html', context)
 
 
+def fullscreen_view(request):
+    """Full screen fretboard reference."""
+    context = {
+        'fretboard': json.dumps(build_fretboard_data()),
+    }
+    return render(request, 'trainer/fullscreen.html', context)
+
+
 @login_required
 def stats_view(request):
     """View user's progress stats."""

@@ -62,70 +62,78 @@ function getAudioContext() {
 }
 
 /**
- * Play a note sound using Web Audio API
+ * Play a note sound using Web Audio API — Karplus-Strong inspired acoustic guitar
  * @param {string} note - Note name (e.g. 'A', 'C#')
  * @param {number} stringNum - String number (1-6) for octave calculation
  * @param {number} fretNum - Fret number (0-12)
  * @param {number} duration - Duration in seconds
  */
-function playNoteSound(note, stringNum, fretNum, duration = 0.8) {
+function playNoteSound(note, stringNum, fretNum, duration = 1.5) {
     try {
         const ctx = getAudioContext();
+        const now = ctx.currentTime;
 
         // Calculate actual frequency based on string and fret
         const openFreq = STRING_FREQUENCIES[stringNum] || 329.63;
         const freq = openFreq * Math.pow(2, fretNum / 12);
 
-        // Create oscillator for guitar-like sound
-        const osc = ctx.createOscillator();
+        // --- Karplus-Strong style plucked string ---
+        const sampleRate = ctx.sampleRate;
+        const periodSamples = Math.round(sampleRate / freq);
+        const bufferLength = Math.round(sampleRate * duration);
+        const buffer = ctx.createBuffer(1, bufferLength, sampleRate);
+        const data = buffer.getChannelData(0);
+
+        // Seed the delay line with filtered noise burst (simulates the pluck)
+        for (let i = 0; i < periodSamples; i++) {
+            data[i] = (Math.random() * 2 - 1) * 0.6;
+        }
+
+        // Apply a short averaging filter to the initial burst for body warmth
+        // Lower strings get more filtering (warmer), higher strings stay brighter
+        const burstSmooth = stringNum >= 4 ? 3 : stringNum >= 2 ? 2 : 1;
+        for (let pass = 0; pass < burstSmooth; pass++) {
+            for (let i = 1; i < periodSamples; i++) {
+                data[i] = data[i] * 0.5 + data[i - 1] * 0.5;
+            }
+        }
+
+        // Feedback loop: each new sample = average of sample one period ago + neighbour, with decay
+        const decay = 0.996 + (stringNum - 1) * 0.0005; // thicker strings ring longer
+        for (let i = periodSamples; i < bufferLength; i++) {
+            data[i] = (data[i - periodSamples] + data[i - periodSamples + 1]) * 0.5 * decay;
+        }
+
+        // Play the buffer
+        const src = ctx.createBufferSource();
+        src.buffer = buffer;
+
+        // Body resonance filter (simulates guitar body)
+        const bodyFilter = ctx.createBiquadFilter();
+        bodyFilter.type = 'peaking';
+        bodyFilter.frequency.value = 250; // guitar body resonance ~250Hz
+        bodyFilter.Q.value = 2.5;
+        bodyFilter.gain.value = 4;
+
+        // Brightness filter — roll off harsh highs
+        const brightnessFilter = ctx.createBiquadFilter();
+        brightnessFilter.type = 'lowpass';
+        brightnessFilter.frequency.value = 4000 - (stringNum - 1) * 400; // bass strings darker
+        brightnessFilter.Q.value = 0.7;
+
+        // Gain envelope
         const gainNode = ctx.createGain();
-        const filterNode = ctx.createBiquadFilter();
-
-        // Guitar-like waveform
-        osc.type = 'triangle';
-
-        // Add harmonics for richer tone
-        const osc2 = ctx.createOscillator();
-        osc2.type = 'sine';
-        osc2.frequency.value = freq * 2; // octave harmonic
-        const gain2 = ctx.createGain();
-        gain2.gain.value = 0.15;
-
-        const osc3 = ctx.createOscillator();
-        osc3.type = 'sine';
-        osc3.frequency.value = freq * 3;
-        const gain3 = ctx.createGain();
-        gain3.gain.value = 0.05;
-
-        osc.frequency.value = freq;
-
-        // Low-pass filter for warmth
-        filterNode.type = 'lowpass';
-        filterNode.frequency.value = 2000;
-        filterNode.Q.value = 1;
-
-        // Guitar pluck envelope
-        const now = ctx.currentTime;
-        gainNode.gain.setValueAtTime(0, now);
-        gainNode.gain.linearRampToValueAtTime(0.3, now + 0.01);
-        gainNode.gain.exponentialRampToValueAtTime(0.15, now + 0.1);
+        gainNode.gain.setValueAtTime(0.35, now);
         gainNode.gain.exponentialRampToValueAtTime(0.001, now + duration);
 
-        // Connect
-        osc.connect(filterNode);
-        osc2.connect(gain2);
-        osc3.connect(gain3);
-        gain2.connect(filterNode);
-        gain3.connect(filterNode);
-        filterNode.connect(gainNode);
+        // Connect chain: src → body → brightness → gain → output
+        src.connect(bodyFilter);
+        bodyFilter.connect(brightnessFilter);
+        brightnessFilter.connect(gainNode);
         gainNode.connect(ctx.destination);
 
-        osc.start(now);
-        osc2.start(now);
-        osc3.start(now);
-        osc.stop(now + duration);
-        osc2.stop(now + duration);
-        osc3.stop(now + duration);
+        src.start(now);
+        src.stop(now + duration);
     } catch (e) {
         console.log('Audio playback error:', e);
     }

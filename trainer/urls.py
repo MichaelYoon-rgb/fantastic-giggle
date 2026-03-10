@@ -10,6 +10,7 @@ urlpatterns = [
     path('game/find/', views.game_find, name='game_find'),
     path('stats/', views.stats_view, name='stats'),
     path('tuner/', views.tuner_view, name='tuner'),
+    path('fullscreen/', views.fullscreen_view, name='fullscreen'),
 
     # API
     path('api/record-attempt/', views.api_record_attempt, name='api_record_attempt'),

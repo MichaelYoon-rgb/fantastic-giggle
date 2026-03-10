@@ -1,0 +1,297 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Full Screen Fretboard — Every Guitar Note</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v={% now 'U' %}">
+    <style>
+        /* ── Fullscreen overrides ── */
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            overflow: hidden;
+            background: var(--bg);
+        }
+        .fs-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            width: 100vw;
+        }
+        .fs-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.5rem 1.25rem;
+            background: rgba(255,252,248,0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+            flex-shrink: 0;
+            z-index: 10;
+        }
+        .fs-toolbar .fs-brand {
+            font-family: var(--font-fun);
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--text-primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .fs-toolbar .fs-actions {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        .fs-toolbar .fs-actions .btn {
+            font-size: 0.8rem;
+            padding: 0.35rem 0.75rem;
+        }
+        .fs-body {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: auto;
+            padding: 1rem;
+        }
+        .fs-body .fretboard-wrapper {
+            width: 100%;
+            max-width: 100%;
+        }
+        .fs-body .fretboard {
+            min-width: unset;
+            width: 100%;
+            padding: 1.5rem 1rem 1rem;
+        }
+        .fs-body .string-row {
+            height: 52px;
+        }
+        .fs-body .note-dot {
+            width: 40px;
+            height: 40px;
+            font-size: 0.82rem;
+        }
+        .fs-body .fret-cell:hover .note-dot {
+            font-size: 1rem;
+        }
+        .fs-body .string-label {
+            font-size: 0.9rem;
+        }
+        .fs-note-info {
+            position: fixed;
+            bottom: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(42, 32, 53, 0.92);
+            color: #fff;
+            font-family: var(--font-fun);
+            font-size: 1.1rem;
+            font-weight: 600;
+            padding: 0.6rem 1.5rem;
+            border-radius: 999px;
+            opacity: 0;
+            transition: opacity 0.25s ease, transform 0.25s ease;
+            pointer-events: none;
+            z-index: 20;
+            box-shadow: 0 4px 20px rgba(42,32,53,0.3);
+        }
+        .fs-note-info.visible {
+            opacity: 1;
+            transform: translateX(-50%) translateY(-4px);
+        }
+        /* Toggle button for showing all notes */
+        .toggle-notes-active {
+            background: var(--accent) !important;
+            color: #fff !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="fs-container">
+        <!-- Toolbar -->
+        <div class="fs-toolbar">
+            <a href="{% url 'home' %}" class="fs-brand">
+                <span>🎸</span>
+                <span>Every Guitar Note</span>
+            </a>
+            <div class="fs-actions">
+                <button class="btn btn-sm btn-ghost" id="toggleNotes">👁 Show All</button>
+                <button class="btn btn-sm btn-ghost" id="toggleSound">🔊 Sound</button>
+                <a href="{% url 'home' %}" class="btn btn-sm btn-outline">✕ Exit</a>
+            </div>
+        </div>
+
+        <!-- Fretboard -->
+        <div class="fs-body">
+            <div class="fretboard-wrapper">
+                <div class="fretboard" id="fullFretboard">
+                    <div class="fret-numbers">
+                        <div class="fret-number"></div>
+                        <div class="fret-number" style="font-size:0.6rem;">O</div>
+                        <div class="fret-number">1</div>
+                        <div class="fret-number">2</div>
+                        <div class="fret-number">3</div>
+                        <div class="fret-number">4</div>
+                        <div class="fret-number">5</div>
+                        <div class="fret-number">6</div>
+                        <div class="fret-number">7</div>
+                        <div class="fret-number">8</div>
+                        <div class="fret-number">9</div>
+                        <div class="fret-number">10</div>
+                        <div class="fret-number">11</div>
+                        <div class="fret-number">12</div>
+                    </div>
+                    <div class="strings-container" id="fsStrings"></div>
+                    <div class="fret-markers">
+                        <div class="fret-marker"></div>
+                        <div class="fret-marker"></div>
+                        <div class="fret-marker"></div>
+                        <div class="fret-marker"></div>
+                        <div class="fret-marker"><div class="fret-marker-dot"></div></div>
+                        <div class="fret-marker"></div>
+                        <div class="fret-marker"><div class="fret-marker-dot"></div></div>
+                        <div class="fret-marker"></div>
+                        <div class="fret-marker"><div class="fret-marker-dot"></div></div>
+                        <div class="fret-marker"></div>
+                        <div class="fret-marker"><div class="fret-marker-dot"></div></div>
+                        <div class="fret-marker"></div>
+                        <div class="fret-marker"></div>
+                        <div class="fret-marker">
+                            <div class="fret-marker-dot"></div>
+                            <div class="fret-marker-dot"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Floating note info -->
+        <div class="fs-note-info" id="noteInfo"></div>
+    </div>
+
+    <script src="{% static 'js/shared.js' %}?v={% now 'U' %}"></script>
+    <script>
+        const FRETBOARD = {{ fretboard|safe }};
+        const STRING_NAMES = {1: 'e', 2: 'B', 3: 'G', 4: 'D', 5: 'A', 6: 'E'};
+        const INLAY_FRETS = [3, 5, 7, 9];
+        const DOUBLE_INLAY_FRETS = [12];
+        let showAll = false;
+        let soundOn = true;
+        let noteInfoTimeout = null;
+
+        function buildFretboard() {
+            const container = document.getElementById('fsStrings');
+            for (let s = 6; s >= 1; s--) {
+                const row = document.createElement('div');
+                row.className = 'string-row';
+                const label = document.createElement('div');
+                label.className = 'string-label';
+                label.textContent = STRING_NAMES[s];
+                row.appendChild(label);
+
+                for (let f = 0; f <= 12; f++) {
+                    const cell = document.createElement('div');
+                    cell.className = `fret-cell ${f === 0 ? 'fret-0' : ''}`;
+
+                    if (s === 4 && INLAY_FRETS.includes(f)) {
+                        const inlay = document.createElement('div');
+                        inlay.className = 'inlay-dot';
+                        inlay.style.bottom = '-12px';
+                        cell.appendChild(inlay);
+                    }
+                    if (s === 4 && DOUBLE_INLAY_FRETS.includes(f)) {
+                        const i1 = document.createElement('div');
+                        i1.className = 'inlay-dot';
+                        i1.style.bottom = '-8px';
+                        i1.style.left = 'calc(50% - 10px)';
+                        cell.appendChild(i1);
+                        const i2 = document.createElement('div');
+                        i2.className = 'inlay-dot';
+                        i2.style.bottom = '-8px';
+                        i2.style.right = 'calc(50% - 10px)';
+                        i2.style.left = 'auto';
+                        cell.appendChild(i2);
+                    }
+
+                    const dot = document.createElement('div');
+                    dot.className = 'note-dot';
+                    dot.dataset.string = s;
+                    dot.dataset.fret = f;
+                    dot.textContent = FRETBOARD[`${s}-${f}`];
+
+                    cell.addEventListener('click', () => {
+                        const note = FRETBOARD[`${s}-${f}`];
+                        if (soundOn) {
+                            playNoteSound(note, s, f);
+                            vibrateString(s);
+                        }
+                        showNoteInfo(note, s, f);
+                        // Pulse the dot
+                        dot.classList.add('highlighted');
+                        setTimeout(() => dot.classList.remove('highlighted'), 600);
+                    });
+
+                    cell.appendChild(dot);
+                    row.appendChild(cell);
+                }
+                container.appendChild(row);
+            }
+        }
+
+        function vibrateString(stringNum) {
+            const rows = document.querySelectorAll('.string-row');
+            const idx = 6 - stringNum;
+            if (rows[idx]) {
+                rows[idx].classList.remove('vibrating');
+                void rows[idx].offsetWidth;
+                rows[idx].classList.add('vibrating');
+                setTimeout(() => rows[idx].classList.remove('vibrating'), 700);
+            }
+        }
+
+        function showNoteInfo(note, string, fret) {
+            const el = document.getElementById('noteInfo');
+            const stringName = STRING_NAMES[string];
+            el.textContent = `${note} — String ${stringName}, Fret ${fret}`;
+            el.style.background = getNoteColor(note);
+            el.style.color = '#2a2035';
+            el.classList.add('visible');
+            clearTimeout(noteInfoTimeout);
+            noteInfoTimeout = setTimeout(() => el.classList.remove('visible'), 2000);
+        }
+
+        // Toggle all notes
+        document.getElementById('toggleNotes').addEventListener('click', function() {
+            showAll = !showAll;
+            this.textContent = showAll ? '👁 Hide All' : '👁 Show All';
+            this.classList.toggle('toggle-notes-active', showAll);
+            document.querySelectorAll('#fsStrings .note-dot').forEach(dot => {
+                if (showAll) {
+                    dot.classList.add('show', 'color-coded');
+                    const note = FRETBOARD[`${dot.dataset.string}-${dot.dataset.fret}`];
+                    dot.style.background = getNoteColor(note);
+                } else {
+                    dot.classList.remove('show', 'color-coded');
+                    dot.style.background = '';
+                }
+            });
+        });
+
+        // Toggle sound
+        document.getElementById('toggleSound').addEventListener('click', function() {
+            soundOn = !soundOn;
+            this.textContent = soundOn ? '🔊 Sound' : '🔇 Muted';
+        });
+
+        buildFretboard();
+    </script>
+</body>
+</html>
