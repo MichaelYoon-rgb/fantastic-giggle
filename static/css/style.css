@@ -2368,6 +2368,179 @@ body.screen-shake {
     transition: opacity 0.3s ease;
 }
 
+/* ═══ Tuner Fretboard Card ═══ */
+.tuner-fretboard-card {
+    margin-bottom: 1.5rem;
+}
+.tuner-fretboard-wrapper {
+    position: relative;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+.tuner-fretboard-wrapper .fretboard {
+    border-top: none;
+}
+.tuner-fb-hint {
+    font-family: var(--font-fun);
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+.tuner-fb-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1.25rem 0.75rem;
+    font-family: var(--font-fun);
+    font-size: 0.85rem;
+}
+.fb-detected-label {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+}
+.fb-detected-note {
+    font-size: 1.5rem;
+    font-weight: 700;
+    min-width: 2rem;
+    text-align: center;
+    transition: color 0.15s ease;
+}
+.fb-detected-pos {
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+}
+
+/* Detected note on fretboard */
+.note-dot.detected-note {
+    opacity: 1;
+    background: var(--accent) !important;
+    color: white;
+    box-shadow: 0 0 16px var(--accent-glow), 0 0 30px rgba(196, 176, 232, 0.15);
+    font-weight: 700;
+    animation: pop 0.3s ease;
+}
+
+/* ═══ Major Scales Card ═══ */
+.scales-card .step-desc {
+    font-family: var(--font-fun);
+}
+.scales-selector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    align-items: center;
+    padding: 0 0.25rem;
+    margin-bottom: 0.75rem;
+}
+.scale-display {
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-lg);
+    padding: 1rem 1.25rem;
+    margin: 0 0.25rem 0.75rem;
+}
+.scale-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+.scale-name {
+    font-family: var(--font-fun);
+    font-size: 1.3rem;
+    font-weight: 700;
+}
+.scale-progress-badge {
+    font-family: var(--font-fun);
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    background: var(--bg-card-solid);
+    color: var(--text-muted);
+}
+.scale-progress-badge.all-done {
+    background: var(--pastel-mint);
+    color: #1e3a2c;
+}
+.scale-notes-row {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.5rem;
+}
+.scale-note-pill {
+    font-family: var(--font-fun);
+    font-size: 0.82rem;
+    font-weight: 700;
+    padding: 0.3rem 0.65rem;
+    border-radius: 999px;
+    background: var(--bg-card-solid);
+    border: 2px solid var(--border);
+    color: var(--text-secondary);
+    transition: all 0.25s ease;
+}
+.scale-note-pill.current {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+    box-shadow: 0 0 14px var(--accent-glow);
+    animation: pulse-glow 2s ease-in-out infinite;
+    transform: scale(1.1);
+}
+.scale-note-pill.done {
+    background: var(--pastel-mint);
+    border-color: var(--pastel-mint);
+    color: #1e3a2c;
+}
+.scale-arrow {
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    opacity: 0.5;
+}
+.scale-arrow.done {
+    color: var(--pastel-mint);
+    opacity: 1;
+}
+.scale-status {
+    font-family: var(--font-fun);
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+.scales-progress-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    padding: 0 0.25rem 0.5rem;
+    margin-top: 0.25rem;
+}
+
+/* Scale fretboard classes */
+.note-dot.scale-next {
+    animation: pulse-glow 2s ease-in-out infinite;
+}
+.note-dot.scale-done {
+    background: var(--pastel-mint) !important;
+    color: #1e3a2c;
+}
+
+/* Walk visual highlights */
+.walk-string.walk-current {
+    background: var(--accent) !important;
+    color: white !important;
+    box-shadow: 0 0 12px var(--accent-glow);
+    transform: scale(1.15);
+}
+.walk-string.walk-passed {
+    background: var(--pastel-mint) !important;
+    color: #1e3a2c !important;
+    opacity: 0.7;
+}
+.walk-arrow.walk-passed {
+    color: var(--pastel-mint);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .nav-links {
