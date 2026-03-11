@@ -1,65 +1,75 @@
 {% extends "trainer/base.html" %}
+{% load static %}
 
 {% block title %}Scales — Every Guitar Note{% endblock %}
 {% block nav_scales %}active{% endblock %}
 
 {% block content %}
-<div class="game-header">
+<div class="game-header" style="margin-bottom:1rem;">
     <div>
         <h1 class="game-title">🎵 Scales</h1>
-        <p class="game-subtitle">Play through all 7 major scales. The fretboard highlights positions as you go — use the mic to follow along!</p>
+        <p class="game-subtitle">Name every note in each major scale</p>
     </div>
 </div>
 
-<!-- ══════ LIVE FRETBOARD ══════ -->
-<div class="card tuner-fretboard-card" id="tunerFretboardCard">
-    <div class="card-header" style="cursor:pointer;" id="fretboardCardToggle">
-        <div class="card-title">🎸 Live Fretboard</div>
-        <div style="display:flex; align-items:center; gap:0.5rem;">
-            <span class="tuner-fb-hint" id="fbHint">Select a scale &amp; start mic to play along</span>
-            <button class="flip-toggle" id="fbMetronomeToggle" title="Toggle metronome" onclick="event.stopPropagation();">
-                <span class="flip-icon">🕐</span> BPM
-            </button>
-            <button class="flip-toggle" id="flipToggle" title="Flip fretboard orientation" onclick="event.stopPropagation();">
-                <span class="flip-icon">↕</span> Flip
-            </button>
-            <span class="btn btn-ghost btn-sm" id="fbCollapseBtn">▼</span>
+<!-- ══════ SCALE SELECTOR ══════ -->
+<div class="card scales-card">
+    <div class="card-header">
+        <div class="card-title">Pick a Scale</div>
+        <div class="scale-session-badge" id="sessionBadge">0 / 7</div>
+    </div>
+    <div class="scales-selector" id="scalesSelector"></div>
+</div>
+
+<!-- ══════ CHALLENGE AREA ══════ -->
+<div class="card scales-card" id="challengeCard" style="margin-top:1rem; display:none;">
+    <!-- Scale name header -->
+    <div class="card-header">
+        <div class="card-title" id="challengeTitle">C Major</div>
+        <div style="display:flex; gap:0.5rem; align-items:center;">
+            <button class="btn btn-ghost btn-sm" id="listenBtn" title="Hear the scale">🔊 Listen</button>
+            <button class="btn btn-ghost btn-sm" id="resetBtn" title="Start over">↺ Reset</button>
         </div>
     </div>
-    <div id="fretboardCardBody">
-        <!-- Metronome controls -->
-        <div class="metronome-controls" id="fbMetronomeControls" style="display:none; padding:0.4rem 1rem;">
-            <div class="metronome-row">
-                <label class="metro-label">BPM</label>
-                <button class="metro-adj" id="fbBpmDown">−</button>
-                <span class="metro-value" id="fbBpmDisplay">60</span>
-                <button class="metro-adj" id="fbBpmUp">+</button>
-            </div>
-        </div>
+
+    <!-- Degree slots -->
+    <div class="scale-slots-row" id="slotsRow"></div>
+
+    <!-- Prompt -->
+    <div class="scale-prompt" id="scalePrompt">
+        What is the <span class="scale-degree-highlight" id="degreeLabel">1st</span> note?
+    </div>
+
+    <!-- Chromatic note buttons -->
+    <div class="scale-choices" id="choicesGrid"></div>
+
+    <!-- Feedback area -->
+    <div class="scale-result" id="scaleResult"></div>
+</div>
+
+<!-- ══════ FRETBOARD REVEAL ══════ -->
+<div class="card tuner-fretboard-card" id="fretboardRevealCard" style="margin-top:1rem; display:none;">
+    <div class="card-header" style="cursor:pointer;" id="fbRevealToggle">
+        <div class="card-title">🎸 Scale on Fretboard</div>
+        <span class="btn btn-ghost btn-sm" id="fbRevealCollapseBtn">▼</span>
+    </div>
+    <div id="fbRevealBody">
         <div class="tuner-fretboard-wrapper">
-            <div class="fretboard" id="tunerFretboard">
+            <div class="fretboard" id="revealFretboard">
                 <div class="fret-numbers">
                     <div class="fret-number"></div>
                     <div class="fret-number" style="font-size:0.6rem;">O</div>
-                    <div class="fret-number">1</div>
-                    <div class="fret-number">2</div>
-                    <div class="fret-number">3</div>
-                    <div class="fret-number">4</div>
-                    <div class="fret-number">5</div>
-                    <div class="fret-number">6</div>
-                    <div class="fret-number">7</div>
-                    <div class="fret-number">8</div>
-                    <div class="fret-number">9</div>
-                    <div class="fret-number">10</div>
-                    <div class="fret-number">11</div>
-                    <div class="fret-number">12</div>
+                    <div class="fret-number">1</div><div class="fret-number">2</div>
+                    <div class="fret-number">3</div><div class="fret-number">4</div>
+                    <div class="fret-number">5</div><div class="fret-number">6</div>
+                    <div class="fret-number">7</div><div class="fret-number">8</div>
+                    <div class="fret-number">9</div><div class="fret-number">10</div>
+                    <div class="fret-number">11</div><div class="fret-number">12</div>
                 </div>
-                <div class="strings-container" id="tunerStringsContainer"></div>
+                <div class="strings-container" id="revealStrings"></div>
                 <div class="fret-markers">
-                    <div class="fret-marker"></div>
-                    <div class="fret-marker"></div>
-                    <div class="fret-marker"></div>
-                    <div class="fret-marker"></div>
+                    <div class="fret-marker"></div><div class="fret-marker"></div>
+                    <div class="fret-marker"></div><div class="fret-marker"></div>
                     <div class="fret-marker"><div class="fret-marker-dot"></div></div>
                     <div class="fret-marker"></div>
                     <div class="fret-marker"><div class="fret-marker-dot"></div></div>
@@ -67,8 +77,7 @@
                     <div class="fret-marker"><div class="fret-marker-dot"></div></div>
                     <div class="fret-marker"></div>
                     <div class="fret-marker"><div class="fret-marker-dot"></div></div>
-                    <div class="fret-marker"></div>
-                    <div class="fret-marker"></div>
+                    <div class="fret-marker"></div><div class="fret-marker"></div>
                     <div class="fret-marker">
                         <div class="fret-marker-dot"></div>
                         <div class="fret-marker-dot"></div>
@@ -76,53 +85,15 @@
                 </div>
             </div>
         </div>
-        <!-- Detected note indicator -->
-        <div class="tuner-fb-status" id="tunerFbStatus">
-            <span class="fb-detected-label">Detected:</span>
-            <span class="fb-detected-note" id="fbDetectedNote">—</span>
-            <span class="fb-detected-pos" id="fbDetectedPos"></span>
-        </div>
     </div>
 </div>
 
-<!-- ══════ SCALE SELECTOR & DISPLAY ══════ -->
-<div class="card scales-card" style="margin-top: 1.5rem;">
+<!-- ══════ PROGRESS GRID ══════ -->
+<div class="card scales-card" style="margin-top:1rem;">
     <div class="card-header">
-        <div class="card-title">🎵 Major Scales</div>
+        <div class="card-title">Progress</div>
     </div>
-    <div id="scalesBody">
-        <!-- Scale selector -->
-        <div class="scales-selector" id="scalesSelector">
-            <span class="exercise-label">Scale:</span>
-        </div>
-
-        <!-- Current scale display -->
-        <div class="scale-display" id="scaleDisplay" style="display:none;">
-            <div class="scale-header-row">
-                <span class="scale-name" id="scaleName"></span>
-                <span class="scale-progress-badge" id="scaleProgressBadge"></span>
-            </div>
-            <div class="scale-notes-row" id="scaleNotesRow"></div>
-            <div class="scale-status" id="scaleStatus">Play each note in order</div>
-            <div class="exercise-actions" style="margin-top:0.5rem;">
-                <button class="btn btn-primary btn-sm" id="scaleListenBtn">🔊 Hear Scale</button>
-                <button class="btn btn-ghost btn-sm" id="scaleResetBtn">↺ Reset</button>
-            </div>
-        </div>
-
-        <!-- All scales progress -->
-        <div class="scales-progress-grid" id="scalesProgressGrid"></div>
-    </div>
-</div>
-
-<!-- ══════ MIC BUTTON ══════ -->
-<div class="card" style="margin-top: 1.5rem;">
-    <div class="card-header">
-        <div class="card-title">🎤 Microphone</div>
-    </div>
-    <div style="text-align:center; padding:1rem;">
-        <button class="btn btn-lg btn-primary" id="micStartBtn">🎤 Start Listening</button>
-    </div>
+    <div class="scales-progress-grid" id="progressGrid"></div>
 </div>
 
 <!-- Feedback Toast -->
@@ -134,45 +105,228 @@
 const FRETBOARD = {{ fretboard|safe }};
 
 /* ═══════════════════════════════════════════
-   METRONOME
+   DATA
    ═══════════════════════════════════════════ */
-let metronomeInterval = null;
-let metronomeAudioCtx = null;
+const MAJOR_SCALES = {
+    'C':  ['C', 'D', 'E', 'F', 'G', 'A', 'B'],
+    'D':  ['D', 'E', 'F#', 'G', 'A', 'B', 'C#'],
+    'E':  ['E', 'F#', 'G#', 'A', 'B', 'C#', 'D#'],
+    'F':  ['F', 'G', 'A', 'Bb', 'C', 'D', 'E'],
+    'G':  ['G', 'A', 'B', 'C', 'D', 'E', 'F#'],
+    'A':  ['A', 'B', 'C#', 'D', 'E', 'F#', 'G#'],
+    'B':  ['B', 'C#', 'D#', 'E', 'F#', 'G#', 'A#'],
+};
+const SCALE_ORDER = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+const CHROMATIC = ['C', 'C#/Db', 'D', 'D#/Eb', 'E', 'F', 'F#/Gb', 'G', 'G#/Ab', 'A', 'A#/Bb', 'B'];
 
-function startMetronome(bpm) {
-    stopMetronome();
-    if (!metronomeAudioCtx) metronomeAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const interval = 60000 / bpm;
-    metroTick();
-    metronomeInterval = setInterval(metroTick, interval);
+// Map from any enharmonic to all accepted names for matching
+const ENHARMONIC_MAP = {
+    'C': ['C'], 'C#': ['C#', 'Db'], 'Db': ['C#', 'Db'],
+    'D': ['D'], 'D#': ['D#', 'Eb'], 'Eb': ['D#', 'Eb'],
+    'E': ['E'], 'F': ['F'],
+    'F#': ['F#', 'Gb'], 'Gb': ['F#', 'Gb'],
+    'G': ['G'], 'G#': ['G#', 'Ab'], 'Ab': ['G#', 'Ab'],
+    'A': ['A'], 'A#': ['A#', 'Bb'], 'Bb': ['A#', 'Bb'],
+    'B': ['B'],
+};
+
+const DEGREE_LABELS = ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th'];
+
+let state = {
+    key: null,
+    notes: [],
+    currentIndex: 0,
+    completed: new Set(),
+    wrongCount: 0,
+};
+
+/* ═══════════════════════════════════════════
+   BUILD UI
+   ═══════════════════════════════════════════ */
+function buildScaleSelector() {
+    const container = document.getElementById('scalesSelector');
+    container.innerHTML = '';
+    SCALE_ORDER.forEach(key => {
+        const btn = document.createElement('button');
+        btn.className = 'note-select-btn';
+        btn.textContent = key + ' Major';
+        btn.style.background = getNoteColor(key);
+        btn.dataset.key = key;
+        if (state.completed.has(key)) btn.classList.add('scale-btn-done');
+        btn.addEventListener('click', () => startScale(key));
+        container.appendChild(btn);
+    });
 }
-function metroTick() {
-    if (!metronomeAudioCtx) return;
-    const ctx = metronomeAudioCtx;
-    const now = ctx.currentTime;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'sine'; osc.frequency.value = 1000;
-    gain.gain.setValueAtTime(0.4, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
-    osc.connect(gain); gain.connect(ctx.destination);
-    osc.start(now); osc.stop(now + 0.05);
+
+function buildChoicesGrid() {
+    const grid = document.getElementById('choicesGrid');
+    grid.innerHTML = '';
+    CHROMATIC.forEach(label => {
+        const btn = document.createElement('button');
+        btn.className = 'scale-choice-btn';
+        const primary = label.split('/')[0];
+        btn.style.setProperty('--btn-color', getNoteColor(primary));
+        btn.textContent = label;
+        btn.dataset.label = label;
+        btn.addEventListener('click', () => handleChoice(label));
+        grid.appendChild(btn);
+    });
 }
-function stopMetronome() {
-    if (metronomeInterval) { clearInterval(metronomeInterval); metronomeInterval = null; }
+
+function buildSlots() {
+    const row = document.getElementById('slotsRow');
+    row.innerHTML = '';
+    for (let i = 0; i < 7; i++) {
+        const slot = document.createElement('div');
+        slot.className = 'scale-slot';
+        slot.id = `slot-${i}`;
+        const num = document.createElement('span');
+        num.className = 'scale-slot-degree';
+        num.textContent = i + 1;
+        const note = document.createElement('span');
+        note.className = 'scale-slot-note';
+        note.id = `slot-note-${i}`;
+        note.textContent = '?';
+        slot.appendChild(num);
+        slot.appendChild(note);
+        row.appendChild(slot);
+    }
 }
 
 /* ═══════════════════════════════════════════
-   LIVE FRETBOARD
+   GAME LOGIC
    ═══════════════════════════════════════════ */
-let fretboardInverted = true;
+function startScale(key) {
+    state.key = key;
+    state.notes = MAJOR_SCALES[key];
+    state.currentIndex = 0;
+    state.wrongCount = 0;
+
+    // Update selector active states
+    document.querySelectorAll('#scalesSelector .note-select-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.key === key);
+    });
+
+    // Show challenge card
+    document.getElementById('challengeCard').style.display = '';
+    document.getElementById('challengeTitle').textContent = `${key} Major`;
+    document.getElementById('challengeTitle').style.color = getNoteColor(key);
+
+    // Hide fretboard reveal
+    document.getElementById('fretboardRevealCard').style.display = 'none';
+
+    buildSlots();
+    buildChoicesGrid();
+    updatePrompt();
+    document.getElementById('scaleResult').textContent = '';
+
+    // Reset choice button states
+    document.querySelectorAll('.scale-choice-btn').forEach(b => {
+        b.classList.remove('disabled', 'correct-pick');
+        b.disabled = false;
+    });
+}
+
+function updatePrompt() {
+    if (state.currentIndex >= 7) {
+        document.getElementById('scalePrompt').innerHTML = '🎉 <b>Complete!</b>';
+        return;
+    }
+    document.getElementById('degreeLabel').textContent = DEGREE_LABELS[state.currentIndex];
+    // Highlight current slot
+    for (let i = 0; i < 7; i++) {
+        const slot = document.getElementById(`slot-${i}`);
+        slot.classList.toggle('scale-slot-active', i === state.currentIndex);
+    }
+}
+
+function handleChoice(label) {
+    if (state.currentIndex >= 7) return;
+
+    const target = state.notes[state.currentIndex];
+    const targetAliases = ENHARMONIC_MAP[target] || [target];
+    const chosenNames = label.split('/');
+
+    // Check if any of the chosen enharmonic names match any target alias
+    const isCorrect = chosenNames.some(n => targetAliases.includes(n));
+
+    if (isCorrect) {
+        // Fill the slot
+        const slotNote = document.getElementById(`slot-note-${state.currentIndex}`);
+        slotNote.textContent = target;
+        slotNote.style.color = getNoteColor(target);
+
+        const slot = document.getElementById(`slot-${state.currentIndex}`);
+        slot.classList.add('scale-slot-filled');
+        slot.classList.remove('scale-slot-active');
+        slot.style.borderColor = getNoteColor(target);
+
+        // Play sound
+        playNoteSound(target, 1, 0, 0.5);
+
+        // Mark choice button as used
+        const btn = document.querySelector(`.scale-choice-btn[data-label="${label}"]`);
+        if (btn) {
+            btn.classList.add('correct-pick');
+            btn.disabled = true;
+        }
+
+        state.currentIndex++;
+        updatePrompt();
+
+        if (state.currentIndex >= 7) {
+            onScaleComplete();
+        }
+    } else {
+        // Wrong — shake the button
+        const btn = document.querySelector(`.scale-choice-btn[data-label="${label}"]`);
+        if (btn) {
+            btn.classList.add('shake');
+            setTimeout(() => btn.classList.remove('shake'), 500);
+        }
+        state.wrongCount++;
+        showFeedback('Not quite — try again!', 'incorrect');
+    }
+}
+
+function onScaleComplete() {
+    state.completed.add(state.key);
+    const perfect = state.wrongCount === 0;
+    const msg = perfect
+        ? `🎉 Perfect! ${state.key} Major — no mistakes!`
+        : `✅ ${state.key} Major complete! (${state.wrongCount} wrong attempt${state.wrongCount > 1 ? 's' : ''})`;
+
+    document.getElementById('scaleResult').innerHTML = `<span class="scale-complete-msg">${msg}</span>`;
+    showFeedback(perfect ? '🎉 Perfect!' : '✅ Complete!', 'correct');
+
+    updateSessionBadge();
+    buildScaleSelector();
+    buildProgressGrid();
+    showFretboardReveal();
+
+    // Auto-advance after a pause
+    setTimeout(() => {
+        const nextKey = SCALE_ORDER.find(k => !state.completed.has(k));
+        if (nextKey) {
+            startScale(nextKey);
+        } else {
+            document.getElementById('scaleResult').innerHTML =
+                '<span class="scale-complete-msg">🏆 All 7 major scales mastered!</span>';
+            showFeedback('🏆 All scales complete!', 'correct');
+        }
+    }, 2500);
+}
+
+/* ═══════════════════════════════════════════
+   FRETBOARD REVEAL
+   ═══════════════════════════════════════════ */
 const INLAY_FRETS = [3, 5, 7, 9];
 const DOUBLE_INLAY_FRETS = [12];
 
-function buildTunerFretboard() {
-    const container = document.getElementById('tunerStringsContainer');
+function buildRevealFretboard() {
+    const container = document.getElementById('revealStrings');
     container.innerHTML = '';
-    const strings = fretboardInverted ? [1,2,3,4,5,6] : [6,5,4,3,2,1];
+    const strings = [1, 2, 3, 4, 5, 6];
     for (const s of strings) {
         const row = document.createElement('div');
         row.className = 'string-row';
@@ -184,35 +338,21 @@ function buildTunerFretboard() {
         for (let f = 0; f <= 12; f++) {
             const cell = document.createElement('div');
             cell.className = `fret-cell ${f === 0 ? 'fret-0' : ''}`;
-            if (fretboardInverted) {
-                if (s === 3 && INLAY_FRETS.includes(f)) {
-                    const inlay = document.createElement('div');
-                    inlay.className = 'inlay-dot'; inlay.style.bottom = '-12px';
-                    cell.appendChild(inlay);
-                }
-                if (DOUBLE_INLAY_FRETS.includes(f) && (s === 2 || s === 4)) {
-                    const inlay = document.createElement('div');
-                    inlay.className = 'inlay-dot'; inlay.style.bottom = '-12px';
-                    cell.appendChild(inlay);
-                }
-            } else {
-                if (s === 4 && INLAY_FRETS.includes(f)) {
-                    const inlay = document.createElement('div');
-                    inlay.className = 'inlay-dot'; inlay.style.bottom = '-12px';
-                    cell.appendChild(inlay);
-                }
-                if (DOUBLE_INLAY_FRETS.includes(f) && (s === 5 || s === 3)) {
-                    const inlay = document.createElement('div');
-                    inlay.className = 'inlay-dot'; inlay.style.bottom = '-12px';
-                    cell.appendChild(inlay);
-                }
+            if (s === 3 && INLAY_FRETS.includes(f)) {
+                const inlay = document.createElement('div');
+                inlay.className = 'inlay-dot'; inlay.style.bottom = '-12px';
+                cell.appendChild(inlay);
+            }
+            if (DOUBLE_INLAY_FRETS.includes(f) && (s === 2 || s === 4)) {
+                const inlay = document.createElement('div');
+                inlay.className = 'inlay-dot'; inlay.style.bottom = '-12px';
+                cell.appendChild(inlay);
             }
             const dot = document.createElement('div');
             dot.className = 'note-dot';
-            dot.id = `tnote-${s}-${f}`;
+            dot.id = `rnote-${s}-${f}`;
             dot.dataset.string = s;
             dot.dataset.fret = f;
-            dot.textContent = FRETBOARD[`${s}-${f}`];
             cell.appendChild(dot);
             row.appendChild(cell);
         }
@@ -220,364 +360,77 @@ function buildTunerFretboard() {
     }
 }
 
-function clearFretboardHighlights() {
-    document.querySelectorAll('#tunerStringsContainer .note-dot').forEach(d => {
-        d.classList.remove('highlighted', 'correct', 'color-coded', 'target-note', 'detected-note', 'scale-next', 'scale-done');
-        d.style.background = '';
-        d.style.opacity = '';
-        d.style.boxShadow = '';
-        d.textContent = FRETBOARD[`${d.dataset.string}-${d.dataset.fret}`];
-    });
-}
+function showFretboardReveal() {
+    if (!state.key) return;
+    const card = document.getElementById('fretboardRevealCard');
+    card.style.display = '';
+    buildRevealFretboard();
 
-function updateFbHint(html) {
-    const el = document.getElementById('fbHint');
-    if (!el) return;
-    if (html && html.includes('<')) { el.innerHTML = html; }
-    else if (html) { el.innerHTML = `Showing: <b style="color:${getNoteColor(html)}">${html}</b>`; }
-    else { el.textContent = 'Select a scale & start mic to play along'; }
-}
-
-function vibrateString(stringNum) {
-    const row = document.querySelector(`#tunerStringsContainer .string-row[data-string="${stringNum}"]`);
-    if (row) {
-        row.classList.remove('vibrating');
-        void row.offsetWidth;
-        row.classList.add('vibrating');
-        setTimeout(() => row.classList.remove('vibrating'), 700);
+    const scaleNotes = MAJOR_SCALES[state.key];
+    // Highlight every position on the fretboard that matches a scale note
+    for (let s = 1; s <= 6; s++) {
+        for (let f = 0; f <= 12; f++) {
+            const cellNote = FRETBOARD[`${s}-${f}`];
+            const dot = document.getElementById(`rnote-${s}-${f}`);
+            if (!dot) continue;
+            // Check if this note is in the scale (handle enharmonics)
+            const inScale = scaleNotes.some(sn => {
+                const aliases = ENHARMONIC_MAP[sn] || [sn];
+                const cellAliases = ENHARMONIC_MAP[cellNote] || [cellNote];
+                return aliases.some(a => cellAliases.includes(a));
+            });
+            if (inScale) {
+                dot.classList.add('color-coded');
+                dot.style.background = getNoteColor(cellNote);
+                dot.style.opacity = '1';
+                dot.textContent = cellNote;
+            }
+        }
     }
 }
 
-/* ─── Flip toggle ─── */
-document.getElementById('flipToggle')?.addEventListener('click', () => {
-    fretboardInverted = !fretboardInverted;
-    buildTunerFretboard();
-    if (scaleState.active) highlightScaleOnFretboard();
-});
-
-/* ─── Metronome toggle ─── */
-let fbMetronomeBpm = 60;
-let fbMetronomeActive = false;
-
-document.getElementById('fbMetronomeToggle')?.addEventListener('click', function() {
-    fbMetronomeActive = !fbMetronomeActive;
-    this.classList.toggle('flipped', fbMetronomeActive);
-    document.getElementById('fbMetronomeControls').style.display = fbMetronomeActive ? 'flex' : 'none';
-    if (fbMetronomeActive) { startMetronome(fbMetronomeBpm); }
-    else { stopMetronome(); }
-});
-document.getElementById('fbBpmUp')?.addEventListener('click', () => {
-    fbMetronomeBpm = Math.min(240, fbMetronomeBpm + 10);
-    document.getElementById('fbBpmDisplay').textContent = fbMetronomeBpm;
-    if (fbMetronomeActive) startMetronome(fbMetronomeBpm);
-});
-document.getElementById('fbBpmDown')?.addEventListener('click', () => {
-    fbMetronomeBpm = Math.max(20, fbMetronomeBpm - 10);
-    document.getElementById('fbBpmDisplay').textContent = fbMetronomeBpm;
-    if (fbMetronomeActive) startMetronome(fbMetronomeBpm);
-});
-
-/* ─── Collapse toggle ─── */
-document.getElementById('fretboardCardToggle')?.addEventListener('click', () => {
-    const body = document.getElementById('fretboardCardBody');
-    const btn = document.getElementById('fbCollapseBtn');
+document.getElementById('fbRevealToggle')?.addEventListener('click', () => {
+    const body = document.getElementById('fbRevealBody');
+    const btn = document.getElementById('fbRevealCollapseBtn');
     if (body.style.display === 'none') { body.style.display = ''; btn.textContent = '▼'; }
     else { body.style.display = 'none'; btn.textContent = '▶'; }
 });
 
 /* ═══════════════════════════════════════════
-   MIC DETECTION
+   LISTEN — play scale audio
    ═══════════════════════════════════════════ */
-let pitchDetector = null;
-let micActive = false;
-let lastDetectedDot = null;
-const ALL_NOTES_CHROMATIC = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-const STRING_ORDER = ['E', 'A', 'D', 'G', 'B', 'e'];
-
-function freqToNote(freq) {
-    if (freq <= 0) return { note: '—', octave: 0, cents: 0 };
-    const semitones = 12 * Math.log2(freq / 440.0);
-    const rounded = Math.round(semitones);
-    const cents = Math.round((semitones - rounded) * 100);
-    const noteIndex = ((rounded % 12) + 12 + 9) % 12;
-    const octave = Math.floor((rounded + 9) / 12) + 4;
-    return { note: ALL_NOTES_CHROMATIC[noteIndex], octave, cents };
-}
-
-document.getElementById('micStartBtn')?.addEventListener('click', async function() {
-    if (micActive) {
-        if (pitchDetector) { pitchDetector.stop(); pitchDetector = null; }
-        micActive = false;
-        this.textContent = '🎤 Start Listening';
-        this.classList.remove('btn-danger'); this.classList.add('btn-primary');
-        document.getElementById('fbDetectedNote').textContent = '—';
-        document.getElementById('fbDetectedNote').style.color = '';
-        document.getElementById('fbDetectedPos').textContent = '';
-        document.querySelectorAll('#tunerStringsContainer .note-dot.detected-note').forEach(d => {
-            d.classList.remove('detected-note');
-            if (!d.classList.contains('highlighted') && !d.classList.contains('correct') && !d.classList.contains('color-coded')) {
-                d.style.opacity = ''; d.style.background = '';
-            }
-        });
-        return;
-    }
-    pitchDetector = new PitchDetector();
-    const started = await pitchDetector.start();
-    if (!started) { showFeedback('Mic access denied', 'incorrect'); return; }
-    micActive = true;
-    this.textContent = '🛑 Stop Listening';
-    this.classList.remove('btn-primary'); this.classList.add('btn-danger');
-    pitchDetector.onNoteDetected = (info) => { if (micActive) handleMicDetection(info); };
+document.getElementById('listenBtn')?.addEventListener('click', () => {
+    if (!state.key) return;
+    const notes = MAJOR_SCALES[state.key];
+    // Play ascending + octave root
+    const full = [...notes, notes[0]];
+    full.forEach((note, i) => {
+        setTimeout(() => playNoteSound(note, 1, 0, 0.6), i * 350);
+    });
 });
 
-function handleMicDetection(info) {
-    const pos = pitchDetector.guessPosition(info.frequency);
-    if (pos && pos.string && pos.fret !== null) {
-        const strName = {1:'e', 2:'B', 3:'G', 4:'D', 5:'A', 6:'E'}[pos.string];
-        document.getElementById('fbDetectedNote').textContent = info.note;
-        document.getElementById('fbDetectedNote').style.color = getNoteColor(info.note);
-        document.getElementById('fbDetectedPos').textContent = `String ${strName}, Fret ${pos.fret}`;
-
-        if (lastDetectedDot) {
-            lastDetectedDot.classList.remove('detected-note');
-            if (!lastDetectedDot.classList.contains('highlighted') && !lastDetectedDot.classList.contains('correct') && !lastDetectedDot.classList.contains('color-coded')) {
-                lastDetectedDot.style.opacity = ''; lastDetectedDot.style.background = ''; lastDetectedDot.style.boxShadow = '';
-            }
-        }
-        const dot = document.getElementById(`tnote-${pos.string}-${pos.fret}`);
-        if (dot) {
-            dot.classList.add('detected-note');
-            dot.style.opacity = '1';
-            lastDetectedDot = dot;
-            vibrateString(pos.string);
-        }
-        if (scaleState.active) {
-            checkScaleDetection(info.note, pos.string, pos.fret);
-        }
-    }
-}
+document.getElementById('resetBtn')?.addEventListener('click', () => {
+    if (state.key) startScale(state.key);
+});
 
 /* ═══════════════════════════════════════════
-   MAJOR SCALES
+   PROGRESS
    ═══════════════════════════════════════════ */
-const MAJOR_SCALES = {
-    'C':  ['C', 'D', 'E', 'F', 'G', 'A', 'B', 'C'],
-    'D':  ['D', 'E', 'F#', 'G', 'A', 'B', 'C#', 'D'],
-    'E':  ['E', 'F#', 'G#', 'A', 'B', 'C#', 'D#', 'E'],
-    'F':  ['F', 'G', 'A', 'A#', 'C', 'D', 'E', 'F'],
-    'G':  ['G', 'A', 'B', 'C', 'D', 'E', 'F#', 'G'],
-    'A':  ['A', 'B', 'C#', 'D', 'E', 'F#', 'G#', 'A'],
-    'B':  ['B', 'C#', 'D#', 'E', 'F#', 'G#', 'A#', 'B'],
-};
-const SCALE_ORDER = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
-
-let scaleState = {
-    active: false,
-    key: null,
-    notes: [],
-    currentIndex: 0,
-    completed: new Set(),
-};
-
-function buildScalePath(key) {
-    const notes = MAJOR_SCALES[key];
-    const path = [];
-    const openMidi = {6: 40, 5: 45, 4: 50, 3: 55, 2: 59, 1: 64};
-    const noteToSemitone = {'C':0,'C#':1,'D':2,'D#':3,'E':4,'F':5,'F#':6,'G':7,'G#':8,'A':9,'A#':10,'B':11};
-
-    const rootSemi = noteToSemitone[notes[0]];
-    let startString = 6;
-    let startFret = (rootSemi - (openMidi[6] % 12) + 12) % 12;
-    if (startFret === 0) startFret = 12;
-    if (startFret > 7) {
-        const altFret = (rootSemi - (openMidi[5] % 12) + 12) % 12;
-        if (altFret > 0 && altFret <= 7) { startString = 5; startFret = altFret; }
-    }
-
-    let currentString = startString;
-    let lastMidi = openMidi[currentString] + startFret - 1;
-
-    for (const note of notes) {
-        let bestS = null, bestF = null, bestMidi = null;
-        for (let s = currentString; s >= 1; s--) {
-            for (let f = 0; f <= 12; f++) {
-                const cellNote = FRETBOARD[`${s}-${f}`];
-                if (cellNote === note) {
-                    const midi = openMidi[s] + f;
-                    if (midi > lastMidi) {
-                        if (bestMidi === null || midi < bestMidi) {
-                            bestS = s; bestF = f; bestMidi = midi;
-                        }
-                    }
-                }
-            }
-        }
-        if (bestS !== null) {
-            path.push({string: bestS, fret: bestF, note: note});
-            lastMidi = bestMidi;
-            currentString = bestS;
-        }
-    }
-    return path;
+function updateSessionBadge() {
+    document.getElementById('sessionBadge').textContent = `${state.completed.size} / 7`;
 }
 
-function buildScalesUI() {
-    const container = document.getElementById('scalesSelector');
-    if (!container) return;
-    SCALE_ORDER.forEach(key => {
-        const btn = document.createElement('button');
-        btn.className = 'note-select-btn';
-        btn.textContent = key;
-        btn.style.background = getNoteColor(key);
-        btn.dataset.key = key;
-        btn.addEventListener('click', () => selectScale(key));
-        container.appendChild(btn);
-    });
-    buildScalesProgressGrid();
-}
-
-function selectScale(key) {
-    document.querySelectorAll('#scalesSelector .note-select-btn').forEach(b => {
-        b.classList.toggle('active', b.dataset.key === key);
-    });
-    scaleState = {
-        active: true,
-        key: key,
-        notes: MAJOR_SCALES[key],
-        path: buildScalePath(key),
-        currentIndex: 0,
-        completed: scaleState.completed,
-    };
-    document.getElementById('scaleDisplay').style.display = '';
-    document.getElementById('scaleName').textContent = `${key} Major`;
-    document.getElementById('scaleName').style.color = getNoteColor(key);
-    updateScaleNotesRow();
-    updateScaleProgressBadge();
-    document.getElementById('scaleStatus').textContent = 'Play each note in order — mic detects your playing!';
-    highlightScaleOnFretboard();
-}
-
-function updateScaleNotesRow() {
-    const row = document.getElementById('scaleNotesRow');
-    if (!row) return;
-    row.innerHTML = '';
-    scaleState.notes.forEach((note, i) => {
-        if (i > 0) {
-            const arrow = document.createElement('span');
-            arrow.className = 'scale-arrow';
-            arrow.textContent = '→';
-            if (i < scaleState.currentIndex) arrow.classList.add('done');
-            row.appendChild(arrow);
-        }
-        const pill = document.createElement('span');
-        pill.className = 'scale-note-pill';
-        pill.textContent = note;
-        pill.style.setProperty('--note-color', getNoteColor(note));
-        if (i < scaleState.currentIndex) pill.classList.add('done');
-        else if (i === scaleState.currentIndex) pill.classList.add('current');
-        row.appendChild(pill);
-    });
-}
-
-function highlightScaleOnFretboard() {
-    clearFretboardHighlights();
-    if (!scaleState.active || !scaleState.path) return;
-
-    scaleState.path.forEach((pos, i) => {
-        const d = document.getElementById(`tnote-${pos.string}-${pos.fret}`);
-        if (!d) return;
-        const color = getNoteColor(pos.note);
-        if (i < scaleState.currentIndex) {
-            d.classList.add('correct', 'scale-done');
-            d.style.opacity = '1'; d.textContent = pos.note;
-        } else if (i === scaleState.currentIndex) {
-            d.classList.add('highlighted', 'scale-next');
-            d.style.opacity = '1'; d.textContent = pos.note;
-        } else {
-            d.classList.add('color-coded', 'target-note');
-            d.style.background = color; d.style.opacity = '0.3'; d.textContent = pos.note;
-        }
-    });
-
-    const currentNote = scaleState.notes[scaleState.currentIndex];
-    if (currentNote) {
-        updateFbHint(`${scaleState.key} Major — play <b style="color:${getNoteColor(currentNote)}">${currentNote}</b>`);
-    } else {
-        updateFbHint(`${scaleState.key} Major — done! 🎉`);
-    }
-}
-
-function checkScaleDetection(detectedNote, detectedString, detectedFret) {
-    if (!scaleState.active || scaleState.currentIndex >= scaleState.notes.length) return false;
-    const target = scaleState.path[scaleState.currentIndex];
-    if (!target) return false;
-    if (detectedNote !== target.note) return false;
-
-    scaleState.currentIndex++;
-    vibrateString(detectedString);
-    highlightScaleOnFretboard();
-    updateScaleNotesRow();
-
-    if (scaleState.currentIndex >= scaleState.notes.length) {
-        scaleState.completed.add(scaleState.key);
-        showFeedback(`🎉 ${scaleState.key} Major complete!`, 'correct');
-        updateScaleProgressBadge();
-        buildScalesProgressGrid();
-        document.getElementById('scaleStatus').innerHTML = `<b>${scaleState.key} Major</b> complete! Pick the next scale.`;
-        setTimeout(() => {
-            const nextKey = SCALE_ORDER.find(k => !scaleState.completed.has(k));
-            if (nextKey) { selectScale(nextKey); }
-            else {
-                showFeedback('🏆 All 7 major scales complete!', 'correct');
-                document.getElementById('scaleStatus').innerHTML = '🏆 <b>All major scales mastered this session!</b>';
-            }
-        }, 1500);
-        return true;
-    }
-    return false;
-}
-
-function updateScaleProgressBadge() {
-    const badge = document.getElementById('scaleProgressBadge');
-    if (!badge) return;
-    const done = scaleState.completed.size;
-    badge.textContent = `${done}/7 scales`;
-    badge.className = 'scale-progress-badge' + (done >= 7 ? ' all-done' : '');
-}
-
-function buildScalesProgressGrid() {
-    const grid = document.getElementById('scalesProgressGrid');
-    if (!grid) return;
+function buildProgressGrid() {
+    const grid = document.getElementById('progressGrid');
     grid.innerHTML = '';
     SCALE_ORDER.forEach(key => {
         const item = document.createElement('div');
-        item.className = 'progress-note-item' + (scaleState.completed.has(key) ? ' done' : '');
-        item.innerHTML = `<span class="pn-note" style="color:${getNoteColor(key)}">${key}</span><span class="pn-count">${scaleState.completed.has(key) ? '✓' : '—'}</span>`;
+        item.className = 'progress-note-item' + (state.completed.has(key) ? ' done' : '');
+        item.innerHTML = `<span class="pn-note" style="color:${getNoteColor(key)}">${key}</span>` +
+            `<span class="pn-count">${state.completed.has(key) ? '✓' : '—'}</span>`;
         grid.appendChild(item);
     });
 }
-
-function playScaleAudio(key) {
-    const path = buildScalePath(key);
-    if (!path.length) return;
-    path.forEach((pos, i) => {
-        setTimeout(() => {
-            playNoteSound(pos.note, pos.string, pos.fret, 0.8);
-            vibrateString(pos.string);
-        }, i * 400);
-    });
-}
-
-document.getElementById('scaleListenBtn')?.addEventListener('click', () => {
-    if (scaleState.active) playScaleAudio(scaleState.key);
-});
-document.getElementById('scaleResetBtn')?.addEventListener('click', () => {
-    if (!scaleState.active) return;
-    scaleState.currentIndex = 0;
-    highlightScaleOnFretboard();
-    updateScaleNotesRow();
-    document.getElementById('scaleStatus').textContent = 'Play each note in order';
-});
 
 function showFeedback(message, type) {
     const toast = document.getElementById('feedbackToast');
@@ -586,8 +439,11 @@ function showFeedback(message, type) {
     setTimeout(() => toast.classList.remove('show'), 1500);
 }
 
-/* ─── INIT ─── */
-buildTunerFretboard();
-buildScalesUI();
+/* ═══════════════════════════════════════════
+   INIT
+   ═══════════════════════════════════════════ */
+buildScaleSelector();
+buildProgressGrid();
+updateSessionBadge();
 </script>
 {% endblock %}

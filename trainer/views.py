@@ -224,11 +224,6 @@ def fullscreen_view(request):
     return render(request, 'trainer/fullscreen.html', context)
 
 
-def strum_view(request):
-    """Strumming exercise with metronome and mic detection."""
-    return render(request, 'trainer/strum.html')
-
-
 def scales_view(request):
     """Major scales practice with live fretboard and mic detection."""
     context = {
