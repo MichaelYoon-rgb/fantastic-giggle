@@ -84,6 +84,7 @@
                 <a href="{% url 'recall' %}" class="nav-link {% block nav_recall %}{% endblock %}">🧠 Recall</a>
                 <a href="{% url 'strum' %}" class="nav-link {% block nav_strum %}{% endblock %}">🎸 Strum</a>
                 <a href="{% url 'school' %}" class="nav-link {% block nav_school %}{% endblock %}">🎓 School</a>
+                <a href="{% url 'scales' %}" class="nav-link {% block nav_scales %}{% endblock %}">🎵 Scales</a>
                 <a href="{% url 'fullscreen' %}" class="nav-link {% block nav_fullscreen %}{% endblock %}">🖥 Fretboard</a>
                 {% if user.is_authenticated %}
                     <a href="{% url 'stats' %}" class="nav-link {% block nav_stats %}{% endblock %}">📊 Stats</a>

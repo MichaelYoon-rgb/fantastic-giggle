@@ -229,6 +229,14 @@ def strum_view(request):
     return render(request, 'trainer/strum.html')
 
 
+def scales_view(request):
+    """Major scales practice with live fretboard and mic detection."""
+    context = {
+        'fretboard': json.dumps(build_fretboard_data()),
+    }
+    return render(request, 'trainer/scales.html', context)
+
+
 def note_explorer_view(request):
     """Note explorer — select notes and see all positions on fretboard."""
     context = {

@@ -9,6 +9,7 @@ urlpatterns = [
     path('recall/', views.recall_view, name='recall'),
     path('strum/', views.strum_view, name='strum'),
     path('school/', views.school_view, name='school'),
+    path('scales/', views.scales_view, name='scales'),
     path('fretboard/', views.fullscreen_view, name='fullscreen'),
     path('stats/', views.stats_view, name='stats'),
 
